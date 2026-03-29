@@ -1,0 +1,10 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Rota para a página inicial (Home)
+    path('', views.home, name='home'),
+    # Rota para a página de prémios que planeámos
+    path('awards/', views.awards_view, name='awards_list'),
+    path('salaries/', views.salaries_view, name='salaries_list'),
+]

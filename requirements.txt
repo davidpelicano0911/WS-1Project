@@ -1,0 +1,6 @@
+asgiref==3.11.1
+Django==6.0.3
+pyparsing==3.3.2
+rdflib==7.6.0
+SPARQLWrapper==2.0.0
+sqlparse==0.5.5
