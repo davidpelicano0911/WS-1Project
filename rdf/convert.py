@@ -60,7 +60,7 @@ def read_csv(filename: str):
 # --- Conversion Functions ---
 
 def declare_ontology():
-    classes = ["Player", "Franchise", "Team", "BattingStat", "PitchingStat", "FieldingStat", "Salary", "HallOfFameVote", "Award", "WorldSeriesResult", "AllStarAppearance", "Manager"]
+    classes = ["Player", "Franchise", "Team", "BattingStat", "PitchingStat", "FieldingStat", "FieldingOFStat", "Salary", "HallOfFameVote", "Award", "WorldSeriesResult", "AllStarAppearance", "Manager"]
     for cls in classes:
         add(BB[cls], RDF.type, OWL.Class)
         add(BB[cls], RDFS.label, Literal(cls))
@@ -154,6 +154,117 @@ def convert_awards():
         add(uri(f"player/{safe(pid)}"), BB.wonAward, s)
         add(s, BB.yearID, lit_int(year))
 
+def convert_fielding():
+    print("  Processing Fielding (Large File)...")
+    for row in read_csv("Fielding.csv"):
+        pid, year, stint, tid = row.get("playerID"), row.get("yearID"), row.get("stint", "1"), row.get("teamID")
+        if not pid or not year or not tid: continue
+        
+        s = uri(f"fielding/{safe(pid)}/{safe(year)}/{safe(stint)}")
+        add(s, RDF.type, BB.FieldingStat)
+        add(s, BB.yearID, lit_int(year))
+        add(s, BB.POS, lit(row.get("POS")))
+        add(s, BB.G, lit_int(row.get("G")))
+        add(s, BB.E, lit_int(row.get("E")))
+        
+        add(uri(f"player/{safe(pid)}"), BB.hasFielding, s)
+        add(s, BB.teamOf, uri(f"team/{safe(tid)}/{safe(year)}"))
+
+def convert_fielding_of():
+    print("  Processing FieldingOF...")
+    for row in read_csv("FieldingOF.csv"):
+        pid, year, stint = row.get("playerID"), row.get("yearID"), row.get("stint", "1")
+        if not pid or not year: continue
+        
+        s = uri(f"fieldingof/{safe(pid)}/{safe(year)}/{safe(stint)}")
+        add(s, RDF.type, BB.FieldingOFStat)
+        add(s, BB.yearID, lit_int(year))
+        for pos in ["Glf", "Gcf", "Grf"]:
+            if row.get(pos): add(s, uri(pos), lit_int(row.get(pos)))
+            
+        add(uri(f"player/{safe(pid)}"), BB.hasFieldingOF, s)
+
+def convert_hall_of_fame():
+    print("  Processing HallOfFame...")
+    for row in read_csv("HallOfFame.csv"):
+        pid, yearid = row.get("playerID"), row.get("yearid")
+        if not pid or not yearid: continue
+        
+        s = uri(f"halloffame/{safe(pid)}/{safe(yearid)}")
+        add(s, RDF.type, BB.HallOfFameVote)
+        add(s, BB.yearID, lit_int(yearid))
+        add(s, BB.votedBy, lit(row.get("votedBy")))
+        add(s, BB.ballots, lit_int(row.get("ballots")))
+        add(s, BB.needed, lit_int(row.get("needed")))
+        add(s, BB.votes, lit_int(row.get("votes")))
+        add(s, BB.inducted, lit_bool(row.get("inducted")))
+        add(s, BB.category, lit(row.get("category")))
+        
+        add(uri(f"player/{safe(pid)}"), BB.hallOfFameVote, s)
+
+def convert_allstar_full():
+    print("  Processing AllStarFull...")
+    for row in read_csv("AllstarFull.csv"):
+        pid, year, gameNum, tid = row.get("playerID"), row.get("yearID"), row.get("gameNum"), row.get("teamID")
+        if not pid or not year or not gameNum: continue
+        
+        s = uri(f"allstar/{safe(pid)}/{safe(year)}/{safe(gameNum)}")
+        add(s, RDF.type, BB.AllStarAppearance)
+        add(s, BB.yearID, lit_int(year))
+        add(s, BB.gameID, lit(row.get("gameID")))
+        add(s, BB.startingPos, lit_int(row.get("startingPos")))
+        
+        add(uri(f"player/{safe(pid)}"), BB.playedInAllStar, s)
+        if tid: add(s, BB.teamOf, uri(f"team/{safe(tid)}/{safe(year)}"))
+
+def convert_managers():
+    print("  Processing Managers...")
+    for row in read_csv("Managers.csv"):
+        pid, year, inseason, tid = row.get("playerID"), row.get("yearID"), row.get("inseason", "1"), row.get("teamID")
+        if not pid or not year or not tid: continue
+        
+        s = uri(f"manager/{safe(pid)}/{safe(year)}/{safe(inseason)}")
+        add(s, RDF.type, BB.Manager)
+        add(s, BB.yearID, lit_int(year))
+        add(s, BB.wins, lit_int(row.get("W")))
+        add(s, BB.losses, lit_int(row.get("L")))
+        add(s, BB.rank, lit_int(row.get("rank")))
+        
+        add(uri(f"player/{safe(pid)}"), BB.isManager, s)
+        add(s, BB.managedTeam, uri(f"team/{safe(tid)}/{safe(year)}"))
+
+def convert_awards_managers():
+    print("  Processing AwardsManagers...")
+    for row in read_csv("AwardsManagers.csv"):
+        pid, award, year = row.get("playerID"), row.get("awardID"), row.get("yearID")
+        if not pid or not award or not year: continue
+        
+        s = uri(f"awardmgr/{safe(pid)}/{safe(award)}/{safe(year)}")
+        add(s, RDF.type, BB.Award)
+        add(s, BB.awardName, lit(award))
+        add(s, BB.yearID, lit_int(year))
+        
+        add(uri(f"player/{safe(pid)}"), BB.wonAward, s)
+
+def convert_series_post():
+    print("  Processing SeriesPost...")
+    for row in read_csv("SeriesPost.csv"):
+        year, round_id = row.get("yearID"), row.get("round")
+        if not year or not round_id: continue
+        
+        s = uri(f"seriespost/{safe(year)}/{safe(round_id)}")
+        add(s, RDF.type, BB.WorldSeriesResult)
+        add(s, BB.yearID, lit_int(year))
+        add(s, BB.round, lit(round_id))
+        add(s, BB.wins, lit_int(row.get("wins")))
+        add(s, BB.losses, lit_int(row.get("losses")))
+        add(s, BB.ties, lit_int(row.get("ties")))
+        
+        w_team = row.get("teamIDwinner")
+        l_team = row.get("teamIDloser")
+        if w_team: add(s, BB.winnerTeam, uri(f"team/{safe(w_team)}/{safe(year)}"))
+        if l_team: add(s, BB.loserTeam, uri(f"team/{safe(l_team)}/{safe(year)}"))
+
 # --- Main ---
 def main():
     try:
@@ -166,6 +277,13 @@ def main():
         convert_pitching()
         convert_salaries()
         convert_awards()
+        convert_fielding()
+        convert_fielding_of()
+        convert_hall_of_fame()
+        convert_allstar_full()
+        convert_managers()
+        convert_awards_managers()
+        convert_series_post()
         
         print(f"\nSuccess! File generated: {OUT}")
         print(f"Size: {OUT.stat().st_size / 1024 / 1024:.2f} MB")
