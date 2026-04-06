@@ -4,32 +4,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Baseball Data Explorer{% endblock %}</title>
+    <title>{% block title %}BaseBallX{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'baseball/style.css' %}">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <div class="site-shell">
-        <div class="container">
-            <nav class="navbar navbar-expand-lg site-nav rounded-pill px-3 px-md-4 py-3 mb-4">
-                <div class="container-fluid px-0">
-                    <a class="navbar-brand d-flex align-items-center gap-3 text-white m-0" href="{% url 'home' %}">
-                        <span class="brand-mark">
-                            <i class="bi bi-baseball"></i>
-                        </span>
-                        <span class="site-brand">Baseball Data Explorer</span>
+        <header class="portal-header">
+            <div class="top-club-bar">
+                <div class="container portal-container top-club-inner">
+                    <a class="top-club-label" href="{% url 'home' %}">
+                        Data Hub
+                        <i class="bi bi-arrow-up-right"></i>
                     </a>
+                    <div class="club-badge-strip" aria-hidden="true">
+                        {% for team in header_teams %}
+                            <a class="club-badge club-badge-link" href="{% url 'teams' %}" title="{{ team.name }}">
+                                {% if team.mlb_logo_id %}
+                                    <img
+                                        src="https://www.mlbstatic.com/team-logos/{{ team.mlb_logo_id }}.svg"
+                                        alt="{{ team.name }} logo"
+                                        class="club-logo"
+                                        loading="lazy"
+                                    >
+                                {% else %}
+                                    <img
+                                        src="{% static 'baseball/team-fallback.svg' %}"
+                                        alt="{{ team.name }} logo fallback"
+                                        class="club-logo"
+                                        loading="lazy"
+                                    >
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
                 </div>
-            </nav>
+            </div>
 
+            <div class="container portal-container">
+                <nav class="portal-nav">
+                    <div class="portal-brand-wrap">
+                        <a class="portal-brand" href="{% url 'home' %}">
+                            <img src="{% static 'logo.png' %}" alt="BaseBallX logo" class="brand-logo brand-logo-standalone">
+                        </a>
+
+                        <div class="portal-leagues d-none d-lg-flex">
+                            <a href="{% url 'home' %}" class="portal-pill-link">Home</a>
+                            <a href="{% url 'players' %}" class="portal-pill-link">Players</a>
+                            <a href="{% url 'teams' %}" class="portal-pill-link">Teams</a>
+                            <a href="{% url 'compare_players' %}" class="portal-pill-link">Comparator</a>
+                            <a href="{% url 'analytics' %}" class="portal-pill-link">Analytics / Stats</a>
+                            <a href="{% url 'about' %}" class="portal-pill-link">About</a>
+                        </div>
+                    </div>
+
+                    <div class="portal-actions">
+                        <a href="{% url 'graph_view' %}" class="icon-circle-link" aria-label="Open graph view">
+                            <i class="bi bi-search"></i>
+                        </a>
+                        <a href="{% url 'compare_players' %}" class="portal-cta">Explore Data</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="subnav-bar">
+                <div class="container portal-container subnav-inner">
+                    <a href="{% url 'home' %}" class="subnav-link">Home</a>
+                    <a href="{% url 'players' %}" class="subnav-link">Players</a>
+                    <a href="{% url 'teams' %}" class="subnav-link">Teams</a>
+                    <a href="{% url 'compare_players' %}" class="subnav-link">Comparator</a>
+                    <a href="{% url 'analytics' %}" class="subnav-link">Analytics / Stats</a>
+                    <a href="{% url 'about' %}" class="subnav-link">About</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="container portal-container">
             {% block content %}{% endblock %}
 
             <footer class="site-footer text-center mt-5 pt-3">
-                <small>Practical Assignment 1 · Semantic Web Baseball Explorer</small>
+                <small>Practical Assignment 1 · BaseBallX</small>
             </footer>
         </div>
     </div>

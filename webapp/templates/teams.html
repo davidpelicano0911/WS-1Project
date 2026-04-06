@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Teams{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-shield-fill"></i>
+                Teams
+            </span>
+            <h1 class="page-title">Teams</h1>
+            <p class="section-copy mb-0">
+                This section is reserved for team and franchise exploration across the baseball archive.
+            </p>
+        </div>
+    </div>
+
+    <div class="data-panel">
+        <p class="section-copy mb-3">
+            The RDF now contains richer team data, including franchise information and half-season records. The next step is to add team search and team detail pages on top of it.
+        </p>
+        <a href="{% url 'graph_view' %}" class="btn-app btn-secondary-app">
+            Open graph view
+        </a>
+    </div>
+</section>
+{% endblock %}

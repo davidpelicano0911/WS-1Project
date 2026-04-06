@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics / Stats{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-graph-up-arrow"></i>
+                Analytics / Stats
+            </span>
+            <h1 class="page-title">Analytics / Stats</h1>
+            <p class="section-copy mb-0">
+                Jump into the most useful statistical views already available in the app.
+            </p>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-md-6">
+            <article class="feature-card h-100">
+                <div class="feature-icon gold">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <h2 class="feature-title h3">Awards</h2>
+                <p class="section-copy">
+                    Browse award records and distinctions across seasons directly from GraphDB.
+                </p>
+                <a href="{% url 'awards_list' %}" class="btn-app btn-primary-app">Open awards</a>
+            </article>
+        </div>
+        <div class="col-md-6">
+            <article class="feature-card h-100">
+                <div class="feature-icon green">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <h2 class="feature-title h3">Salaries</h2>
+                <p class="section-copy">
+                    See top salary records and use them as a simple stats-style leaderboard.
+                </p>
+                <a href="{% url 'salaries_list' %}" class="btn-app btn-secondary-app">Open salaries</a>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}

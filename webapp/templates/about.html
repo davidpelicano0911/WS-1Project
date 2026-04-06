@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-info-circle-fill"></i>
+                About
+            </span>
+            <h1 class="page-title">About</h1>
+            <p class="section-copy mb-0">
+                Baseball Data Explorer is a Semantic Web project built with Django, GraphDB and RDF generated from the archive dataset.
+            </p>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-md-4">
+            <div class="hero-stat">
+                <span class="hero-stat-value">RDF</span>
+                <span class="hero-stat-label">Structured linked data generated from archive CSV files.</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="hero-stat">
+                <span class="hero-stat-value">GraphDB</span>
+                <span class="hero-stat-label">SPARQL endpoint used by the Django app for queries and views.</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="hero-stat">
+                <span class="hero-stat-value">Django</span>
+                <span class="hero-stat-label">Frontend and routing layer for the site experience.</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

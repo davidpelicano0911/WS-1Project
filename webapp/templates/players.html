@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Players{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-person-bounding-box"></i>
+                Players
+            </span>
+            <h1 class="page-title">Players</h1>
+            <p class="section-copy mb-0">
+                Explore player-focused tools in the knowledge graph, from direct comparisons to relationship graphs.
+            </p>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-md-6">
+            <article class="feature-card h-100">
+                <div class="feature-icon green">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <h2 class="feature-title h3">Comparator</h2>
+                <p class="section-copy">
+                    Compare two players side by side using graph-backed summaries, awards and batting aggregates.
+                </p>
+                <a href="{% url 'compare_players' %}" class="btn-app btn-primary-app">Open comparator</a>
+            </article>
+        </div>
+        <div class="col-md-6">
+            <article class="feature-card h-100">
+                <div class="feature-icon green">
+                    <i class="bi bi-diagram-3-fill"></i>
+                </div>
+                <h2 class="feature-title h3">Player Graph</h2>
+                <p class="section-copy">
+                    Inspect how a player connects to teams, franchises and awards through RDF relationships.
+                </p>
+                <a href="{% url 'graph_view' %}" class="btn-app btn-secondary-app">Open graph view</a>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}
