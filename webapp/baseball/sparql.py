@@ -12,6 +12,82 @@ def run_query(query):
     results = sparql.query().convert()
     return results["results"]["bindings"]
 
+
+def _row_value(row, key, default=None):
+    return row.get(key, {}).get("value", default)
+
+
+def _row_int(row, key, default=0):
+    value = _row_value(row, key)
+    if value in (None, ""):
+        return default
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _row_float(row, key, default=0.0):
+    value = _row_value(row, key)
+    if value in (None, ""):
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_player_id(player_id):
+    return escape_sparql_string(str(player_id).strip())
+
+
+def _outs_to_decimal_innings(ip_outs):
+    if ip_outs is None:
+        return None
+    if not ip_outs:
+        return 0.0
+    whole = ip_outs // 3
+    remainder = ip_outs % 3
+    return float(f"{whole}.{remainder}")
+
+
+def _build_batting_rates(line):
+    at_bats = line.get("at_bats", 0)
+    hits = line.get("hits", 0)
+    doubles = line.get("doubles", 0)
+    triples = line.get("triples", 0)
+    home_runs = line.get("home_runs", 0)
+    walks = line.get("walks", 0)
+    hit_by_pitch = line.get("hit_by_pitch", 0)
+    sacrifice_flies = line.get("sacrifice_flies", 0)
+    strikeouts = line.get("strikeouts", 0)
+    seasons = line.get("seasons", 0)
+
+    singles = max(hits - doubles - triples - home_runs, 0)
+    total_bases = singles + (2 * doubles) + (3 * triples) + (4 * home_runs)
+
+    line["avg"] = (hits / at_bats) if at_bats else None
+    obp_denom = at_bats + walks + hit_by_pitch + sacrifice_flies
+    line["obp"] = ((hits + walks + hit_by_pitch) / obp_denom) if obp_denom else None
+    line["slg"] = (total_bases / at_bats) if at_bats else None
+    line["ops"] = (
+        (line["obp"] + line["slg"])
+        if line["obp"] is not None and line["slg"] is not None
+        else None
+    )
+    line["bb_k_ratio"] = (walks / strikeouts) if strikeouts else None
+    line["hr_per_season"] = (home_runs / seasons) if seasons else None
+    return line
+
+
+def _build_pitching_rates(line):
+    innings_outs = line.get("innings_outs", 0)
+    earned_runs = line.get("earned_runs", 0)
+    line["innings_pitched"] = _outs_to_decimal_innings(innings_outs)
+    if line.get("era") is None:
+        line["era"] = ((earned_runs * 27) / innings_outs) if innings_outs else None
+    return line
+
 @lru_cache(maxsize=32)
 def get_player_options_by_initial(initial):
     initial = str(initial).strip().upper()
@@ -46,7 +122,7 @@ def escape_sparql_string(value):
 
 @lru_cache(maxsize=1024)
 def get_player_summary(player_id):
-    player_id = escape_sparql_string(player_id.strip())
+    player_id = _normalize_player_id(player_id)
     if not player_id:
         return None
 
@@ -54,7 +130,7 @@ def get_player_summary(player_id):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?name ?playerID ?birthYear ?birthCountry ?height ?weight ?awardsCount ?maxSalary ?careerHomeRuns ?careerRBI ?battingSeasons
+    SELECT ?name ?playerID ?birthYear ?birthCountry ?height ?weight ?bats ?throws ?debut ?finalGame ?awardsCount ?maxSalary ?careerHomeRuns ?careerRBI ?battingSeasons
     WHERE {{
         ?player a bb:Player ;
                 foaf:name ?name ;
@@ -65,6 +141,10 @@ def get_player_summary(player_id):
         OPTIONAL {{ ?player bb:birthCountry ?birthCountry . }}
         OPTIONAL {{ ?player bb:height ?height . }}
         OPTIONAL {{ ?player bb:weight ?weight . }}
+        OPTIONAL {{ ?player bb:bats ?bats . }}
+        OPTIONAL {{ ?player bb:throws ?throws . }}
+        OPTIONAL {{ ?player bb:debut ?debut . }}
+        OPTIONAL {{ ?player bb:finalGame ?finalGame . }}
 
         OPTIONAL {{
             SELECT (COUNT(DISTINCT ?awardObj) AS ?awardsCount)
@@ -91,6 +171,7 @@ def get_player_summary(player_id):
             WHERE {{
                 ?player bb:playerID "{player_id}" ;
                         bb:hasBatting ?battingObj .
+                ?battingObj a bb:BattingStat .
                 OPTIONAL {{ ?battingObj bb:homeRuns ?homeRunsValue . }}
                 OPTIONAL {{ ?battingObj bb:RBI ?rbiValue . }}
                 OPTIONAL {{ ?battingObj bb:yearID ?season . }}
@@ -116,6 +197,10 @@ def get_player_summary(player_id):
         "birth_country": value_for("birthCountry"),
         "height": value_for("height"),
         "weight": value_for("weight"),
+        "bats": value_for("bats"),
+        "throws": value_for("throws"),
+        "debut": value_for("debut"),
+        "final_game": value_for("finalGame"),
         "awards_count": value_for("awardsCount", "0"),
         "max_salary": value_for("maxSalary", "0"),
         "career_home_runs": value_for("careerHomeRuns", "0"),
@@ -123,6 +208,497 @@ def get_player_summary(player_id):
         "batting_seasons": value_for("battingSeasons", "0"),
         "search_term": player_id,
     }
+
+
+@lru_cache(maxsize=1024)
+def get_player_batting_seasons(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?teamName ?lg
+           ?gamesValue ?atBatsValue ?runsValue ?hitsValue ?doublesValue ?triplesValue
+           ?homeRunsValue ?rbiValue ?stolenBasesValue ?walksValue ?strikeoutsValue
+           ?hitByPitchValue ?sacrificeFliesValue
+    WHERE {{
+        ?player bb:playerID "{player_id}" ;
+                bb:hasBatting ?batting .
+        ?batting a bb:BattingStat ;
+                 bb:yearID ?year .
+        OPTIONAL {{ ?batting bb:G ?gamesValue . }}
+        OPTIONAL {{ ?batting bb:AB ?atBatsValue . }}
+        OPTIONAL {{ ?batting bb:R ?runsValue . }}
+        OPTIONAL {{ ?batting bb:H ?hitsValue . }}
+        OPTIONAL {{ ?batting <http://baseball.ws.pt/2B> ?doublesValue . }}
+        OPTIONAL {{ ?batting <http://baseball.ws.pt/3B> ?triplesValue . }}
+        OPTIONAL {{ ?batting bb:homeRuns ?homeRunsValue . }}
+        OPTIONAL {{ ?batting bb:RBI ?rbiValue . }}
+        OPTIONAL {{ ?batting bb:SB ?stolenBasesValue . }}
+        OPTIONAL {{ ?batting bb:BB ?walksValue . }}
+        OPTIONAL {{ ?batting bb:SO ?strikeoutsValue . }}
+        OPTIONAL {{ ?batting bb:HBP ?hitByPitchValue . }}
+        OPTIONAL {{ ?batting bb:SF ?sacrificeFliesValue . }}
+        OPTIONAL {{
+            ?batting bb:teamOf ?team .
+            OPTIONAL {{ ?team bb:teamName ?teamName . }}
+        }}
+        OPTIONAL {{ ?batting bb:lgID ?lg . }}
+    }}
+    ORDER BY ?year
+    """
+
+    seasons = {}
+    for row in run_query(query):
+        year = _row_int(row, "year")
+        if not year:
+            continue
+
+        season = seasons.setdefault(
+            year,
+            {
+                "year": year,
+                "teams": set(),
+                "leagues": set(),
+                "games": 0,
+                "at_bats": 0,
+                "runs": 0,
+                "hits": 0,
+                "doubles": 0,
+                "triples": 0,
+                "home_runs": 0,
+                "rbi": 0,
+                "stolen_bases": 0,
+                "walks": 0,
+                "strikeouts": 0,
+                "hit_by_pitch": 0,
+                "sacrifice_flies": 0,
+            },
+        )
+
+        team_name = _row_value(row, "teamName")
+        if team_name:
+            season["teams"].add(team_name)
+        lg = _row_value(row, "lg")
+        if lg:
+            season["leagues"].add(lg)
+
+        season["games"] += _row_int(row, "gamesValue")
+        season["at_bats"] += _row_int(row, "atBatsValue")
+        season["runs"] += _row_int(row, "runsValue")
+        season["hits"] += _row_int(row, "hitsValue")
+        season["doubles"] += _row_int(row, "doublesValue")
+        season["triples"] += _row_int(row, "triplesValue")
+        season["home_runs"] += _row_int(row, "homeRunsValue")
+        season["rbi"] += _row_int(row, "rbiValue")
+        season["stolen_bases"] += _row_int(row, "stolenBasesValue")
+        season["walks"] += _row_int(row, "walksValue")
+        season["strikeouts"] += _row_int(row, "strikeoutsValue")
+        season["hit_by_pitch"] += _row_int(row, "hitByPitchValue")
+        season["sacrifice_flies"] += _row_int(row, "sacrificeFliesValue")
+
+    lines = []
+    for season in sorted(seasons.values(), key=lambda item: item["year"]):
+        season["teams"] = sorted(season["teams"])
+        season["leagues"] = sorted(season["leagues"])
+        season["team_label"] = ", ".join(season["teams"]) if season["teams"] else "Unknown team"
+        season["league_label"] = ", ".join(season["leagues"]) if season["leagues"] else "N/A"
+        season["seasons"] = 1
+        lines.append(_build_batting_rates(season))
+    return lines
+
+
+@lru_cache(maxsize=1024)
+def get_player_batting_summary(player_id):
+    seasons = get_player_batting_seasons(player_id)
+    summary = {
+        "games": 0,
+        "at_bats": 0,
+        "runs": 0,
+        "hits": 0,
+        "doubles": 0,
+        "triples": 0,
+        "home_runs": 0,
+        "rbi": 0,
+        "stolen_bases": 0,
+        "walks": 0,
+        "strikeouts": 0,
+        "hit_by_pitch": 0,
+        "sacrifice_flies": 0,
+        "seasons": len(seasons),
+    }
+
+    for season in seasons:
+        for key in (
+            "games",
+            "at_bats",
+            "runs",
+            "hits",
+            "doubles",
+            "triples",
+            "home_runs",
+            "rbi",
+            "stolen_bases",
+            "walks",
+            "strikeouts",
+            "hit_by_pitch",
+            "sacrifice_flies",
+        ):
+            summary[key] += season.get(key, 0)
+
+    return _build_batting_rates(summary)
+
+
+@lru_cache(maxsize=1024)
+def get_player_pitching_seasons(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?teamName ?lg
+           ?winsValue ?lossesValue ?gamesValue ?gamesStartedValue ?savesValue
+           ?inningsOutsValue ?earnedRunsValue ?strikeoutsValue ?eraValue
+    WHERE {{
+        ?player bb:playerID "{player_id}" ;
+                bb:hasPitching ?pitching .
+        ?pitching a bb:PitchingStat ;
+                  bb:yearID ?year .
+        OPTIONAL {{ ?pitching bb:W ?winsValue . }}
+        OPTIONAL {{ ?pitching bb:L ?lossesValue . }}
+        OPTIONAL {{ ?pitching bb:G ?gamesValue . }}
+        OPTIONAL {{ ?pitching bb:GS ?gamesStartedValue . }}
+        OPTIONAL {{ ?pitching bb:SV ?savesValue . }}
+        OPTIONAL {{ ?pitching bb:IPouts ?inningsOutsValue . }}
+        OPTIONAL {{ ?pitching bb:ER ?earnedRunsValue . }}
+        OPTIONAL {{ ?pitching bb:SO ?strikeoutsValue . }}
+        OPTIONAL {{ ?pitching bb:ERA ?eraValue . }}
+        OPTIONAL {{
+            ?pitching bb:teamOf ?team .
+            OPTIONAL {{ ?team bb:teamName ?teamName . }}
+        }}
+        OPTIONAL {{ ?pitching bb:lgID ?lg . }}
+    }}
+    ORDER BY ?year
+    """
+
+    seasons = {}
+    for row in run_query(query):
+        year = _row_int(row, "year")
+        if not year:
+            continue
+
+        season = seasons.setdefault(
+            year,
+            {
+                "year": year,
+                "teams": set(),
+                "leagues": set(),
+                "wins": 0,
+                "losses": 0,
+                "games": 0,
+                "games_started": 0,
+                "saves": 0,
+                "innings_outs": 0,
+                "earned_runs": 0,
+                "strikeouts": 0,
+                "_has_wins": False,
+                "_has_losses": False,
+                "_has_games": False,
+                "_has_games_started": False,
+                "_has_saves": False,
+                "_has_innings_outs": False,
+                "_has_earned_runs": False,
+                "_has_strikeouts": False,
+                "_era_values": [],
+            },
+        )
+
+        team_name = _row_value(row, "teamName")
+        if team_name:
+            season["teams"].add(team_name)
+        lg = _row_value(row, "lg")
+        if lg:
+            season["leagues"].add(lg)
+
+        if _row_value(row, "winsValue") not in (None, ""):
+            season["wins"] += _row_int(row, "winsValue")
+            season["_has_wins"] = True
+        if _row_value(row, "lossesValue") not in (None, ""):
+            season["losses"] += _row_int(row, "lossesValue")
+            season["_has_losses"] = True
+        if _row_value(row, "gamesValue") not in (None, ""):
+            season["games"] += _row_int(row, "gamesValue")
+            season["_has_games"] = True
+        if _row_value(row, "gamesStartedValue") not in (None, ""):
+            season["games_started"] += _row_int(row, "gamesStartedValue")
+            season["_has_games_started"] = True
+        if _row_value(row, "savesValue") not in (None, ""):
+            season["saves"] += _row_int(row, "savesValue")
+            season["_has_saves"] = True
+        if _row_value(row, "inningsOutsValue") not in (None, ""):
+            season["innings_outs"] += _row_int(row, "inningsOutsValue")
+            season["_has_innings_outs"] = True
+        if _row_value(row, "earnedRunsValue") not in (None, ""):
+            season["earned_runs"] += _row_int(row, "earnedRunsValue")
+            season["_has_earned_runs"] = True
+        if _row_value(row, "strikeoutsValue") not in (None, ""):
+            season["strikeouts"] += _row_int(row, "strikeoutsValue")
+            season["_has_strikeouts"] = True
+        if _row_value(row, "eraValue") not in (None, ""):
+            season["_era_values"].append(_row_float(row, "eraValue", None))
+
+    lines = []
+    for season in sorted(seasons.values(), key=lambda item: item["year"]):
+        season["teams"] = sorted(season["teams"])
+        season["leagues"] = sorted(season["leagues"])
+        season["team_label"] = ", ".join(season["teams"]) if season["teams"] else "Unknown team"
+        season["league_label"] = ", ".join(season["leagues"]) if season["leagues"] else "N/A"
+        season["seasons"] = 1
+        if not season["_has_wins"]:
+            season["wins"] = None
+        if not season["_has_losses"]:
+            season["losses"] = None
+        if not season["_has_games"]:
+            season["games"] = None
+        if not season["_has_games_started"]:
+            season["games_started"] = None
+        if not season["_has_saves"]:
+            season["saves"] = None
+        if not season["_has_innings_outs"]:
+            season["innings_outs"] = None
+        if not season["_has_earned_runs"]:
+            season["earned_runs"] = None
+        if not season["_has_strikeouts"]:
+            season["strikeouts"] = None
+        if season["innings_outs"] not in (None, 0) and season["earned_runs"] is not None:
+            season["era"] = (season["earned_runs"] * 27) / season["innings_outs"]
+        else:
+            era_values = [value for value in season["_era_values"] if value is not None]
+            season["era"] = (sum(era_values) / len(era_values)) if era_values else None
+        lines.append(_build_pitching_rates(season))
+    return lines
+
+
+@lru_cache(maxsize=1024)
+def get_player_pitching_summary(player_id):
+    seasons = get_player_pitching_seasons(player_id)
+    summary = {"seasons": len(seasons)}
+
+    for key in (
+        "wins",
+        "losses",
+        "games",
+        "games_started",
+        "saves",
+        "innings_outs",
+        "earned_runs",
+        "strikeouts",
+    ):
+        values = [season.get(key) for season in seasons if season.get(key) is not None]
+        summary[key] = sum(values) if values else None
+
+    if summary["innings_outs"] not in (None, 0) and summary["earned_runs"] is not None:
+        summary["era"] = (summary["earned_runs"] * 27) / summary["innings_outs"]
+    else:
+        era_values = [season.get("era") for season in seasons if season.get("era") is not None]
+        summary["era"] = (sum(era_values) / len(era_values)) if era_values else None
+    return _build_pitching_rates(summary)
+
+
+@lru_cache(maxsize=1024)
+def get_player_award_history(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?awardName ?lg ?notes
+    WHERE {{
+        ?player bb:playerID "{player_id}" ;
+                bb:wonAward ?award .
+        OPTIONAL {{ ?award bb:yearID ?year . }}
+        OPTIONAL {{ ?award bb:awardName ?awardName . }}
+        OPTIONAL {{ ?award bb:lgID ?lg . }}
+        OPTIONAL {{ ?award bb:notes ?notes . }}
+    }}
+    ORDER BY ?year ?awardName
+    """
+
+    return [
+        {
+            "year": _row_int(row, "year", None),
+            "award_name": _row_value(row, "awardName", "Award"),
+            "league": _row_value(row, "lg", ""),
+            "notes": _row_value(row, "notes", ""),
+        }
+        for row in run_query(query)
+    ]
+
+
+@lru_cache(maxsize=1024)
+def get_player_allstar_history(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?gameID ?startingPos ?teamName
+    WHERE {{
+        ?player bb:playerID "{player_id}" ;
+                bb:playedInAllStar ?appearance .
+        OPTIONAL {{ ?appearance bb:yearID ?year . }}
+        OPTIONAL {{ ?appearance bb:gameID ?gameID . }}
+        OPTIONAL {{ ?appearance bb:startingPos ?startingPos . }}
+        OPTIONAL {{
+            ?appearance bb:teamOf ?team .
+            OPTIONAL {{ ?team bb:teamName ?teamName . }}
+        }}
+    }}
+    ORDER BY ?year
+    """
+
+    return [
+        {
+            "year": _row_int(row, "year", None),
+            "game_id": _row_value(row, "gameID", ""),
+            "starting_position": _row_int(row, "startingPos", None),
+            "team_name": _row_value(row, "teamName", ""),
+        }
+        for row in run_query(query)
+    ]
+
+
+@lru_cache(maxsize=1024)
+def get_player_hall_of_fame(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return {"inducted": False, "inducted_year": None, "vote_count": 0}
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?inducted ?votes ?needed
+    WHERE {{
+        ?player bb:playerID "{player_id}" ;
+                bb:hallOfFameVote ?vote .
+        OPTIONAL {{ ?vote bb:yearID ?year . }}
+        OPTIONAL {{ ?vote bb:inducted ?inducted . }}
+        OPTIONAL {{ ?vote bb:votes ?votes . }}
+        OPTIONAL {{ ?vote bb:needed ?needed . }}
+    }}
+    ORDER BY ?year
+    """
+
+    history = []
+    inducted_year = None
+    for row in run_query(query):
+        inducted = str(_row_value(row, "inducted", "")).lower() == "true"
+        year = _row_int(row, "year", None)
+        if inducted and inducted_year is None:
+            inducted_year = year
+        history.append(
+            {
+                "year": year,
+                "inducted": inducted,
+                "votes": _row_int(row, "votes", None),
+                "needed": _row_int(row, "needed", None),
+            }
+        )
+
+    return {
+        "inducted": inducted_year is not None,
+        "inducted_year": inducted_year,
+        "vote_count": len(history),
+        "history": history,
+    }
+
+
+@lru_cache(maxsize=1024)
+def get_player_salary_history(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?salaryValue ?teamName
+    WHERE {{
+        ?player bb:playerID "{player_id}" ;
+                bb:hasSalary ?salaryObj .
+        ?salaryObj bb:salary ?salaryValue .
+        OPTIONAL {{ ?salaryObj bb:yearID ?year . }}
+        OPTIONAL {{
+            ?salaryObj bb:teamOf ?team .
+            OPTIONAL {{ ?team bb:teamName ?teamName . }}
+        }}
+    }}
+    ORDER BY DESC(?salaryValue) DESC(?year)
+    """
+
+    return [
+        {
+            "year": _row_int(row, "year", None),
+            "salary": _row_int(row, "salaryValue"),
+            "team_name": _row_value(row, "teamName", ""),
+        }
+        for row in run_query(query)
+    ]
+
+
+@lru_cache(maxsize=1024)
+def get_player_team_history(player_id):
+    player_id = _normalize_player_id(player_id)
+    if not player_id:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT DISTINCT ?year ?teamName ?franchiseName ?lg
+    WHERE {{
+        ?player bb:playerID "{player_id}" .
+        {{
+            ?player bb:hasBatting ?season .
+            ?season a bb:BattingStat .
+        }}
+        UNION
+        {{
+            ?player bb:hasPitching ?season .
+            ?season a bb:PitchingStat .
+        }}
+        ?season bb:yearID ?year .
+        OPTIONAL {{ ?season bb:lgID ?lg . }}
+        OPTIONAL {{
+            ?season bb:teamOf ?team .
+            OPTIONAL {{ ?team bb:teamName ?teamName . }}
+            OPTIONAL {{
+                ?team bb:franchiseOf ?franchise .
+                OPTIONAL {{ ?franchise bb:franchiseName ?franchiseName . }}
+            }}
+        }}
+    }}
+    ORDER BY ?year ?teamName
+    """
+
+    return [
+        {
+            "year": _row_int(row, "year", None),
+            "team_name": _row_value(row, "teamName", ""),
+            "franchise_name": _row_value(row, "franchiseName", ""),
+            "league": _row_value(row, "lg", ""),
+        }
+        for row in run_query(query)
+    ]
 
 @lru_cache(maxsize=1)
 def get_top_salaries():

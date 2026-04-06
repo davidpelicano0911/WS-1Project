@@ -1,0 +1,62 @@
+<div class="combobox-app" data-combobox>
+    <input type="hidden" id="{{ field_id }}" name="{{ field_name }}" value="{{ selected_term }}">
+    <div class="combobox-shell">
+        <input
+            type="text"
+            id="{{ field_id }}-display"
+            class="input-app combobox-input"
+            value="{{ selected_label }}"
+            placeholder="{{ placeholder|default:'Select a player' }}"
+            autocomplete="off"
+            spellcheck="false"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="{{ field_id }}-menu"
+            data-combobox-input
+        >
+        <button type="button" class="combobox-toggle" data-combobox-toggle aria-label="Toggle player list">
+            <i class="bi bi-chevron-down"></i>
+        </button>
+    </div>
+
+    <div class="combobox-menu" id="{{ field_id }}-menu" data-combobox-menu hidden>
+        <button
+            type="button"
+            class="combobox-option combobox-reset{% if not selected_term %} active{% endif %}"
+            data-value=""
+            data-label=""
+            data-reset="true"
+        >
+            <span class="combobox-option-name">Clear selection</span>
+        </button>
+
+        {% if options %}
+        <div class="combobox-option-list" data-combobox-options role="listbox">
+            {% for option in options %}
+            <button
+                type="button"
+                class="combobox-option{% if selected_term == option.player_id %} active{% endif %}"
+                data-value="{{ option.player_id }}"
+                data-label="{{ option.name }} ({{ option.player_id }})"
+                role="option"
+                aria-selected="{% if selected_term == option.player_id %}true{% else %}false{% endif %}"
+            >
+                <span class="combobox-option-name">{{ option.name }}</span>
+                <span class="combobox-option-id">{{ option.player_id }}</span>
+            </button>
+            {% endfor %}
+        </div>
+        <p class="combobox-empty mb-0" data-combobox-empty hidden>No players match that search.</p>
+        {% else %}
+        <p class="combobox-empty-static mb-0">
+            {% if has_letter %}
+            No players are available for this letter yet.
+            {% else %}
+            Choose a letter first to load players.
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+</div>

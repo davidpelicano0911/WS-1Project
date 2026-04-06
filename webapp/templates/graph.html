@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Graph View · Baseball Data Explorer{% endblock %}
 
@@ -33,6 +34,7 @@
                     <button
                         type="button"
                         data-target="graph-player-letter-input"
+                        data-reset-field="player"
                         data-value="{{ letter }}"
                         class="alphabet-button{% if player_letter == letter %} active{% endif %}"
                     >
@@ -45,19 +47,8 @@
 
         <div class="row g-3 align-items-end mt-1">
             <div class="col-lg-8">
-                <label for="player" class="form-label-app">Player</label>
-                <select
-                    id="player"
-                    name="player"
-                    class="input-app select-app auto-submit-select"
-                >
-                    <option value="">Select a player</option>
-                    {% for option in player_options %}
-                    <option value="{{ option.player_id }}" {% if player_term == option.player_id %}selected{% endif %}>
-                        {{ option.name }} ({{ option.player_id }})
-                    </option>
-                    {% endfor %}
-                </select>
+                <label for="player-display" class="form-label-app">Player</label>
+                {% include "includes/player_combobox.html" with field_id="player" field_name="player" selected_term=player_term selected_label=player_selected_label options=player_options has_letter=player_letter placeholder="Select a player" %}
             </div>
             <div class="col-lg-4">
                 <div class="graph-selection-meta">
@@ -111,6 +102,7 @@
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="{% static 'baseball/js/player-combobox.js' %}"></script>
 <script>
     const graphForm = document.getElementById('graph-form');
 
@@ -121,16 +113,17 @@
                 return;
             }
             target.value = button.dataset.value;
-            const playerSelect = document.getElementById('player');
-            if (playerSelect) {
-                playerSelect.value = '';
+            const resetField = button.dataset.resetField;
+            if (resetField) {
+                const hiddenInput = document.getElementById(resetField);
+                const displayInput = document.getElementById(`${resetField}-display`);
+                if (hiddenInput) {
+                    hiddenInput.value = '';
+                }
+                if (displayInput) {
+                    displayInput.value = '';
+                }
             }
-            graphForm.submit();
-        });
-    });
-
-    document.querySelectorAll('.auto-submit-select').forEach((select) => {
-        select.addEventListener('change', () => {
             graphForm.submit();
         });
     });

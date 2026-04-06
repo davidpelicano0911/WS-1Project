@@ -40,8 +40,114 @@
     color: #ffe7a2;
 }
 
+.compare-score-item,
+.compare-tab-button,
+.compare-winner-pill,
+.compare-aside-item,
+.compare-best-side {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(136, 174, 232, 0.12);
+    color: #edf4ff;
+}
+
+.compare-score-item.neutral {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.compare-score-label,
+.compare-card-footnote,
+.compare-metric-note,
+.compare-delta-copy,
+.compare-aside-label,
+.compare-aside-detail,
+.compare-best-player,
+.compare-best-detail {
+    color: #9fb6d9;
+}
+
+.compare-score-value,
+.compare-context-value,
+.compare-aside-value,
+.compare-best-value {
+    color: #edf4ff;
+}
+
+.compare-table-wrap {
+    border-color: rgba(136, 174, 232, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.compare-metric-table tbody td {
+    padding: 0.8rem 1rem;
+    border-color: rgba(136, 174, 232, 0.08);
+    background: rgba(16, 42, 82, 0.92);
+}
+
+.compare-metric-table tbody tr:nth-child(even) td {
+    background: rgba(13, 35, 69, 0.94);
+}
+
+.compare-metric-table tbody tr:hover td {
+    background: rgba(20, 53, 101, 0.96);
+}
+
+.compare-metric-table tbody td.compare-winner-cell {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+}
+
+.compare-metric-table tbody tr:nth-child(even) td.compare-winner-cell {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+}
+
+.compare-metric-name,
+.compare-player-cell {
+    color: #edf4ff;
+}
+
+.compare-player-value {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(136, 174, 232, 0.08);
+}
+
+.compare-player-cell.winner {
+    color: #ffe7a2;
+}
+
+.compare-player-cell.winner .compare-player-value {
+    background: linear-gradient(135deg, rgba(244, 197, 66, 0.16), rgba(244, 197, 66, 0.06));
+    border-color: rgba(244, 197, 66, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(255, 217, 108, 0.05);
+}
+
+.compare-tab-button:hover {
+    border-color: rgba(136, 174, 232, 0.28);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.compare-tab-button.active,
+.compare-winner-pill.player1,
+.compare-winner-pill.player2 {
+    color: #072551;
+    border-color: rgba(244, 197, 66, 0.26);
+    background: linear-gradient(135deg, #ffd96c, #c99211);
+}
+
+.compare-winner-pill.tie {
+    background: rgba(31, 95, 196, 0.18);
+    border-color: rgba(136, 174, 232, 0.22);
+    color: #dbe7ff;
+}
+
+.compare-winner-pill.none {
+    color: #9fb6d9;
+}
+
 .alphabet-button,
 .input-app,
+.combobox-menu,
+.combobox-option,
+.combobox-empty,
+.combobox-empty-static,
 .legend-chip,
 .graph-empty-state,
 .graph-canvas {
@@ -54,6 +160,56 @@
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(136, 174, 232, 0.4);
     box-shadow: 0 0 0 4px rgba(31, 95, 196, 0.12);
+}
+
+.combobox-menu {
+    border-color: rgba(136, 174, 232, 0.16);
+    background: rgba(8, 25, 52, 0.98);
+    box-shadow: 0 24px 44px rgba(1, 12, 30, 0.5);
+}
+
+.combobox-toggle:hover,
+.combobox-toggle:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.combobox-option:hover,
+.combobox-option:focus-visible {
+    border-color: rgba(136, 174, 232, 0.28);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.combobox-option.active {
+    color: #072551;
+    border-color: rgba(244, 197, 66, 0.26);
+    background: linear-gradient(135deg, #ffd96c, #c99211);
+}
+
+.combobox-option.active .combobox-option-id {
+    color: rgba(7, 37, 81, 0.72);
+}
+
+.combobox-option-id {
+    color: #9fb6d9;
+}
+
+.combobox-empty,
+.combobox-empty-static {
+    border-color: rgba(136, 174, 232, 0.16);
+    color: #9fb6d9;
+}
+
+.select-app {
+    color-scheme: dark;
+}
+
+.select-app option {
+    background-color: #0c2447;
+    color: #edf4ff;
+}
+
+.select-app option[value=""] {
+    color: #9fb6d9;
 }
 
 .alphabet-button.active {
@@ -134,6 +290,34 @@
         grid-template-columns: 1fr;
     }
 
+    .compare-hub-header,
+    .compare-best-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .compare-scoreboard {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .compare-context-grid,
+    .compare-aside-grid,
+    .compare-best-grid,
+    .compare-best-duel {
+        grid-template-columns: 1fr;
+    }
+
+    .compare-tab-bar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+    }
+
+    .compare-tab-button {
+        flex: 0 0 auto;
+    }
+
     .alphabet-picker {
         grid-template-columns: repeat(6, minmax(0, 1fr));
     }
@@ -145,6 +329,11 @@
 
     .graph-canvas {
         height: 480px;
+    }
+
+    .combobox-menu {
+        position: static;
+        margin-top: 0.55rem;
     }
 
     .hero-panel,

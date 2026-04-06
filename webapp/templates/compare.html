@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Compare Players · Baseball Data Explorer{% endblock %}
 
@@ -34,6 +35,7 @@
                     <button
                         type="button"
                         data-target="player1-letter-input"
+                        data-reset-field="player1"
                         data-value="{{ letter }}"
                         class="alphabet-button{% if player1_letter == letter %} active{% endif %}"
                     >
@@ -49,6 +51,7 @@
                     <button
                         type="button"
                         data-target="player2-letter-input"
+                        data-reset-field="player2"
                         data-value="{{ letter }}"
                         class="alphabet-button{% if player2_letter == letter %} active{% endif %}"
                     >
@@ -61,34 +64,12 @@
 
         <div class="row g-3 align-items-end mt-1">
             <div class="col-md-6">
-                <label for="player1" class="form-label-app">Player 1</label>
-                <select
-                    id="player1"
-                    name="player1"
-                    class="input-app select-app auto-submit-select"
-                >
-                    <option value="">Select a player</option>
-                    {% for option in player1_options %}
-                    <option value="{{ option.player_id }}" {% if player1_term == option.player_id %}selected{% endif %}>
-                        {{ option.name }} ({{ option.player_id }})
-                    </option>
-                    {% endfor %}
-                </select>
+                <label for="player1-display" class="form-label-app">Player 1</label>
+                {% include "includes/player_combobox.html" with field_id="player1" field_name="player1" selected_term=player1_term selected_label=player1_selected_label options=player1_options has_letter=player1_letter placeholder="Select a player" %}
             </div>
             <div class="col-md-6">
-                <label for="player2" class="form-label-app">Player 2</label>
-                <select
-                    id="player2"
-                    name="player2"
-                    class="input-app select-app auto-submit-select"
-                >
-                    <option value="">Select a player</option>
-                    {% for option in player2_options %}
-                    <option value="{{ option.player_id }}" {% if player2_term == option.player_id %}selected{% endif %}>
-                        {{ option.name }} ({{ option.player_id }})
-                    </option>
-                    {% endfor %}
-                </select>
+                <label for="player2-display" class="form-label-app">Player 2</label>
+                {% include "includes/player_combobox.html" with field_id="player2" field_name="player2" selected_term=player2_term selected_label=player2_selected_label options=player2_options has_letter=player2_letter placeholder="Select a player" %}
             </div>
         </div>
 
@@ -111,9 +92,9 @@
     {% endif %}
 </section>
 
-<section class="compare-grid">
+<section class="compare-grid compare-profile-grid">
     {% if player1 %}
-    <article class="feature-card compare-card">
+    <article class="feature-card compare-card compare-profile-card">
         <div class="compare-card-header">
             <div>
                 <span class="eyebrow">
@@ -125,43 +106,17 @@
             <span class="compare-meta">{{ player1.player_id }}</span>
         </div>
 
-        <div class="stat-grid">
+        <div class="stat-grid compare-profile-stats">
+            {% for item in player1.card_stats %}
             <div class="stat-tile">
-                <span class="stat-label">Birth year</span>
-                <span class="stat-value">{{ player1.birth_year }}</span>
+                <span class="stat-label">{{ item.label }}</span>
+                <span class="stat-value">{{ item.value }}</span>
             </div>
-            <div class="stat-tile">
-                <span class="stat-label">Birth country</span>
-                <span class="stat-value">{{ player1.birth_country }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Height</span>
-                <span class="stat-value">{{ player1.height }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Weight</span>
-                <span class="stat-value">{{ player1.weight }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Awards</span>
-                <span class="stat-value">{{ player1.awards_count }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Peak salary</span>
-                <span class="stat-value">${{ player1.max_salary }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Career home runs</span>
-                <span class="stat-value">{{ player1.career_home_runs }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Career RBI</span>
-                <span class="stat-value">{{ player1.career_rbi }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Batting seasons</span>
-                <span class="stat-value">{{ player1.batting_seasons }}</span>
-            </div>
+            {% endfor %}
+        </div>
+
+        <div class="compare-card-footnote">
+            {{ player1.team_count }} teams · {{ player1.franchise_count }} franchises · {{ player1.league_count }} leagues
         </div>
     </article>
     {% else %}
@@ -174,7 +129,7 @@
     {% endif %}
 
     {% if player2 %}
-    <article class="feature-card compare-card">
+    <article class="feature-card compare-card compare-profile-card">
         <div class="compare-card-header">
             <div>
                 <span class="eyebrow">
@@ -186,43 +141,17 @@
             <span class="compare-meta">{{ player2.player_id }}</span>
         </div>
 
-        <div class="stat-grid">
+        <div class="stat-grid compare-profile-stats">
+            {% for item in player2.card_stats %}
             <div class="stat-tile">
-                <span class="stat-label">Birth year</span>
-                <span class="stat-value">{{ player2.birth_year }}</span>
+                <span class="stat-label">{{ item.label }}</span>
+                <span class="stat-value">{{ item.value }}</span>
             </div>
-            <div class="stat-tile">
-                <span class="stat-label">Birth country</span>
-                <span class="stat-value">{{ player2.birth_country }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Height</span>
-                <span class="stat-value">{{ player2.height }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Weight</span>
-                <span class="stat-value">{{ player2.weight }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Awards</span>
-                <span class="stat-value">{{ player2.awards_count }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Peak salary</span>
-                <span class="stat-value">${{ player2.max_salary }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Career home runs</span>
-                <span class="stat-value">{{ player2.career_home_runs }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Career RBI</span>
-                <span class="stat-value">{{ player2.career_rbi }}</span>
-            </div>
-            <div class="stat-tile">
-                <span class="stat-label">Batting seasons</span>
-                <span class="stat-value">{{ player2.batting_seasons }}</span>
-            </div>
+            {% endfor %}
+        </div>
+
+        <div class="compare-card-footnote">
+            {{ player2.team_count }} teams · {{ player2.franchise_count }} franchises · {{ player2.league_count }} leagues
         </div>
     </article>
     {% else %}
@@ -234,9 +163,231 @@
     </article>
     {% endif %}
 </section>
+
+{% if submitted and not compare_ready %}
+<div class="notice-app mt-4">
+    Pick a player on both sides to unlock the full head-to-head tabs, winner deltas, and best-season highlights.
+</div>
+{% endif %}
+
+{% if compare_ready %}
+<section class="data-panel compare-hub mt-4">
+    <div class="compare-hub-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-arrows-angle-expand"></i>
+                Head to head
+            </span>
+            <h2 class="feature-title h3 mb-2">{{ player1.name }} vs {{ player2.name }}</h2>
+            <p class="muted-copy mb-0">
+                The middle column calls the lead on each metric, while the tabs adapt to the data available for both players.
+            </p>
+        </div>
+        {% if compare_scoreboard %}
+        <div class="compare-scoreboard">
+            <div class="compare-score-item">
+                <span class="compare-score-label">Player 1</span>
+                <strong class="compare-score-value">{{ compare_scoreboard.player1_wins }}</strong>
+            </div>
+            <div class="compare-score-item neutral">
+                <span class="compare-score-label">Ties</span>
+                <strong class="compare-score-value">{{ compare_scoreboard.ties }}</strong>
+            </div>
+            <div class="compare-score-item">
+                <span class="compare-score-label">Player 2</span>
+                <strong class="compare-score-value">{{ compare_scoreboard.player2_wins }}</strong>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="compare-tab-bar" role="tablist" aria-label="Comparison sections">
+        {% for tab in compare_tabs %}
+        <button
+            type="button"
+            id="compare-tab-{{ tab.id }}"
+            class="compare-tab-button{% if forloop.first %} active{% endif %}"
+            data-tab-target="{{ tab.id }}"
+            role="tab"
+            aria-controls="compare-panel-{{ tab.id }}"
+            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+        >
+            <i class="bi {{ tab.icon }}"></i>
+            <span>{{ tab.label }}</span>
+        </button>
+        {% endfor %}
+    </div>
+
+    {% for tab in compare_tabs %}
+    <section
+        id="compare-panel-{{ tab.id }}"
+        class="compare-tab-panel{% if forloop.first %} active{% endif %}"
+        data-tab-panel="{{ tab.id }}"
+        role="tabpanel"
+        aria-labelledby="compare-tab-{{ tab.id }}"
+        {% if not forloop.first %}hidden{% endif %}
+    >
+        <div class="compare-section-header">
+            <div>
+                <h3 class="feature-title h4 mb-2">{{ tab.label }}</h3>
+                <p class="muted-copy mb-0">{{ tab.description }}</p>
+            </div>
+        </div>
+
+        {% if tab.rows %}
+        <div class="table-responsive table-app compare-table-wrap">
+            <table class="table align-middle mb-0 compare-metric-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>{{ player1.name }}</th>
+                        <th>Winner / Delta</th>
+                        <th>{{ player2.name }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in tab.rows %}
+                    <tr class="compare-metric-row {{ row.winner_side }}">
+                        <td class="compare-metric-cell">
+                            <strong class="compare-metric-name">{{ row.label }}</strong>
+                            {% if row.note %}
+                            <span class="compare-metric-note">{{ row.note }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="compare-player-cell{% if row.winner_side == 'player1' %} winner{% endif %}">
+                            <span class="compare-player-value">{{ row.player1_display }}</span>
+                        </td>
+                        <td class="compare-winner-cell {{ row.winner_side }}">
+                            <div class="compare-winner-stack">
+                                <span class="compare-winner-pill {{ row.winner_side }}">{{ row.winner_display }}</span>
+                                <span class="compare-delta-copy">{{ row.delta_display }}</span>
+                            </div>
+                        </td>
+                        <td class="compare-player-cell{% if row.winner_side == 'player2' %} winner{% endif %}">
+                            <span class="compare-player-value">{{ row.player2_display }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if tab.pair_cards %}
+        <div class="compare-context-grid">
+            {% for card in tab.pair_cards %}
+            <article class="feature-card compare-context-card">
+                <span class="stat-label">{{ card.title }}</span>
+                <span class="compare-context-value">{{ card.value }}</span>
+                <p class="hint-app mb-0">{{ card.detail }}</p>
+            </article>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if tab.player1_aside_entries or tab.player2_aside_entries %}
+        <div class="compare-aside-grid">
+            <article class="feature-card compare-aside-card">
+                <span class="eyebrow">
+                    <i class="bi bi-person-fill"></i>
+                    {{ tab.player1_aside_title|default:"Player 1" }}
+                </span>
+                <h4 class="compare-aside-title">{{ player1.name }}</h4>
+                {% if tab.player1_aside_entries %}
+                <div class="compare-aside-list">
+                    {% for entry in tab.player1_aside_entries %}
+                    <div class="compare-aside-item">
+                        <span class="compare-aside-label">{{ entry.label }}</span>
+                        <strong class="compare-aside-value">{{ entry.value }}</strong>
+                        {% if entry.detail %}
+                        <span class="compare-aside-detail">{{ entry.detail }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="hint-app mb-0">No items available.</p>
+                {% endif %}
+            </article>
+
+            <article class="feature-card compare-aside-card">
+                <span class="eyebrow">
+                    <i class="bi bi-person-fill"></i>
+                    {{ tab.player2_aside_title|default:"Player 2" }}
+                </span>
+                <h4 class="compare-aside-title">{{ player2.name }}</h4>
+                {% if tab.player2_aside_entries %}
+                <div class="compare-aside-list">
+                    {% for entry in tab.player2_aside_entries %}
+                    <div class="compare-aside-item">
+                        <span class="compare-aside-label">{{ entry.label }}</span>
+                        <strong class="compare-aside-value">{{ entry.value }}</strong>
+                        {% if entry.detail %}
+                        <span class="compare-aside-detail">{{ entry.detail }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="hint-app mb-0">No items available.</p>
+                {% endif %}
+            </article>
+        </div>
+        {% endif %}
+    </section>
+    {% endfor %}
+</section>
+
+{% if best_season_cards %}
+<section class="mt-4">
+    <div class="compare-section-header mb-3">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-stars"></i>
+                Best seasons
+            </span>
+            <h2 class="feature-title h4 mb-2">Peak-year highlights</h2>
+            <p class="muted-copy mb-0">
+                Best-season cards compare each player’s top HR, RBI, salary, and ERA seasons side by side.
+            </p>
+        </div>
+    </div>
+
+    <div class="compare-best-grid">
+        {% for card in best_season_cards %}
+        <article class="feature-card compare-best-card">
+            <div class="compare-best-header">
+                <span class="stat-label">{{ card.title }}</span>
+                <span class="compare-winner-pill {{ card.winner_side }}">{{ card.winner_display }}</span>
+            </div>
+
+            <div class="compare-best-duel">
+                <div class="compare-best-side">
+                    <span class="compare-best-player">Player 1</span>
+                    <strong class="compare-best-value">{{ card.player1_display }}</strong>
+                    <span class="compare-best-detail">{{ card.player1_detail }}</span>
+                </div>
+
+                <div class="compare-best-center">
+                    <span class="compare-delta-copy">{{ card.delta_display }}</span>
+                </div>
+
+                <div class="compare-best-side">
+                    <span class="compare-best-player">Player 2</span>
+                    <strong class="compare-best-value">{{ card.player2_display }}</strong>
+                    <span class="compare-best-detail">{{ card.player2_detail }}</span>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'baseball/js/player-combobox.js' %}"></script>
 <script>
     const compareForm = document.getElementById('compare-form');
 
@@ -247,13 +398,41 @@
                 return;
             }
             target.value = button.dataset.value;
+            const resetField = button.dataset.resetField;
+            if (resetField) {
+                const hiddenInput = document.getElementById(resetField);
+                const displayInput = document.getElementById(`${resetField}-display`);
+                if (hiddenInput) {
+                    hiddenInput.value = '';
+                }
+                if (displayInput) {
+                    displayInput.value = '';
+                }
+            }
             compareForm.submit();
         });
     });
 
-    document.querySelectorAll('.auto-submit-select').forEach((select) => {
-        select.addEventListener('change', () => {
-            compareForm.submit();
+    const compareTabButtons = Array.from(document.querySelectorAll('[data-tab-target]'));
+    const compareTabPanels = Array.from(document.querySelectorAll('[data-tab-panel]'));
+
+    const setActiveCompareTab = (tabId) => {
+        compareTabButtons.forEach((button) => {
+            const isActive = button.dataset.tabTarget === tabId;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        compareTabPanels.forEach((panel) => {
+            const isActive = panel.dataset.tabPanel === tabId;
+            panel.classList.toggle('active', isActive);
+            panel.hidden = !isActive;
+        });
+    };
+
+    compareTabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            setActiveCompareTab(button.dataset.tabTarget);
         });
     });
 </script>
