@@ -792,12 +792,13 @@ def get_player_graph_data(player_id):
     team_query = f"""
     PREFIX bb: <http://baseball.ws.pt/>
 
-    SELECT DISTINCT ?team ?teamName ?year ?franchise ?franchiseName
+    SELECT DISTINCT ?team ?teamName ?teamID ?year ?franchise ?franchiseName
     WHERE {{
         ?player bb:playerID "{player_id}" ;
                 bb:hasBatting ?batting .
         ?batting bb:teamOf ?team .
         OPTIONAL {{ ?team bb:teamName ?teamName . }}
+        OPTIONAL {{ ?team bb:teamID ?teamID . }}
         OPTIONAL {{ ?team bb:yearID ?year . }}
         OPTIONAL {{
             ?team bb:franchiseOf ?franchise .
@@ -846,17 +847,19 @@ def get_player_graph_data(player_id):
 
         team_node_id = f"team:{team_uri}"
         team_name = row.get("teamName", {}).get("value", "Unknown Team")
+        team_id = row.get("teamID", {}).get("value")
         team_year = row.get("year", {}).get("value")
         team_label = f"{team_name} ({team_year})" if team_year else team_name
 
         if team_node_id not in seen_nodes:
-            nodes.append({
-                "data": {
-                    "id": team_node_id,
-                    "label": team_label,
-                    "type": "team",
-                }
-            })
+            node_data = {
+                "id": team_node_id,
+                "label": team_label,
+                "type": "team",
+            }
+            if team_id:
+                node_data["teamID"] = team_id
+            nodes.append({"data": node_data})
             seen_nodes.add(team_node_id)
 
         player_team_edge = (player_node_id, team_node_id, "plays_for")

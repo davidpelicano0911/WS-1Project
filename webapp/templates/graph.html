@@ -136,6 +136,43 @@
         const nodes = JSON.parse(nodesElement.textContent);
         const edges = JSON.parse(edgesElement.textContent);
 
+        console.log('All nodes:', nodes);
+
+        // MLB Logo ID mapping
+        const MLB_LOGO_IDS = {
+            "ARI": 109, "ATL": 144, "BAL": 110, "BOS": 111, "CHC": 112, "CHW": 145,
+            "CIN": 113, "CLE": 114, "COL": 115, "DET": 116, "HOU": 117, "KCR": 118,
+            "LAA": 108, "LAD": 119, "MIA": 146, "MIL": 158, "MIN": 142, "NYM": 121,
+            "NYY": 147, "OAK": 133, "PHI": 143, "PIT": 134, "SDP": 135, "SEA": 136,
+            "SFG": 137, "STL": 138, "TBR": 139, "TEX": 140, "TOR": 141, "WSN": 120,
+        };
+
+        const TEAM_CODE_NORMALIZATION = {
+            "ANA": "LAA", "CAL": "LAA", "CHA": "CHW", "CHN": "CHC", "KCA": "KCR",
+            "LAN": "LAD", "MON": "WSN", "NYA": "NYY", "NYN": "NYM", "SDN": "SDP",
+            "SFN": "SFG", "SLN": "STL", "TBA": "TBR",
+        };
+
+        // Add logo URLs to team nodes
+        nodes.forEach(node => {
+            if (node.data.type === 'team') {
+                // Extract team code from URI like "team:http://baseball.ws.pt/team/NYA/2010"
+                const match = node.data.id.match(/\/team\/([A-Z]+)\//);
+                if (match && match[1]) {
+                    const teamCode = match[1];
+                    const normalizedCode = TEAM_CODE_NORMALIZATION[teamCode] || teamCode;
+                    const logoId = MLB_LOGO_IDS[normalizedCode];
+                    console.log('Team:', node.data.label, 'Code:', teamCode, 'Normalized:', normalizedCode, 'LogoID:', logoId);
+                    if (logoId) {
+                        node.data.logoUrl = `https://www.mlbstatic.com/team-logos/${logoId}.svg`;
+                        console.log('Set logoUrl:', node.data.logoUrl);
+                    }
+                } else {
+                    console.log('Could not extract team code from:', node.data.id);
+                }
+            }
+        });
+
         cytoscape({
             container: graphContainer,
             elements: [...nodes, ...edges],
@@ -157,7 +194,7 @@
                     style: {
                         'background-color': '#1d4f91',
                         'label': 'data(label)',
-                        'color': '#10284b',
+                        'color': '#ffffff',
                         'text-wrap': 'wrap',
                         'text-max-width': 110,
                         'font-size': 11,
@@ -174,14 +211,34 @@
                     selector: 'node[type="player"]',
                     style: {
                         'background-color': '#c63845',
-                        'width': 44,
-                        'height': 44,
+                        'width': 50,
+                        'height': 50,
+                        'shape': 'ellipse',
+                        'border-width': 3,
+                        'border-color': '#ffffff',
+                        'text-valign': 'bottom',
+                        'text-margin-y': 8,
                     }
                 },
                 {
                     selector: 'node[type="team"]',
                     style: {
                         'background-color': '#1d4f91',
+                        'width': 30,
+                        'height': 30,
+                        'border-width': 2,
+                        'shape': 'ellipse',
+                    }
+                },
+                {
+                    selector: 'node[type="team"][logoUrl]',
+                    style: {
+                        'background-color': '#ffffff',
+                        'background-fit': 'contain',
+                        'background-clip': 'none',
+                        'background-image': 'data(logoUrl)',
+                        'background-width': '70%',
+                        'background-height': '70%',
                     }
                 },
                 {
