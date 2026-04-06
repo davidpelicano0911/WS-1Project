@@ -1,5 +1,11 @@
 from django.shortcuts import render
-from .sparql import get_top_salaries, get_awards_list, get_player_summary, get_player_options_by_initial
+from .sparql import (
+    get_awards_list,
+    get_player_graph_data,
+    get_player_options_by_initial,
+    get_player_summary,
+    get_top_salaries,
+)
 
 def home(request):
     return render(request, 'index.html')
@@ -40,3 +46,22 @@ def compare_players_view(request):
         'player2_missing': bool(player2_term and not player2),
     }
     return render(request, 'compare.html', context)
+
+def graph_view(request):
+    letters = [chr(code) for code in range(ord('A'), ord('Z') + 1)]
+    player_letter = request.GET.get('player_letter', '').strip().upper()
+    player_term = request.GET.get('player', '').strip()
+    player_options = get_player_options_by_initial(player_letter) if player_letter in letters else []
+    player = get_player_summary(player_term) if player_term else None
+    graph_data = get_player_graph_data(player_term) if player_term else {"nodes": [], "edges": []}
+
+    context = {
+        'letters': letters,
+        'player_letter': player_letter,
+        'player_term': player_term,
+        'player_options': player_options,
+        'player': player,
+        'graph_nodes': graph_data["nodes"],
+        'graph_edges': graph_data["edges"],
+    }
+    return render(request, 'graph.html', context)

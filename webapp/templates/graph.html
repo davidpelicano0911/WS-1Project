@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Graph View · Baseball Data Explorer{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-diagram-3-fill"></i>
+            Relationship graph
+        </span>
+        <h1 class="page-title">Player network graph</h1>
+        <p class="section-copy mb-0">
+            Select one player to visualize connections to teams, franchises, and awards from the RDF graph.
+        </p>
+    </div>
+
+    <a href="{% url 'home' %}" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back home
+    </a>
+</section>
+
+<section class="data-panel form-panel mb-4">
+    <form method="get" id="graph-form">
+        <input type="hidden" name="player_letter" id="graph-player-letter-input" value="{{ player_letter }}">
+
+        <div class="row g-4">
+            <div class="col-12">
+                <label class="form-label-app">Player letter</label>
+                <div class="alphabet-picker">
+                    {% for letter in letters %}
+                    <button
+                        type="button"
+                        data-target="graph-player-letter-input"
+                        data-value="{{ letter }}"
+                        class="alphabet-button{% if player_letter == letter %} active{% endif %}"
+                    >
+                        {{ letter }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end mt-1">
+            <div class="col-lg-8">
+                <label for="player" class="form-label-app">Player</label>
+                <select
+                    id="player"
+                    name="player"
+                    class="input-app select-app auto-submit-select"
+                >
+                    <option value="">Select a player</option>
+                    {% for option in player_options %}
+                    <option value="{{ option.player_id }}" {% if player_term == option.player_id %}selected{% endif %}>
+                        {{ option.name }} ({{ option.player_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-4">
+                <div class="graph-selection-meta">
+                    {% if player %}
+                    <span class="compare-meta">{{ player.player_id }}</span>
+                    <p class="hint-app mb-0 mt-2">
+                        Showing relationships for <strong>{{ player.name }}</strong>.
+                    </p>
+                    {% else %}
+                    <p class="hint-app mb-0">
+                        Pick a letter first, then choose a player to draw the network.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</section>
+
+<section class="data-panel graph-panel">
+    <div class="graph-panel-header">
+        <div>
+            <h2 class="feature-title h4 mb-2">Relationship overview</h2>
+            <p class="muted-copy mb-0">
+                Center node is the selected player. Teams and awards sit around the player, with franchises on the outer ring.
+            </p>
+        </div>
+        <div class="graph-legend">
+            <span class="legend-chip legend-player">Player</span>
+            <span class="legend-chip legend-team">Team</span>
+            <span class="legend-chip legend-franchise">Franchise</span>
+            <span class="legend-chip legend-award">Award</span>
+        </div>
+    </div>
+
+    {% if player and graph_nodes %}
+    <div id="player-graph" class="graph-canvas"></div>
+    {{ graph_nodes|json_script:"graph-nodes-data" }}
+    {{ graph_edges|json_script:"graph-edges-data" }}
+    {% else %}
+    <div class="graph-empty-state">
+        <i class="bi bi-diagram-3"></i>
+        <h3 class="feature-title h4 mb-2">No graph to display yet</h3>
+        <p class="muted-copy mb-0">
+            Choose a player from the selector above to render the relationship graph.
+        </p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script>
+    const graphForm = document.getElementById('graph-form');
+
+    document.querySelectorAll('.alphabet-button').forEach((button) => {
+        button.addEventListener('click', () => {
+            const target = document.getElementById(button.dataset.target);
+            if (!target) {
+                return;
+            }
+            target.value = button.dataset.value;
+            const playerSelect = document.getElementById('player');
+            if (playerSelect) {
+                playerSelect.value = '';
+            }
+            graphForm.submit();
+        });
+    });
+
+    document.querySelectorAll('.auto-submit-select').forEach((select) => {
+        select.addEventListener('change', () => {
+            graphForm.submit();
+        });
+    });
+
+    const graphContainer = document.getElementById('player-graph');
+    const nodesElement = document.getElementById('graph-nodes-data');
+    const edgesElement = document.getElementById('graph-edges-data');
+
+    if (graphContainer && nodesElement && edgesElement) {
+        const nodes = JSON.parse(nodesElement.textContent);
+        const edges = JSON.parse(edgesElement.textContent);
+
+        cytoscape({
+            container: graphContainer,
+            elements: [...nodes, ...edges],
+            layout: {
+                name: 'concentric',
+                animate: false,
+                minNodeSpacing: 40,
+                levelWidth: () => 1,
+                concentric: (node) => {
+                    const type = node.data('type');
+                    if (type === 'player') return 3;
+                    if (type === 'team' || type === 'award') return 2;
+                    return 1;
+                },
+            },
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#1d4f91',
+                        'label': 'data(label)',
+                        'color': '#10284b',
+                        'text-wrap': 'wrap',
+                        'text-max-width': 110,
+                        'font-size': 11,
+                        'font-weight': 700,
+                        'text-valign': 'bottom',
+                        'text-margin-y': 8,
+                        'width': 28,
+                        'height': 28,
+                        'border-width': 2,
+                        'border-color': '#ffffff',
+                    }
+                },
+                {
+                    selector: 'node[type="player"]',
+                    style: {
+                        'background-color': '#c63845',
+                        'width': 44,
+                        'height': 44,
+                    }
+                },
+                {
+                    selector: 'node[type="team"]',
+                    style: {
+                        'background-color': '#1d4f91',
+                    }
+                },
+                {
+                    selector: 'node[type="franchise"]',
+                    style: {
+                        'background-color': '#5476a5',
+                    }
+                },
+                {
+                    selector: 'node[type="award"]',
+                    style: {
+                        'background-color': '#d9a728',
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#9fb3d1',
+                        'target-arrow-color': '#9fb3d1',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                    }
+                }
+            ],
+            userPanningEnabled: true,
+            userZoomingEnabled: true,
+            boxSelectionEnabled: false,
+        });
+    }
+</script>
+{% endblock %}
