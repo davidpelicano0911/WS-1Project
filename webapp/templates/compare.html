@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Players · Baseball Data Explorer{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-person-vcard-fill"></i>
+            Player comparison
+        </span>
+        <h1 class="page-title">Compare two players</h1>
+        <p class="section-copy mb-0">
+            Pick a starting letter for each side, then choose the players you want to compare.
+        </p>
+    </div>
+
+    <a href="{% url 'home' %}" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back home
+    </a>
+</section>
+
+<section class="data-panel form-panel mb-4">
+    <form method="get" id="compare-form">
+        <input type="hidden" name="player1_letter" id="player1-letter-input" value="{{ player1_letter }}">
+        <input type="hidden" name="player2_letter" id="player2-letter-input" value="{{ player2_letter }}">
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <label class="form-label-app">Player 1 letter</label>
+                <div class="alphabet-picker">
+                    {% for letter in letters %}
+                    <button
+                        type="button"
+                        data-target="player1-letter-input"
+                        data-value="{{ letter }}"
+                        class="alphabet-button{% if player1_letter == letter %} active{% endif %}"
+                    >
+                        {{ letter }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <label class="form-label-app">Player 2 letter</label>
+                <div class="alphabet-picker">
+                    {% for letter in letters %}
+                    <button
+                        type="button"
+                        data-target="player2-letter-input"
+                        data-value="{{ letter }}"
+                        class="alphabet-button{% if player2_letter == letter %} active{% endif %}"
+                    >
+                        {{ letter }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-6">
+                <label for="player1" class="form-label-app">Player 1</label>
+                <select
+                    id="player1"
+                    name="player1"
+                    class="input-app select-app auto-submit-select"
+                >
+                    <option value="">Select a player</option>
+                    {% for option in player1_options %}
+                    <option value="{{ option.player_id }}" {% if player1_term == option.player_id %}selected{% endif %}>
+                        {{ option.name }} ({{ option.player_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="player2" class="form-label-app">Player 2</label>
+                <select
+                    id="player2"
+                    name="player2"
+                    class="input-app select-app auto-submit-select"
+                >
+                    <option value="">Select a player</option>
+                    {% for option in player2_options %}
+                    <option value="{{ option.player_id }}" {% if player2_term == option.player_id %}selected{% endif %}>
+                        {{ option.name }} ({{ option.player_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+    </form>
+
+    <p class="hint-app mt-3 mb-0">
+        Click a letter to load that subset, then select a player and the comparison card will appear below automatically.
+    </p>
+
+    {% if player1_missing or player2_missing %}
+    <div class="notice-app">
+        {% if player1_missing %}
+        No player matched "{{ player1_term }}".
+        {% endif %}
+        {% if player1_missing and player2_missing %} {% endif %}
+        {% if player2_missing %}
+        No player matched "{{ player2_term }}".
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+
+<section class="compare-grid">
+    {% if player1 %}
+    <article class="feature-card compare-card">
+        <div class="compare-card-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-person-fill"></i>
+                    Player 1
+                </span>
+                <h2 class="compare-player-name">{{ player1.name }}</h2>
+            </div>
+            <span class="compare-meta">{{ player1.player_id }}</span>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-tile">
+                <span class="stat-label">Birth year</span>
+                <span class="stat-value">{{ player1.birth_year }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Birth country</span>
+                <span class="stat-value">{{ player1.birth_country }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Height</span>
+                <span class="stat-value">{{ player1.height }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Weight</span>
+                <span class="stat-value">{{ player1.weight }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Awards</span>
+                <span class="stat-value">{{ player1.awards_count }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Peak salary</span>
+                <span class="stat-value">${{ player1.max_salary }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Career home runs</span>
+                <span class="stat-value">{{ player1.career_home_runs }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Career RBI</span>
+                <span class="stat-value">{{ player1.career_rbi }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Batting seasons</span>
+                <span class="stat-value">{{ player1.batting_seasons }}</span>
+            </div>
+        </div>
+    </article>
+    {% else %}
+    <article class="feature-card compare-card empty-compare">
+        <div>
+            <i class="bi bi-person-lines-fill"></i>
+            <p class="mt-3 mb-0">Choose the first player to start the comparison.</p>
+        </div>
+    </article>
+    {% endif %}
+
+    {% if player2 %}
+    <article class="feature-card compare-card">
+        <div class="compare-card-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-person-fill"></i>
+                    Player 2
+                </span>
+                <h2 class="compare-player-name">{{ player2.name }}</h2>
+            </div>
+            <span class="compare-meta">{{ player2.player_id }}</span>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-tile">
+                <span class="stat-label">Birth year</span>
+                <span class="stat-value">{{ player2.birth_year }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Birth country</span>
+                <span class="stat-value">{{ player2.birth_country }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Height</span>
+                <span class="stat-value">{{ player2.height }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Weight</span>
+                <span class="stat-value">{{ player2.weight }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Awards</span>
+                <span class="stat-value">{{ player2.awards_count }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Peak salary</span>
+                <span class="stat-value">${{ player2.max_salary }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Career home runs</span>
+                <span class="stat-value">{{ player2.career_home_runs }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Career RBI</span>
+                <span class="stat-value">{{ player2.career_rbi }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Batting seasons</span>
+                <span class="stat-value">{{ player2.batting_seasons }}</span>
+            </div>
+        </div>
+    </article>
+    {% else %}
+    <article class="feature-card compare-card empty-compare">
+        <div>
+            <i class="bi bi-person-lines-fill"></i>
+            <p class="mt-3 mb-0">Choose the second player to complete the side-by-side view.</p>
+        </div>
+    </article>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const compareForm = document.getElementById('compare-form');
+
+    document.querySelectorAll('.alphabet-button').forEach((button) => {
+        button.addEventListener('click', () => {
+            const target = document.getElementById(button.dataset.target);
+            if (!target) {
+                return;
+            }
+            target.value = button.dataset.value;
+            compareForm.submit();
+        });
+    });
+
+    document.querySelectorAll('.auto-submit-select').forEach((select) => {
+        select.addEventListener('change', () => {
+            compareForm.submit();
+        });
+    });
+</script>
+{% endblock %}

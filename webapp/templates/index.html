@@ -51,7 +51,7 @@
 </section>
 
 <section class="row g-4">
-    <div class="col-md-6">
+    <div class="col-lg-4">
         <article class="feature-card">
             <div class="feature-icon gold">
                 <i class="bi bi-trophy-fill"></i>
@@ -66,7 +66,7 @@
         </article>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-lg-4">
         <article class="feature-card">
             <div class="feature-icon green">
                 <i class="bi bi-graph-up-arrow"></i>
@@ -77,6 +77,21 @@
             </p>
             <a href="{% url 'salaries_list' %}" class="btn-app btn-secondary-app">
                 Open salaries
+            </a>
+        </article>
+    </div>
+
+    <div class="col-lg-4">
+        <article class="feature-card">
+            <div class="feature-icon green">
+                <i class="bi bi-person-bounding-box"></i>
+            </div>
+            <h2 class="feature-title h3">Player compare</h2>
+            <p class="section-copy">
+                Put two players side by side and compare profile details, awards, peak salary, and batting totals from the RDF graph.
+            </p>
+            <a href="{% url 'compare_players' %}" class="btn-app btn-secondary-app">
+                Compare players
             </a>
         </article>
     </div>

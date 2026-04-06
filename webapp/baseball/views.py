@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .sparql import get_top_salaries, get_awards_list
+from .sparql import get_top_salaries, get_awards_list, get_player_summary, get_player_options_by_initial
 
 def home(request):
     return render(request, 'index.html')
@@ -12,3 +12,31 @@ def awards_view(request):
 def salaries_view(request):
     salaries = get_top_salaries()
     return render(request, 'salaries.html', {'salaries': salaries})
+
+def compare_players_view(request):
+    letters = [chr(code) for code in range(ord('A'), ord('Z') + 1)]
+    player1_letter = request.GET.get('player1_letter', '').strip().upper()
+    player2_letter = request.GET.get('player2_letter', '').strip().upper()
+    player1_term = request.GET.get('player1', '').strip()
+    player2_term = request.GET.get('player2', '').strip()
+    player1_options = get_player_options_by_initial(player1_letter) if player1_letter in letters else []
+    player2_options = get_player_options_by_initial(player2_letter) if player2_letter in letters else []
+
+    player1 = get_player_summary(player1_term) if player1_term else None
+    player2 = get_player_summary(player2_term) if player2_term else None
+
+    context = {
+        'letters': letters,
+        'player1_letter': player1_letter,
+        'player2_letter': player2_letter,
+        'player1': player1,
+        'player2': player2,
+        'player1_term': player1_term,
+        'player2_term': player2_term,
+        'player1_options': player1_options,
+        'player2_options': player2_options,
+        'submitted': bool(player1_term or player2_term),
+        'player1_missing': bool(player1_term and not player1),
+        'player2_missing': bool(player2_term and not player2),
+    }
+    return render(request, 'compare.html', context)
