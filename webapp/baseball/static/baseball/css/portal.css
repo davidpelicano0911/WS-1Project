@@ -1,0 +1,253 @@
+body {
+    font-family: "Barlow", sans-serif;
+    background:
+        radial-gradient(circle at top left, rgba(244, 197, 66, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(36, 102, 210, 0.14), transparent 30%),
+        linear-gradient(160deg, #041733 0%, #09264d 50%, #0d2f59 100%);
+    color: #e9f1ff;
+}
+
+.portal-container {
+    max-width: 1760px;
+}
+
+.portal-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    backdrop-filter: blur(16px);
+}
+
+.top-club-bar {
+    background: rgba(1, 18, 45, 0.9);
+    border-bottom: 1px solid rgba(136, 174, 232, 0.12);
+}
+
+.top-club-inner,
+.subnav-inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.top-club-inner {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+}
+
+.top-club-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    background: rgba(12, 39, 77, 0.92);
+    color: #f7fbff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.club-badge-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    padding-bottom: 0.2rem;
+    scrollbar-width: none;
+}
+
+.club-badge-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.club-badge {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(145deg, rgba(250, 252, 255, 0.94), rgba(185, 209, 247, 0.95));
+    color: #06214a;
+    font-size: 0.68rem;
+    font-weight: 800;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.club-badge-link {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 2.25rem;
+    padding: 0.18rem;
+    background: rgba(247, 251, 255, 0.96);
+    border: 1px solid rgba(136, 174, 232, 0.2);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.club-badge-link:hover {
+    transform: translateY(-2px);
+    background: #ffffff;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.club-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.portal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.1rem;
+    padding: 0.8rem 0;
+}
+
+.portal-brand-wrap,
+.portal-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.portal-brand {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 260px;
+    max-height: 76px;
+    overflow: visible;
+    color: #ffffff;
+    padding: 0.15rem 0;
+    line-height: 0;
+}
+
+.portal-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.portal-brand-kicker {
+    color: rgba(220, 233, 255, 0.7);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.site-brand,
+.feature-title,
+.page-title,
+.compare-player-name {
+    font-family: "Oswald", sans-serif;
+    letter-spacing: 0.01em;
+}
+
+.site-brand {
+    font-size: 1.55rem;
+    line-height: 1;
+}
+
+.brand-mark {
+    width: 5.2rem;
+    height: 5.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 5.2rem;
+    overflow: hidden;
+    background: radial-gradient(circle at 35% 35%, #fff9e6 0%, #ffe8a8 58%, #efc348 100%);
+    color: #072551;
+    border: 2px solid rgba(244, 197, 66, 0.28);
+    box-shadow: 0 10px 24px rgba(6, 21, 44, 0.28);
+}
+
+.brand-logo {
+    width: 92%;
+    height: 92%;
+    object-fit: contain;
+    display: block;
+}
+
+.brand-logo-standalone {
+    width: 260px;
+    height: 76px;
+    object-fit: contain;
+    object-position: left center;
+    display: block;
+    transform: scale(1.6);
+    transform-origin: left center;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.28)) brightness(1.08) contrast(1.08);
+}
+
+.portal-leagues {
+    padding: 0.4rem;
+    border-radius: 999px;
+    background: rgba(10, 37, 76, 0.9);
+    border: 1px solid rgba(136, 174, 232, 0.12);
+}
+
+.portal-pill-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    color: #dce9ff;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.portal-pill-link:hover,
+.subnav-link:hover {
+    color: #ffffff;
+}
+
+.icon-circle-link {
+    width: 2.9rem;
+    height: 2.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(16, 50, 98, 0.95);
+    color: #ffffff;
+    border: 1px solid rgba(136, 174, 232, 0.16);
+}
+
+.portal-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0 1.35rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.66);
+    color: #ffffff;
+    font-weight: 800;
+}
+
+.subnav-bar {
+    background: rgba(4, 28, 66, 0.92);
+    border-top: 1px solid rgba(136, 174, 232, 0.08);
+    border-bottom: 1px solid rgba(136, 174, 232, 0.1);
+}
+
+.subnav-inner {
+    flex-wrap: wrap;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.subnav-link {
+    color: #dce9ff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.9rem;
+}

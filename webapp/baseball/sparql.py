@@ -157,6 +157,42 @@ def get_awards_list():
     """
     return run_query(query)
 
+
+@lru_cache(maxsize=1)
+def get_header_teams_graph():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT DISTINCT ?teamCode ?teamName ?franchise
+    WHERE {
+        ?team a bb:Team ;
+              bb:yearID ?year ;
+              bb:teamName ?teamName .
+        FILTER(?year = 2015)
+        OPTIONAL { ?team bb:teamIDBR ?teamCodeBR . }
+        OPTIONAL { ?team bb:teamID ?teamCodeID . }
+        OPTIONAL { ?team bb:franchID ?franchise . }
+        BIND(
+            COALESCE(
+                ?teamCodeBR,
+                ?teamCodeID,
+                STRBEFORE(STRAFTER(STR(?team), "/team/"), "/")
+            ) AS ?teamCode
+        )
+    }
+    ORDER BY ?teamCode
+    """
+
+    return [
+        {
+            "abbr": row.get("teamCode", {}).get("value", ""),
+            "name": row.get("teamName", {}).get("value", row.get("teamCode", {}).get("value", "")),
+            "franchise": row.get("franchise", {}).get("value", row.get("teamCode", {}).get("value", "")),
+        }
+        for row in run_query(query)
+        if row.get("teamCode", {}).get("value")
+    ]
+
 @lru_cache(maxsize=1024)
 def get_player_graph_data(player_id):
     player_id = escape_sparql_string(player_id.strip())
