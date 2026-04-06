@@ -147,12 +147,20 @@ def convert_salaries():
 def convert_awards():
     print("  Processing Awards...")
     for row in read_csv("AwardsPlayers.csv"):
-        pid, award, year = row.get("playerID"), row.get("awardID"), row.get("yearID")
-        if not pid: continue
-        s = uri(f"award/{safe(pid)}/{safe(award)}/{safe(year)}")
+        pid = row.get("playerID")
+        award = row.get("awardID")
+        year = row.get("yearID")
+        lg = row.get("lgID")
+        if not pid or not award or not year or not lg:
+            continue
+        s = uri(f"award/{safe(pid)}/{safe(award)}/{safe(year)}/{safe(lg)}")
+        add(s, RDF.type, BB.Award)
         add(s, BB.awardName, lit(award))
-        add(uri(f"player/{safe(pid)}"), BB.wonAward, s)
         add(s, BB.yearID, lit_int(year))
+        add(s, BB.lgID, lit(lg))
+        add(s, BB.notes, lit(row.get("notes")))
+        add(s, BB.tie, lit_bool(row.get("tie")))
+        add(uri(f"player/{safe(pid)}"), BB.wonAward, s)
 
 def convert_fielding():
     print("  Processing Fielding (Large File)...")

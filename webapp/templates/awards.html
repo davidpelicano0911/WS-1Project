@@ -1,97 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Hall of Fame - Awards</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+{% extends "base.html" %}
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #eef2f3, #dfe9f3);
-            min-height: 100vh;
-        }
+{% block title %}Awards · Baseball Data Explorer{% endblock %}
 
-        .card {
-            border: none;
-            border-radius: 20px;
-        }
-
-        .table thead {
-            border-radius: 10px;
-        }
-
-        .badge {
-            font-size: 0.9rem;
-            padding: 8px 12px;
-        }
-
-        .header-title {
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container mt-5">
-
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="header-title">
-            <i class="bi bi-trophy-fill text-warning"></i> Hall of Fame Awards
-        </h1>
-        <a href="{% url 'home' %}" class="btn btn-outline-dark rounded-pill">
-            <i class="bi bi-arrow-left"></i> Back
-        </a>
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-stars"></i>
+            Award listings
+        </span>
+        <h1 class="page-title">Hall of Fame awards</h1>
+        <p class="section-copy mb-0">
+            Latest entries returned from the GraphDB repository through SPARQL.
+        </p>
     </div>
 
-    <!-- Table Card -->
-    <div class="card shadow-lg">
-        <div class="card-body">
+    <a href="{% url 'home' %}" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back home
+    </a>
+</section>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark text-center">
-                        <tr>
-                            <th>Player</th>
-                            <th>Award</th>
-                            <th>Year</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-center">
-
-                        {% for a in awards %}
-                        <tr>
-                            <td><strong>{{ a.name.value }}</strong></td>
-                            <td>{{ a.award.value }}</td>
-                            <td>
-                                <span class="badge bg-primary">
-                                    {{ a.year.value }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-muted py-4">
-                                <i class="bi bi-database-exclamation"></i><br>
-                                No data available yet. Check GraphDB!
-                            </td>
-                        </tr>
-                        {% endfor %}
-
-                    </tbody>
-                </table>
-            </div>
-
-        </div>
+<section class="data-panel">
+    <div class="table-responsive table-app">
+        <table class="table align-middle text-center mb-0">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Award</th>
+                    <th>Year</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in awards %}
+                <tr>
+                    <td><strong>{{ a.name.value }}</strong></td>
+                    <td>{{ a.award.value }}</td>
+                    <td><span class="pill">{{ a.year.value }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="empty-state">
+                        <i class="bi bi-database-exclamation"></i>
+                        No award data available. Check whether GraphDB is running and loaded.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <!-- Footer -->
-    <footer class="text-center mt-5 text-muted">
-        <small>Semantic Web Project</small>
-    </footer>
-
-</div>
-
-</body>
-</html>
+</section>
+{% endblock %}
