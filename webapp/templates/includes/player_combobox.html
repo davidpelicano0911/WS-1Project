@@ -16,7 +16,12 @@
             aria-controls="{{ field_id }}-menu"
             data-combobox-input
         >
-        <button type="button" class="combobox-toggle" data-combobox-toggle aria-label="Toggle player list">
+        <button
+            type="button"
+            class="combobox-toggle"
+            data-combobox-toggle
+            aria-label="{{ toggle_aria_label|default:'Toggle selection list' }}"
+        >
             <i class="bi bi-chevron-down"></i>
         </button>
     </div>
@@ -29,7 +34,7 @@
             data-label=""
             data-reset="true"
         >
-            <span class="combobox-option-name">Clear selection</span>
+            <span class="combobox-option-name">{{ reset_label|default:"Clear selection" }}</span>
         </button>
 
         {% if options %}
@@ -48,13 +53,13 @@
             </button>
             {% endfor %}
         </div>
-        <p class="combobox-empty mb-0" data-combobox-empty hidden>No players match that search.</p>
+        <p class="combobox-empty mb-0" data-combobox-empty hidden>{{ no_results_message|default:"No matches found." }}</p>
         {% else %}
         <p class="combobox-empty-static mb-0">
             {% if has_letter %}
-            No players are available for this letter yet.
+            {{ empty_options_message|default:"No options are available yet." }}
             {% else %}
-            Choose a letter first to load players.
+            {{ idle_message|default:"Start by narrowing the selection." }}
             {% endif %}
         </p>
         {% endif %}

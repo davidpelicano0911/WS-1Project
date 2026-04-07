@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Teams{% endblock %}
 
@@ -10,20 +11,208 @@
                 <i class="bi bi-shield-fill"></i>
                 Teams
             </span>
-            <h1 class="page-title">Teams</h1>
+            <h1 class="page-title">Team Directory</h1>
             <p class="section-copy mb-0">
-                This section is reserved for team and franchise exploration across the baseball archive.
+                Browse franchise cards built from the team archive, then open dedicated club pages for season detail, rosters, history, and postseason context.
             </p>
+        </div>
+        <div class="button-row compact">
+            <a href="{% url 'analytics' %}" class="btn-app btn-primary-app">Open analytics</a>
+            <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Open players</a>
         </div>
     </div>
 
-    <div class="data-panel">
-        <p class="section-copy mb-3">
-            The RDF now contains richer team data, including franchise information and half-season records. The next step is to add team search and team detail pages on top of it.
+    <form method="get" class="data-panel team-filter-panel">
+        <div class="player-filter-head">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-sliders"></i>
+                    Smart filters
+                </span>
+                <p class="hint-app mb-0 mt-2">Filter the franchise catalog before opening a dedicated team page.</p>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-xl-4 col-lg-4">
+                <label for="team-search" class="form-label-app">Search team</label>
+                <div class="player-search-shell">
+                    <i class="bi bi-search player-search-icon"></i>
+                    <input
+                        id="team-search"
+                        type="text"
+                        name="q"
+                        value="{{ search_term }}"
+                        class="input-app player-search-input"
+                        placeholder="Search by franchise, team, park or code"
+                    >
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <label for="team-league" class="form-label-app">League</label>
+                <select id="team-league" name="league" class="input-app select-app">
+                    <option value="">Any league</option>
+                    {% for option in league_options %}
+                    <option value="{{ option.code }}"{% if league_code == option.code %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <label for="team-status" class="form-label-app">Status</label>
+                <select id="team-status" name="status" class="input-app select-app">
+                    <option value="all"{% if status == "all" %} selected{% endif %}>All teams</option>
+                    <option value="active"{% if status == "active" %} selected{% endif %}>Active</option>
+                    <option value="historical"{% if status == "historical" %} selected{% endif %}>Historical</option>
+                </select>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <label for="team-sort" class="form-label-app">Sort by</label>
+                <select id="team-sort" name="sort" class="input-app select-app">
+                    {% for option in sort_options %}
+                    <option value="{{ option.code }}"{% if sort_code == option.code %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="player-filter-actions mt-3">
+            <button type="submit" class="btn-app btn-primary-app">Apply filters</button>
+            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">Reset</a>
+        </div>
+
+        <div class="player-filter-summary">
+            {% if active_filters %}
+                {% for item in active_filters %}
+                    <span class="player-filter-chip">
+                        <strong>{{ item.label }}</strong>
+                        {{ item.value }}
+                    </span>
+                {% endfor %}
+            {% else %}
+                <span class="player-filter-chip neutral">
+                    <i class="bi bi-funnel-fill"></i>
+                    No team filters active
+                </span>
+            {% endif %}
+        </div>
+    </form>
+</section>
+
+<section class="page-header player-directory-head">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-grid-1x2-fill"></i>
+            Catalog
+        </span>
+        <h2 class="feature-title h3 mb-2">Franchise Cards</h2>
+        <p class="muted-copy mb-0">
+            {{ total_teams }} teams in the current catalog view.
         </p>
-        <a href="{% url 'graph_view' %}" class="btn-app btn-secondary-app">
-            Open graph view
-        </a>
     </div>
 </section>
+
+{% if team_cards %}
+<section class="team-card-grid">
+    {% for card in team_cards %}
+    <a href="{% url 'team_detail' card.franchise_id %}" class="feature-card team-browser-card">
+        <article class="team-card-shell">
+            <div class="team-card-front">
+                <div class="team-card-stage">
+                    <div class="team-card-logo-wrap">
+                        <div class="team-card-logo-frame">
+                            {% if card.logo_id %}
+                            <img
+                                src="https://www.mlbstatic.com/team-logos/{{ card.logo_id }}.svg"
+                                alt="{{ card.team_name }} logo"
+                                class="team-logo-image"
+                            >
+                            {% else %}
+                            <img
+                                src="{% static 'baseball/team-fallback.svg' %}"
+                                alt="{{ card.team_name }} fallback logo"
+                                class="team-logo-image"
+                            >
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="team-card-glow"></div>
+                    <div class="team-card-nameplate">
+                        <p class="team-card-kicker">{{ card.status_label }}</p>
+                        <h3 class="team-card-title">{{ card.team_name }}</h3>
+                        <p class="team-card-subtitle">{{ card.name }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-card-hover-panel">
+                <span class="eyebrow team-hover-badge">
+                    <i class="bi bi-shield-fill"></i>
+                    Team dossier
+                </span>
+
+                <div class="team-hover-headline">
+                    <p class="team-hover-kicker">{{ card.latest_year_display }} season</p>
+                    <h3 class="team-hover-title">{{ card.team_name }}</h3>
+                </div>
+
+                <div class="team-hover-section">
+                    <span class="team-hover-section-title">Identity</span>
+                    <div class="team-hover-mini-item">
+                        <span class="stat-label">Franchise</span>
+                        <span class="team-hover-value">{{ card.name }}</span>
+                    </div>
+                    <div class="team-hover-mini-item">
+                        <span class="stat-label">League</span>
+                        <span class="team-hover-value">{{ card.league_name }}</span>
+                    </div>
+                    <div class="team-hover-mini-item">
+                        <span class="stat-label">Ballpark</span>
+                        <span class="team-hover-value">{{ card.park }}</span>
+                    </div>
+                </div>
+
+                <div class="team-hover-section">
+                    <span class="team-hover-section-title">Snapshot</span>
+                    <div class="team-hover-statline">
+                        <div class="team-hover-stat">
+                            <span class="stat-label">Record</span>
+                            <strong>{{ card.record_display }}</strong>
+                        </div>
+                        <div class="team-hover-stat">
+                            <span class="stat-label">Span</span>
+                            <strong>{{ card.span_display }}</strong>
+                        </div>
+                        <div class="team-hover-stat">
+                            <span class="stat-label">Seasons</span>
+                            <strong>{{ card.season_count_display }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                {% if card.badges %}
+                <div class="team-hover-section">
+                    <span class="team-hover-section-title">Status</span>
+                    <div class="team-browser-badges">
+                        {% for badge in card.badges %}
+                        <span class="team-browser-badge">{{ badge }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="team-card-actionbar">
+                    <span class="team-card-source">{{ card.franchise_id }}</span>
+                    <span class="team-card-cta">Open team page <i class="bi bi-arrow-right"></i></span>
+                </div>
+            </div>
+        </article>
+    </a>
+    {% endfor %}
+</section>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-shield-x"></i>
+    No teams matched the current filters.
+</div>
+{% endif %}
 {% endblock %}
