@@ -72,6 +72,20 @@
     color: #edf4ff;
 }
 
+.table-app tbody td {
+    border-color: rgba(136, 174, 232, 0.08);
+    background: rgba(18, 44, 84, 0.9);
+    color: #e4eefc;
+}
+
+.table-app tbody tr:nth-child(even) td {
+    background: rgba(13, 34, 66, 0.94);
+}
+
+.table-app tbody tr:hover td {
+    background: rgba(22, 55, 103, 0.96);
+}
+
 .compare-table-wrap {
     border-color: rgba(136, 174, 232, 0.16);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -140,6 +154,132 @@
 
 .compare-winner-pill.none {
     color: #9fb6d9;
+}
+
+.team-meta-pill,
+.team-status-badge.neutral,
+.team-history-badge,
+.team-fact-item,
+.team-detail-item,
+.team-summary-item,
+.team-chip-card,
+.team-stat-row,
+.team-logo-frame {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(136, 174, 232, 0.12);
+    color: #edf4ff;
+}
+
+.team-meta-pill a,
+.team-table a,
+.team-browser-card {
+    color: inherit;
+}
+
+.team-detail-note,
+.team-best-detail,
+.team-chip-card span {
+    color: #9fb6d9;
+}
+
+.team-fact-value,
+.team-detail-value,
+.team-stat-name,
+.team-stat-value,
+.team-best-value,
+.team-postseason-outcome,
+.team-history-name {
+    color: #edf4ff;
+}
+
+.team-logo-frame {
+    background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 44%),
+        linear-gradient(180deg, rgba(18, 46, 88, 0.96), rgba(8, 25, 52, 0.98));
+}
+
+.team-meta-pill {
+    color: #dbe7ff;
+}
+
+.team-status-badge.blue {
+    background: rgba(31, 95, 196, 0.18);
+    border-color: rgba(136, 174, 232, 0.22);
+    color: #dbe7ff;
+}
+
+.team-status-badge.gold {
+    color: #072551;
+    border-color: rgba(244, 197, 66, 0.26);
+    background: linear-gradient(135deg, #ffd96c, #c99211);
+}
+
+.team-carousel-button,
+.team-season-card,
+.team-module-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(136, 174, 232, 0.12);
+    color: #edf4ff;
+}
+
+.team-carousel-button:hover {
+    border-color: rgba(136, 174, 232, 0.28);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.team-season-year {
+    background: rgba(31, 95, 196, 0.18);
+    color: #dbe7ff;
+}
+
+.team-season-record {
+    background: rgba(244, 197, 66, 0.14);
+    color: #ffe7a2;
+}
+
+.team-season-meta,
+.team-season-statline {
+    color: #9fb6d9;
+}
+
+.team-season-card.active {
+    border-color: rgba(244, 197, 66, 0.22);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 217, 108, 0.05),
+        0 20px 40px rgba(1, 12, 30, 0.28);
+}
+
+.team-table tbody td {
+    border-color: rgba(136, 174, 232, 0.08);
+    background: rgba(16, 42, 82, 0.92);
+    color: #dfe9fa;
+}
+
+.team-table tbody tr:nth-child(even) td {
+    background: rgba(13, 35, 69, 0.94);
+}
+
+.team-table tbody tr:hover td {
+    background: rgba(20, 53, 101, 0.96);
+}
+
+.team-history-current td,
+.team-table tbody tr.team-history-current:hover td {
+    background: rgba(244, 197, 66, 0.12);
+}
+
+.team-table .table-highlight,
+.team-table .table-highlight a {
+    color: #f4f8ff;
+    font-weight: 800;
+}
+
+.team-table tbody td:not(:first-child) {
+    color: #cfe0ff;
+}
+
+.team-table tbody tr:hover td:not(:first-child) {
+    color: #f5f8ff;
 }
 
 .alphabet-button,
@@ -234,6 +374,22 @@
         grid-template-columns: 1fr;
     }
 
+    .team-best-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .team-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-carousel-track {
+        grid-auto-columns: minmax(260px, 42%);
+    }
+
+    .team-module-carousel {
+        grid-auto-columns: minmax(280px, 46%);
+    }
+
     .home-hero-media {
         min-height: auto;
         padding-bottom: 2rem;
@@ -249,6 +405,34 @@
 @media (max-width: 991.98px) {
     .hero-panel {
         padding: 2rem;
+    }
+
+    .team-showcase-layout,
+    .team-hero-layout,
+    .team-identity-block {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .team-showcase-stage-art {
+        min-height: 460px;
+    }
+
+    .team-showcase-metrics,
+    .team-showcase-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .team-browser-stats,
+    .team-fact-list,
+    .team-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-logo-frame {
+        width: 120px;
+        height: 120px;
+        flex-basis: 120px;
     }
 
     .hero-title {
@@ -293,9 +477,7 @@
 }
 
 @media (max-width: 767.98px) {
-    .site-shell {
-        padding-top: 1.2rem;
-    }
+
 
     .page-header {
         flex-direction: column;
@@ -309,7 +491,8 @@
     .compare-grid,
     .stat-grid,
     .player-card-grid,
-    .player-card-statline {
+    .player-card-statline,
+    .team-best-grid {
         grid-template-columns: 1fr;
     }
 
@@ -373,8 +556,49 @@
         padding-bottom: 0.2rem;
     }
 
-    .compare-tab-button {
+    .compare-tab-button,
+    .team-meta-pill,
+    .team-status-badge {
         flex: 0 0 auto;
+    }
+
+    .team-carousel-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .team-carousel-track,
+    .team-module-carousel,
+    .team-season-carousel {
+        grid-auto-columns: 82%;
+    }
+
+    .team-showcase-sidebar-top {
+        flex-direction: column;
+    }
+
+    .team-showcase-season-switch {
+        width: 100%;
+    }
+
+    .team-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-showcase-metrics,
+    .team-showcase-facts {
+        grid-template-columns: 1fr;
+    }
+
+    .team-browser-panel,
+    .team-showcase-sidebar,
+    .team-showcase-stage-art {
+        padding: 1.35rem;
+    }
+
+    .team-showcase-watermark {
+        inset: auto 1rem 7rem auto;
+        width: 70%;
     }
 
     .alphabet-picker {

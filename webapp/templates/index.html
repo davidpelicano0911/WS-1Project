@@ -31,9 +31,9 @@
                     <i class="bi bi-trophy-fill"></i>
                     Latest awards
                 </a>
-                <a href="{% url 'graph_view' %}" class="btn-app btn-ghost-app">
-                    <i class="bi bi-diagram-3-fill"></i>
-                    Open graph view
+                <a href="{% url 'players' %}" class="btn-app btn-ghost-app">
+                    <i class="bi bi-person-bounding-box"></i>
+                    Explore players
                 </a>
             </div>
         </div>
@@ -46,7 +46,7 @@
                 <div>
                     <div class="ticker-meta">
                         <span class="ticker-chip">Awards</span>
-                        <span>Knowledge graph view</span>
+                        <span>Embedded profile graph</span>
                     </div>
                     <h2>Inspect award history by player and season</h2>
                 </div>
@@ -87,17 +87,17 @@
                         </span>
                         <h2 class="section-title-xl">Built for exploration, not just lookup.</h2>
                     </div>
-                    <a href="{% url 'graph_view' %}" class="panel-link">Open interactive graph</a>
+                    <a href="{% url 'players' %}" class="panel-link">Open player explorer</a>
                 </div>
 
                 <div class="spotlight-grid">
                     <article class="spotlight-card spotlight-card-main">
                         <span class="spotlight-tag">Graph Relationships</span>
-                        <h3>Move from players to teams, franchises and awards through real RDF links.</h3>
+                        <h3>Move from player profiles to teams, franchises and awards through real RDF links.</h3>
                         <p>
-                            The graph page gives you a network view of a player’s context instead of isolated rows in a table.
+                            Each detailed player page now includes a network view of that player’s context instead of isolating the graph on a separate screen.
                         </p>
-                        <a href="{% url 'graph_view' %}" class="text-link">Go to graph view</a>
+                        <a href="{% url 'players' %}" class="text-link">Browse player profiles</a>
                     </article>
 
                     <article class="spotlight-card">
@@ -145,10 +145,10 @@
                     <i class="bi bi-chevron-right"></i>
                 </a>
 
-                <a href="{% url 'graph_view' %}" class="score-link-card">
+                <a href="{% url 'players' %}" class="score-link-card">
                     <div>
-                        <div class="score-link-date">Graph</div>
-                        <strong>Network of teams, awards and franchises</strong>
+                        <div class="score-link-date">Profiles</div>
+                        <strong>Player pages with embedded relationship graphs</strong>
                     </div>
                     <i class="bi bi-chevron-right"></i>
                 </a>
@@ -208,12 +208,12 @@
             <div class="feature-icon green">
                 <i class="bi bi-diagram-3-fill"></i>
             </div>
-            <h2 class="feature-title h3">Graph view</h2>
+            <h2 class="feature-title h3">Player graphs</h2>
             <p class="section-copy">
-                Jump from tabular data into a connected graph to expose franchises, teams and award relationships.
+                Open any player profile to see a connected graph of teams, franchises and award relationships in context.
             </p>
-            <a href="{% url 'graph_view' %}" class="btn-app btn-secondary-app">
-                Open graph
+            <a href="{% url 'players' %}" class="btn-app btn-secondary-app">
+                Browse players
             </a>
         </article>
     </div>

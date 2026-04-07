@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ player.name }}{% endblock %}
 
@@ -17,7 +18,7 @@
         </div>
         <div class="button-row compact">
             <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Back to players</a>
-            <a href="{% url 'graph_view' %}?player={{ player.player_id }}" class="btn-app btn-primary-app">Open graph</a>
+            <a href="#relationship-graph" class="btn-app btn-primary-app">Jump to graph</a>
         </div>
     </div>
 
@@ -108,6 +109,41 @@
             {% endif %}
         </article>
     </div>
+</section>
+
+<section class="data-panel graph-panel mb-4" id="relationship-graph">
+    <div class="graph-panel-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-diagram-3-fill"></i>
+                Relationship graph
+            </span>
+            <h2 class="feature-title h4 mb-2">Connected player context</h2>
+            <p class="muted-copy mb-0">
+                This network follows the current player and maps links to teams, franchises, and awards from the RDF graph.
+            </p>
+        </div>
+        <div class="graph-legend">
+            <span class="legend-chip legend-player">Player</span>
+            <span class="legend-chip legend-team">Team</span>
+            <span class="legend-chip legend-franchise">Franchise</span>
+            <span class="legend-chip legend-award">Award</span>
+        </div>
+    </div>
+
+    {% if has_player_graph %}
+        <div id="player-graph" class="graph-canvas"></div>
+        {{ graph_nodes|json_script:"graph-nodes-data" }}
+        {{ graph_edges|json_script:"graph-edges-data" }}
+    {% else %}
+        <div class="graph-empty-state">
+            <i class="bi bi-diagram-3"></i>
+            <h3 class="feature-title h4 mb-2">No graph data available</h3>
+            <p class="muted-copy mb-0">
+                There are no relationship nodes available for this player yet.
+            </p>
+        </div>
+    {% endif %}
 </section>
 
 <section class="compare-grid mb-4">
@@ -381,4 +417,9 @@
         {% endif %}
     </article>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="{% static 'baseball/js/player-graph.js' %}"></script>
 {% endblock %}

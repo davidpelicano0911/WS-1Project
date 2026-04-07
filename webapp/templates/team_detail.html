@@ -1,0 +1,732 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-shield-fill"></i>
+                Team page
+            </span>
+            <h1 class="page-title">{{ selected_team.team_name }}</h1>
+            <p class="section-copy mb-0">
+                Dedicated club page for the {{ selected_team.franchise_name }} franchise, with season context, roster leaders, history, and postseason detail.
+            </p>
+        </div>
+        <div class="button-row compact">
+            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">Back to teams</a>
+            <a href="{% url 'analytics' %}" class="btn-app btn-primary-app">Open analytics</a>
+        </div>
+    </div>
+</section>
+
+<section class="team-showcase-panel mb-4" id="team-detail">
+    <div class="team-showcase-layout">
+        <aside class="team-showcase-sidebar">
+            <div class="team-showcase-sidebar-top">
+                <div class="team-logo-frame team-showcase-logo">
+                    {% if selected_team.logo_id %}
+                    <img
+                        src="https://www.mlbstatic.com/team-logos/{{ selected_team.logo_id }}.svg"
+                        alt="{{ selected_team.team_name }} logo"
+                        class="team-logo-image"
+                    >
+                    {% else %}
+                    <img
+                        src="{% static 'baseball/team-fallback.svg' %}"
+                        alt="{{ selected_team.team_name }} fallback logo"
+                        class="team-logo-image"
+                    >
+                    {% endif %}
+                </div>
+
+                <div class="team-showcase-season-switch">
+                    <form method="get" id="team-season-form">
+                        <label for="team-year" class="form-label-app">Season</label>
+                        <select name="year" id="team-year" class="input-app select-app" {% if not season_options %}disabled{% endif %}>
+                            {% for season in season_options %}
+                            <option value="{{ season.year }}"{% if selected_team and selected_team.year == season.year %} selected{% endif %}>
+                                {{ season.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <div class="team-showcase-sidebar-copy">
+                <span class="eyebrow">
+                    <i class="bi bi-shield-fill"></i>
+                    {{ selected_team.franchise_name }}
+                </span>
+                <h2 class="team-showcase-title">{{ selected_team.team_name }}</h2>
+                <p class="team-showcase-subtitle">
+                    {{ selected_team.year }} club snapshot with league position, park context, roster leaders, and franchise history.
+                </p>
+            </div>
+
+            <div class="team-badge-row">
+                {% for badge in selected_team.badges %}
+                <span class="team-status-badge {{ badge.tone }}">
+                    <i class="bi {{ badge.icon }}"></i>
+                    {{ badge.label }}
+                </span>
+                {% empty %}
+                <span class="team-status-badge neutral">
+                    <i class="bi bi-dash-circle"></i>
+                    No postseason flag
+                </span>
+                {% endfor %}
+            </div>
+
+            <div class="team-showcase-facts">
+                {% for item in team_showcase_facts %}
+                <div class="team-showcase-fact">
+                    <span class="stat-label">{{ item.label }}</span>
+                    <strong class="team-fact-value">{{ item.value }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <div class="team-showcase-stage">
+            <div class="team-showcase-stage-art">
+                <div class="team-showcase-watermark">
+                    {% if selected_team.logo_id %}
+                    <img
+                        src="https://www.mlbstatic.com/team-logos/{{ selected_team.logo_id }}.svg"
+                        alt="{{ selected_team.team_name }} watermark logo"
+                        class="team-showcase-watermark-image"
+                    >
+                    {% else %}
+                    <img
+                        src="{% static 'baseball/team-fallback.svg' %}"
+                        alt="{{ selected_team.team_name }} watermark fallback logo"
+                        class="team-showcase-watermark-image"
+                    >
+                    {% endif %}
+                </div>
+
+                <div class="team-showcase-copy">
+                    <span class="eyebrow">
+                        <i class="bi bi-calendar-event-fill"></i>
+                        {{ selected_team.year }} season
+                    </span>
+                    <h3 class="team-showcase-stage-title">{{ selected_team.team_name }}</h3>
+                    <p class="team-showcase-stage-copy">
+                        <strong>{{ selected_team.franchise_name }}</strong> in the {{ selected_team.league_name }} ·
+                        {{ selected_team.division_name }} · Rank {{ selected_team.rank|default:"-" }}.
+                    </p>
+
+                    <div class="team-meta-strip">
+                        <span class="team-meta-pill">
+                            <i class="bi bi-trophy-fill"></i>
+                            <a href="{% url 'league_detail' selected_team.league_code %}">{{ selected_team.league_name }}</a>
+                        </span>
+                        <span class="team-meta-pill">
+                            <i class="bi bi-signpost-split-fill"></i>
+                            {{ selected_team.division_name }}
+                        </span>
+                        <span class="team-meta-pill">
+                            <i class="bi bi-pin-map-fill"></i>
+                            {{ selected_team.park|default:"Unknown park" }}
+                        </span>
+                        <span class="team-meta-pill">
+                            <i class="bi bi-people-fill"></i>
+                            {{ selected_team.attendance_display }} attendance
+                        </span>
+                    </div>
+                </div>
+
+                <div class="team-showcase-metrics">
+                    {% for item in team_showcase_metrics %}
+                    <div class="team-showcase-metric">
+                        <span class="team-showcase-metric-value">{{ item.value }}</span>
+                        <span class="team-showcase-metric-label">{{ item.label }}</span>
+                        <span class="team-showcase-metric-detail">{{ item.detail }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="data-panel team-hub mb-4">
+    <div class="compare-tab-bar" role="tablist" aria-label="Team sections">
+        {% for tab in team_tabs %}
+        <button
+            type="button"
+            class="compare-tab-button{% if forloop.first %} active{% endif %}"
+            id="team-tab-{{ tab.id }}"
+            data-team-tab-target="{{ tab.id }}"
+            role="tab"
+            aria-controls="team-panel-{{ tab.id }}"
+            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+        >
+            <i class="bi {{ tab.icon }}"></i>
+            <span>{{ tab.label }}</span>
+        </button>
+        {% endfor %}
+    </div>
+
+    <section id="team-panel-overview" class="team-tab-panel active" data-team-tab-panel="overview" role="tabpanel" aria-labelledby="team-tab-overview">
+        <div class="row g-4">
+            <div class="col-xl-7">
+                <article class="feature-card team-panel-card h-100">
+                    <div class="compare-section-header">
+                        <div>
+                            <span class="eyebrow">
+                                <i class="bi bi-diagram-3-fill"></i>
+                                Franchise profile
+                            </span>
+                            <h3 class="feature-title h4 mb-2">{{ selected_team.franchise_name }}</h3>
+                            <p class="muted-copy mb-0">
+                                High-level footprint across all recorded seasons for this franchise.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="team-detail-grid">
+                        {% for item in franchise_profile %}
+                        <div class="team-detail-item">
+                            <span class="stat-label">{{ item.label }}</span>
+                            <strong class="team-detail-value">{{ item.value }}</strong>
+                            <span class="team-detail-note">{{ item.detail }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-5">
+                <article class="feature-card team-panel-card h-100">
+                    <div class="compare-section-header">
+                        <div>
+                            <span class="eyebrow">
+                                <i class="bi bi-stars"></i>
+                                Season summary
+                            </span>
+                            <h3 class="feature-title h4 mb-2">{{ selected_team.year }} at a glance</h3>
+                            <p class="muted-copy mb-0">
+                                Core context around competition, crowd, and postseason status.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="team-summary-list">
+                        {% for card in season_context_cards %}
+                        <div class="team-summary-item">
+                            <span class="stat-label">{{ card.title }}</span>
+                            <strong class="team-detail-value">{{ card.value }}</strong>
+                            <span class="team-detail-note">{{ card.detail }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        {% if best_season_cards %}
+        <div class="team-carousel-block mt-4">
+            <div class="team-carousel-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-stars"></i>
+                        Franchise peaks
+                    </span>
+                    <h3 class="feature-title h5 mb-1 mt-2">Best-season highlights</h3>
+                </div>
+                <div class="team-carousel-controls">
+                    <button type="button" class="team-carousel-button" data-carousel-prev="team-best-seasons" aria-label="Previous highlight">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button type="button" class="team-carousel-button" data-carousel-next="team-best-seasons" aria-label="Next highlight">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="team-carousel-track" id="team-best-seasons" data-carousel-track>
+                {% for card in best_season_cards %}
+                <article class="feature-card team-best-card team-carousel-card">
+                    <div class="team-best-head">
+                        <span class="eyebrow">
+                            <i class="bi {{ card.icon }}"></i>
+                            {{ card.title }}
+                        </span>
+                    </div>
+                    <strong class="team-best-value">{{ card.value }}</strong>
+                    <span class="team-best-detail">{{ card.detail }}</span>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if featured_history_rows %}
+        <div class="team-carousel-block mt-4">
+            <div class="team-carousel-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-clock-history"></i>
+                        Timeline
+                    </span>
+                    <h3 class="feature-title h5 mb-1 mt-2">Recent franchise seasons</h3>
+                </div>
+                <div class="team-carousel-controls">
+                    <button type="button" class="team-carousel-button" data-carousel-prev="team-history-carousel" aria-label="Previous season">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button type="button" class="team-carousel-button" data-carousel-next="team-history-carousel" aria-label="Next season">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="team-carousel-track team-season-carousel" id="team-history-carousel" data-carousel-track>
+                {% for row in featured_history_rows %}
+                <article class="feature-card team-season-card team-carousel-card{% if row.is_selected %} active{% endif %}">
+                    <div class="team-season-card-head">
+                        <span class="team-season-year">{{ row.year }}</span>
+                        <span class="team-season-record">{{ row.record_display }}</span>
+                    </div>
+                    <h4 class="team-season-name">{{ row.team_name }}</h4>
+                    <p class="team-season-meta">{{ row.league_name }} · {{ row.division_name }}</p>
+                    <div class="team-season-statline">
+                        <span>Win % {{ row.win_pct_display }}</span>
+                        <span>{{ row.attendance_display }} fans</span>
+                    </div>
+                    {% if row.badges %}
+                    <div class="team-history-badges">
+                        {% for badge in row.badges %}
+                        <span class="team-history-badge">{{ badge.label }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    <section id="team-panel-stats" class="team-tab-panel" data-team-tab-panel="stats" role="tabpanel" aria-labelledby="team-tab-stats" hidden>
+        <div class="team-stat-grid">
+            {% for section in stat_sections %}
+            <article class="feature-card team-panel-card">
+                <div class="compare-section-header">
+                    <div>
+                        <span class="eyebrow">
+                            <i class="bi {{ section.icon }}"></i>
+                            {{ section.title }}
+                        </span>
+                    </div>
+                </div>
+                <div class="team-stat-list">
+                    {% for row in section.rows %}
+                    <div class="team-stat-row">
+                        <div>
+                            <strong class="team-stat-name">{{ row.label }}</strong>
+                            <span class="team-detail-note">{{ row.note }}</span>
+                        </div>
+                        <span class="team-stat-value">{{ row.value }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if leader_cards or hitter_rows or pitcher_rows or manager_rows or grouped_awards or all_stars %}
+    <section id="team-panel-leaders" class="team-tab-panel" data-team-tab-panel="leaders" role="tabpanel" aria-labelledby="team-tab-leaders" hidden>
+        {% if leader_cards %}
+        <div class="team-carousel-block mb-4">
+            <div class="team-carousel-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-people-fill"></i>
+                        Club leaders
+                    </span>
+                    <h3 class="feature-title h5 mb-1 mt-2">Swipe through the season leaders</h3>
+                </div>
+                <div class="team-carousel-controls">
+                    <button type="button" class="team-carousel-button" data-carousel-prev="team-leaders-carousel" aria-label="Previous leader">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button type="button" class="team-carousel-button" data-carousel-next="team-leaders-carousel" aria-label="Next leader">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="team-carousel-track" id="team-leaders-carousel" data-carousel-track>
+                {% for card in leader_cards %}
+                <article class="feature-card team-best-card team-carousel-card">
+                    <div class="team-best-head">
+                        <span class="eyebrow">
+                            <i class="bi {{ card.icon }}"></i>
+                            {{ card.title }}
+                        </span>
+                    </div>
+                    <strong class="team-best-value">{{ card.value }}</strong>
+                    <span class="team-best-detail">
+                        <a href="{% url 'player_detail' card.player_id %}">{{ card.detail }}</a>
+                    </span>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+            {% if hitter_rows %}
+            <div class="col-xl-6">
+                <article class="feature-card team-panel-card h-100">
+                    <div class="compare-section-header">
+                        <div>
+                            <span class="eyebrow">
+                                <i class="bi bi-lightning-charge-fill"></i>
+                                Hitters
+                            </span>
+                            <h3 class="feature-title h5 mb-2">Top lineup contributors</h3>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-app team-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>AVG</th>
+                                    <th>OPS</th>
+                                    <th>HR</th>
+                                    <th>RBI</th>
+                                    <th>SB</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in hitter_rows %}
+                                <tr>
+                                    <td class="table-highlight">
+                                        <a href="{% url 'player_detail' row.player_id %}">{{ row.name }}</a>
+                                    </td>
+                                    <td>{{ row.avg_display }}</td>
+                                    <td>{{ row.ops_display }}</td>
+                                    <td>{{ row.hr_display }}</td>
+                                    <td>{{ row.rbi_display }}</td>
+                                    <td>{{ row.sb_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+            {% endif %}
+
+            {% if pitcher_rows %}
+            <div class="col-xl-6">
+                <article class="feature-card team-panel-card h-100">
+                    <div class="compare-section-header">
+                        <div>
+                            <span class="eyebrow">
+                                <i class="bi bi-shield-fill"></i>
+                                Pitchers
+                            </span>
+                            <h3 class="feature-title h5 mb-2">Top mound contributors</h3>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-app team-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>IP</th>
+                                    <th>ERA</th>
+                                    <th>W-L</th>
+                                    <th>SO</th>
+                                    <th>SV</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in pitcher_rows %}
+                                <tr>
+                                    <td class="table-highlight">
+                                        <a href="{% url 'player_detail' row.player_id %}">{{ row.name }}</a>
+                                    </td>
+                                    <td>{{ row.ip_display }}</td>
+                                    <td>{{ row.era_display }}</td>
+                                    <td>{{ row.record_display }}</td>
+                                    <td>{{ row.so_display }}</td>
+                                    <td>{{ row.sv_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if manager_rows or grouped_awards or all_stars %}
+        <div class="team-carousel-block mt-4">
+            <div class="team-carousel-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                        Extras
+                    </span>
+                    <h3 class="feature-title h5 mb-1 mt-2">Staff, awards, and All-Stars</h3>
+                </div>
+                <div class="team-carousel-controls">
+                    <button type="button" class="team-carousel-button" data-carousel-prev="team-extras-carousel" aria-label="Previous module">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button type="button" class="team-carousel-button" data-carousel-next="team-extras-carousel" aria-label="Next module">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="team-carousel-track team-module-carousel" id="team-extras-carousel" data-carousel-track>
+                {% if manager_rows %}
+                <article class="feature-card team-panel-card team-carousel-card team-module-card">
+                    <span class="eyebrow">
+                        <i class="bi bi-person-workspace"></i>
+                        Managers
+                    </span>
+                    <div class="team-chip-list mt-3">
+                        {% for row in manager_rows %}
+                        <div class="team-chip-card">
+                            <strong><a href="{% url 'player_detail' row.player_id %}">{{ row.name }}</a></strong>
+                            <span>{{ row.record_display }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endif %}
+
+                {% if grouped_awards %}
+                <article class="feature-card team-panel-card team-carousel-card team-module-card">
+                    <span class="eyebrow">
+                        <i class="bi bi-patch-check-fill"></i>
+                        Awards
+                    </span>
+                    <div class="team-chip-list mt-3">
+                        {% for award in grouped_awards %}
+                        <div class="team-chip-card">
+                            <strong>{{ award.award_name }}</strong>
+                            <span>{{ award.players }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endif %}
+
+                {% if all_stars %}
+                <article class="feature-card team-panel-card team-carousel-card team-module-card">
+                    <span class="eyebrow">
+                        <i class="bi bi-star-fill"></i>
+                        All-Stars
+                    </span>
+                    <div class="team-chip-list mt-3">
+                        {% for player in all_stars %}
+                        <div class="team-chip-card">
+                            <strong><a href="{% url 'player_detail' player.player_id %}">{{ player.name }}</a></strong>
+                            <span>{{ player.player_id }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if history_rows %}
+    <section id="team-panel-history" class="team-tab-panel" data-team-tab-panel="history" role="tabpanel" aria-labelledby="team-tab-history" hidden>
+        <div class="compare-section-header mb-3">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-clock-history"></i>
+                    Franchise timeline
+                </span>
+                <h3 class="feature-title h4 mb-2">Season-by-season history</h3>
+                <p class="muted-copy mb-0">
+                    Full recorded timeline for this franchise, including league context, record, park, and attendance.
+                </p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-app team-table team-history-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Team</th>
+                        <th>League</th>
+                        <th>Record</th>
+                        <th>Win Pct</th>
+                        <th>Park</th>
+                        <th>Attendance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history_rows %}
+                    <tr class="{% if row.is_selected %}team-history-current{% endif %}">
+                        <td class="table-highlight">{{ row.year }}</td>
+                        <td>
+                            <div class="team-history-name">{{ row.team_name }}</div>
+                            {% if row.badges %}
+                            <div class="team-history-badges">
+                                {% for badge in row.badges %}
+                                <span class="team-history-badge">{{ badge.label }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.league_name }} · {{ row.division_name }}</td>
+                        <td>{{ row.record_display }}</td>
+                        <td>{{ row.win_pct_display }}</td>
+                        <td>{{ row.park|default:"-" }}</td>
+                        <td>{{ row.attendance_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if postseason_history or selected_team.badges %}
+    <section id="team-panel-postseason" class="team-tab-panel" data-team-tab-panel="postseason" role="tabpanel" aria-labelledby="team-tab-postseason" hidden>
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <article class="feature-card team-panel-card h-100">
+                    <span class="eyebrow">
+                        <i class="bi bi-trophy-fill"></i>
+                        {{ selected_team.year }}
+                    </span>
+                    <h3 class="feature-title h4 mt-3 mb-2">Season outcome</h3>
+                    <p class="team-postseason-outcome mb-2">{{ season_outcome }}</p>
+                    <p class="muted-copy mb-0">
+                        {% if selected_season_postseason %}
+                        {{ selected_season_postseason|length }} postseason series linked to this season.
+                        {% elif selected_team.badges %}
+                        Postseason flags are present even if no individual series rows were matched.
+                        {% else %}
+                        No postseason activity recorded for this season.
+                        {% endif %}
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-lg-8">
+                <article class="feature-card team-panel-card h-100">
+                    <div class="compare-section-header mb-3">
+                        <div>
+                            <span class="eyebrow">
+                                <i class="bi bi-braces-asterisk"></i>
+                                Franchise postseason
+                            </span>
+                            <h3 class="feature-title h4 mb-2">Series log</h3>
+                        </div>
+                    </div>
+                    {% if postseason_history %}
+                    <div class="table-responsive">
+                        <table class="table table-app team-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Round</th>
+                                    <th>Result</th>
+                                    <th>Opponent</th>
+                                    <th>Series</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in postseason_history %}
+                                <tr>
+                                    <td class="table-highlight">{{ row.year }}</td>
+                                    <td>{{ row.round }}</td>
+                                    <td>{{ row.result }}</td>
+                                    <td>{{ row.opponent_name }}</td>
+                                    <td>{{ row.wins }}-{{ row.losses }}{% if row.ties %}-{{ row.ties }}{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-4">
+                        <i class="bi bi-journal-x"></i>
+                        No postseason series were matched for this franchise.
+                    </div>
+                    {% endif %}
+                </article>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const teamsForm = document.getElementById('team-season-form');
+    const teamYearSelect = document.getElementById('team-year');
+
+    if (teamsForm && teamYearSelect) {
+        teamYearSelect.addEventListener('change', () => {
+            const params = new URLSearchParams(new FormData(teamsForm));
+            const basePath = teamsForm.getAttribute('action') || window.location.pathname;
+            window.location.assign(`${basePath}?${params.toString()}#team-detail`);
+        });
+    }
+
+    const teamTabButtons = Array.from(document.querySelectorAll('[data-team-tab-target]'));
+    const teamTabPanels = Array.from(document.querySelectorAll('[data-team-tab-panel]'));
+
+    const setActiveTeamTab = (tabId) => {
+        teamTabButtons.forEach((button) => {
+            const isActive = button.dataset.teamTabTarget === tabId;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        teamTabPanels.forEach((panel) => {
+            const isActive = panel.dataset.teamTabPanel === tabId;
+            panel.classList.toggle('active', isActive);
+            panel.hidden = !isActive;
+        });
+    };
+
+    teamTabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            setActiveTeamTab(button.dataset.teamTabTarget);
+        });
+    });
+
+    const scrollCarousel = (track, direction) => {
+        if (!track) {
+            return;
+        }
+        const firstCard = track.querySelector('.team-carousel-card');
+        const gap = 20;
+        const distance = firstCard ? firstCard.getBoundingClientRect().width + gap : track.clientWidth * 0.85;
+        track.scrollBy({ left: distance * direction, behavior: 'smooth' });
+    };
+
+    document.querySelectorAll('[data-carousel-prev]').forEach((button) => {
+        button.addEventListener('click', () => {
+            scrollCarousel(document.getElementById(button.dataset.carouselPrev), -1);
+        });
+    });
+
+    document.querySelectorAll('[data-carousel-next]').forEach((button) => {
+        button.addEventListener('click', () => {
+            scrollCarousel(document.getElementById(button.dataset.carouselNext), 1);
+        });
+    });
+</script>
+{% endblock %}

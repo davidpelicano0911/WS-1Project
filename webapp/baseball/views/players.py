@@ -1,8 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from urllib.parse import urlencode
 
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from ..player_media import attach_player_media, enrich_players_with_media
 from ..sparql import (
@@ -430,6 +432,24 @@ def _build_player_detail_payload(profile):
         "pitching_overview": pitching_overview,
         "affiliation_panels": affiliation_panels,
         "recognition_items": recognition_items,
+    }
+
+
+def _build_player_graph_payload(player):
+    graph_data = deepcopy(get_player_graph_data(player.get("player_id", "")))
+    photo_url = player.get("photo_url") or player.get("photo_fallback_url") or ""
+
+    if photo_url:
+        for node in graph_data.get("nodes", []):
+            node_data = node.get("data", {})
+            if node_data.get("type") == "player":
+                node_data["photoUrl"] = photo_url
+                break
+
+    return {
+        "graph_nodes": graph_data.get("nodes", []),
+        "graph_edges": graph_data.get("edges", []),
+        "has_player_graph": bool(graph_data.get("nodes")),
     }
 
 
@@ -1189,10 +1209,12 @@ def player_detail_view(request, player_id):
         raise Http404("Player not found")
     player = attach_player_media(player)
     detail_payload = _build_player_detail_payload(player)
+    graph_payload = _build_player_graph_payload(player)
 
     context = {
         "player": player,
         **detail_payload,
+        **graph_payload,
         "recent_salary_history": player["salary_history"][:10],
         "recent_team_history": sorted(
             player["team_history"],
@@ -1253,21 +1275,8 @@ def compare_players_view(request):
 
 
 def graph_view(request):
-    letters = _alphabet()
-    player_letter = request.GET.get("player_letter", "").strip().upper()
     player_term = request.GET.get("player", "").strip()
-    player_options = get_player_options_by_initial(player_letter) if player_letter in letters else []
-    player = get_player_summary(player_term) if player_term else None
-    graph_data = get_player_graph_data(player_term) if player_term else {"nodes": [], "edges": []}
-
-    context = {
-        "letters": letters,
-        "player_letter": player_letter,
-        "player_term": player_term,
-        "player_options": player_options,
-        "player_selected_label": _player_label(player),
-        "player": player,
-        "graph_nodes": graph_data["nodes"],
-        "graph_edges": graph_data["edges"],
-    }
-    return render(request, "graph.html", context)
+    if player_term:
+        target = reverse("player_detail", kwargs={"player_id": player_term})
+        return redirect(f"{target}#relationship-graph")
+    return redirect(reverse("players"))
