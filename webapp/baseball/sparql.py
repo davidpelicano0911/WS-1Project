@@ -417,7 +417,7 @@ def get_player_summary(player_id):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?name ?playerID ?bbrefID
+    SELECT ?name ?nameFirst ?nameLast ?nameGiven ?playerID ?bbrefID
            ?birthYear ?birthMonth ?birthDay ?birthCountry ?birthState ?birthCity
            ?deathYear ?deathMonth ?deathDay ?deathCountry ?deathState ?deathCity
            ?height ?weight ?bats ?throws ?debut ?finalGame
@@ -429,6 +429,9 @@ def get_player_summary(player_id):
         FILTER(?playerID = "{player_id}")
 
         OPTIONAL {{ ?player bb:bbrefID ?bbrefID . }}
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
         OPTIONAL {{ ?player bb:birthYear ?birthYear . }}
         OPTIONAL {{ ?player bb:birthMonth ?birthMonth . }}
         OPTIONAL {{ ?player bb:birthDay ?birthDay . }}
@@ -492,8 +495,20 @@ def get_player_summary(player_id):
     def value_for(key, default="N/A"):
         return row.get(key, {}).get("value", default)
 
+    first_name = value_for("nameFirst", "")
+    last_name = value_for("nameLast", "")
+    given_name = value_for("nameGiven", "")
+    full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+    if not full_name:
+        full_name = value_for("name", "")
+    if not full_name:
+        full_name = given_name or value_for("playerID")
+
     return {
-        "name": value_for("name"),
+        "name": full_name,
+        "name_first": first_name,
+        "name_last": last_name,
+        "name_given": given_name,
         "player_id": value_for("playerID"),
         "bbref_id": value_for("bbrefID", ""),
         "birth_year": value_for("birthYear"),
@@ -1229,12 +1244,15 @@ def get_player_graph_data(player_id):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?playerID ?name
+    SELECT ?playerID ?name ?nameFirst ?nameLast ?nameGiven
     WHERE {{
         ?player a bb:Player ;
                 bb:playerID ?playerID ;
                 foaf:name ?name .
         FILTER(?playerID = "{player_id}")
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
     }}
     LIMIT 1
     """
@@ -1277,11 +1295,17 @@ def get_player_graph_data(player_id):
 
     player_row = player_results[0]
     player_node_id = f"player:{player_row['playerID']['value']}"
+    player_first = _row_value(player_row, "nameFirst", "")
+    player_last = _row_value(player_row, "nameLast", "")
+    player_given = _row_value(player_row, "nameGiven", "")
+    player_label = " ".join(part for part in [player_first, player_last] if part).strip()
+    if not player_label:
+        player_label = _row_value(player_row, "name", "") or player_given or player_row["playerID"]["value"]
 
     nodes = [{
         "data": {
             "id": player_node_id,
-            "label": player_row["name"]["value"],
+            "label": player_label,
             "type": "player",
         }
     }]

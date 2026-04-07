@@ -1637,6 +1637,7 @@ a {
 }
 
 .player-detail-portrait {
+    position: relative;
     border-radius: 24px;
     overflow: hidden;
     background: linear-gradient(135deg, rgba(29, 79, 145, 0.18), rgba(198, 56, 69, 0.14));
@@ -1655,15 +1656,19 @@ a {
 }
 
 .player-detail-photo {
+    position: relative;
     width: 100%;
     max-height: 420px;
     display: block;
     object-fit: contain;
     object-position: center top;
     background: rgba(10, 24, 46, 0.2);
+    z-index: 2;
 }
 
 .player-detail-photo-fallback {
+    position: absolute;
+    inset: 0;
     width: 100%;
     min-height: 320px;
     display: grid;
@@ -1674,6 +1679,7 @@ a {
     background:
         radial-gradient(circle at top, rgba(255, 255, 255, 0.16), transparent 42%),
         linear-gradient(180deg, rgba(17, 45, 84, 0.72), rgba(26, 30, 68, 0.92));
+    z-index: 1;
 }
 
 .player-detail-avatar {
