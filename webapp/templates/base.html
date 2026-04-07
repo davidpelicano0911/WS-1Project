@@ -53,12 +53,16 @@
                         </a>
 
                         <div class="portal-leagues d-none d-lg-flex">
-                            <a href="{% url 'home' %}" class="portal-pill-link">Home</a>
-                            <a href="{% url 'players' %}" class="portal-pill-link">Players</a>
-                            <a href="{% url 'teams' %}" class="portal-pill-link">Teams</a>
-                            <a href="{% url 'compare_players' %}" class="portal-pill-link">Comparator</a>
-                            <a href="{% url 'analytics' %}" class="portal-pill-link">Analytics / Stats</a>
-                            <a href="{% url 'about' %}" class="portal-pill-link">About</a>
+                            {% for league in header_leagues %}
+                                {% url 'league_detail' league.code as league_url %}
+                                <a
+                                    href="{{ league_url }}"
+                                    class="portal-pill-link{% if request.path == league_url %} active{% endif %}"
+                                    title="{{ league.name }}"
+                                >
+                                    {{ league.name }}
+                                </a>
+                            {% endfor %}
                         </div>
                     </div>
 

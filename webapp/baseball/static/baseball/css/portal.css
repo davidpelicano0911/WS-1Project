@@ -113,13 +113,15 @@ body {
 .portal-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.3rem;
 }
 
 .portal-brand {
     display: inline-flex;
+    position: relative;
+    z-index: 1;
     align-items: center;
-    flex: 0 0 260px;
+    flex: 0 0 210px;
     max-height: 76px;
     overflow: visible;
     color: #ffffff;
@@ -175,17 +177,19 @@ body {
 }
 
 .brand-logo-standalone {
-    width: 260px;
     height: 76px;
     object-fit: contain;
     object-position: left center;
     display: block;
-    transform: scale(1.6);
+    transform: scale(2.5);
     transform-origin: left center;
+    pointer-events: none;
     filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.28)) brightness(1.08) contrast(1.08);
 }
 
 .portal-leagues {
+    position: relative;
+    z-index: 2;
     padding: 0.4rem;
     border-radius: 999px;
     background: rgba(10, 37, 76, 0.9);
@@ -201,6 +205,12 @@ body {
     color: #dce9ff;
     font-weight: 700;
     font-size: 0.95rem;
+}
+
+.portal-pill-link.active {
+    color: #072551;
+    background: linear-gradient(135deg, #ffd96c, #c99211);
+    box-shadow: 0 12px 20px rgba(244, 197, 66, 0.18);
 }
 
 .portal-pill-link:hover,

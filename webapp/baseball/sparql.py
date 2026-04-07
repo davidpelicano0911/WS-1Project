@@ -769,6 +769,143 @@ def get_header_teams_graph():
         if row.get("teamCode", {}).get("value")
     ]
 
+
+LEAGUE_LABELS = {
+    "AL": "American League",
+    "NL": "National League",
+    "NA": "National Association",
+    "AA": "American Association",
+    "UA": "Union Association",
+    "PL": "Players' League",
+    "FL": "Federal League",
+}
+
+LEAGUE_ORDER = {
+    "AL": 1,
+    "NL": 2,
+    "NA": 3,
+    "AA": 4,
+    "UA": 5,
+    "PL": 6,
+    "FL": 7,
+}
+
+
+@lru_cache(maxsize=1)
+def get_header_leagues_graph():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT DISTINCT ?league
+    WHERE {
+        ?team a bb:Team ;
+              bb:lgID ?league .
+        FILTER(STRLEN(STR(?league)) > 0)
+    }
+    ORDER BY ?league
+    """
+
+    leagues = []
+    for row in run_query(query):
+        code = _row_value(row, "league", "")
+        if not code:
+            continue
+        leagues.append(
+            {
+                "code": code,
+                "name": LEAGUE_LABELS.get(code, code),
+                "slug": code.lower(),
+                "sort_order": LEAGUE_ORDER.get(code, 999),
+            }
+        )
+
+    return sorted(leagues, key=lambda league: (league["sort_order"], league["code"]))
+
+
+@lru_cache(maxsize=32)
+def get_league_detail(league_code):
+    league_code = escape_sparql_string(str(league_code).strip().upper())
+    if not league_code:
+        return None
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT
+        (COUNT(DISTINCT ?team) AS ?teamSeasons)
+        (COUNT(DISTINCT ?franchise) AS ?franchises)
+        (COUNT(DISTINCT ?year) AS ?seasons)
+        (MIN(?year) AS ?firstYear)
+        (MAX(?year) AS ?lastYear)
+    WHERE {{
+        ?team a bb:Team ;
+              bb:lgID ?lg ;
+              bb:yearID ?year .
+        FILTER(?lg = "{league_code}")
+        OPTIONAL {{ ?team bb:franchID ?franchise . }}
+    }}
+    """
+
+    results = run_query(query)
+    if not results:
+        return None
+
+    row = results[0]
+    team_seasons = _row_int(row, "teamSeasons", 0)
+    if not team_seasons:
+        return None
+
+    return {
+        "code": league_code,
+        "name": LEAGUE_LABELS.get(league_code, league_code),
+        "team_seasons": team_seasons,
+        "franchises": _row_int(row, "franchises", 0),
+        "seasons": _row_int(row, "seasons", 0),
+        "first_year": _row_int(row, "firstYear", 0),
+        "last_year": _row_int(row, "lastYear", 0),
+    }
+
+
+@lru_cache(maxsize=32)
+def get_teams_by_league(league_code):
+    league_code = escape_sparql_string(str(league_code).strip().upper())
+    if not league_code:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?teamName ?franchise ?park
+           (COUNT(DISTINCT ?year) AS ?seasons)
+           (MIN(?year) AS ?firstYear)
+           (MAX(?year) AS ?lastYear)
+    WHERE {{
+        ?team a bb:Team ;
+              bb:lgID ?lg ;
+              bb:teamName ?teamName ;
+              bb:yearID ?year .
+        FILTER(?lg = "{league_code}")
+        OPTIONAL {{ ?team bb:franchID ?franchise . }}
+        OPTIONAL {{ ?team bb:park ?park . }}
+    }}
+    GROUP BY ?teamName ?franchise ?park
+    ORDER BY ?teamName ?firstYear
+    """
+
+    teams = []
+    for row in run_query(query):
+        teams.append(
+            {
+                "name": _row_value(row, "teamName", "Unknown Team"),
+                "franchise": _row_value(row, "franchise", ""),
+                "park": _row_value(row, "park", ""),
+                "seasons": _row_int(row, "seasons", 0),
+                "first_year": _row_int(row, "firstYear", 0),
+                "last_year": _row_int(row, "lastYear", 0),
+            }
+        )
+    return teams
+
 @lru_cache(maxsize=1024)
 def get_player_graph_data(player_id):
     player_id = escape_sparql_string(player_id.strip())
