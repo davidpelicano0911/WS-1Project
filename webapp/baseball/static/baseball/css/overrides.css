@@ -255,6 +255,27 @@
         max-width: none;
     }
 
+    .player-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .player-filter-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .player-filter-actions {
+        justify-content: stretch;
+    }
+
+    .player-detail-top {
+        grid-template-columns: 1fr;
+    }
+
+    .player-detail-identity-grid {
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+
     .portal-nav,
     .portal-brand-wrap,
     .portal-actions {
@@ -286,8 +307,46 @@
     }
 
     .compare-grid,
-    .stat-grid {
+    .stat-grid,
+    .player-card-grid,
+    .player-card-statline {
         grid-template-columns: 1fr;
+    }
+
+    .player-card-front {
+        gap: 0.8rem;
+    }
+
+    .player-card-actionbar {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .player-card-hover-panel {
+        position: static;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        margin-top: 0.2rem;
+        backdrop-filter: none;
+    }
+
+    .player-card-portrait-frame {
+        min-height: 220px;
+    }
+
+    .player-detail-identity-grid,
+    .player-detail-bio-list,
+    .player-detail-spotlight-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .player-filter-actions {
+        flex-wrap: wrap;
+    }
+
+    .player-filter-actions .btn-app {
+        width: 100%;
     }
 
     .compare-hub-header,
@@ -364,5 +423,27 @@
     .ticker-thumb {
         width: 72px;
         height: 58px;
+    }
+
+    .player-card-title {
+        font-size: 1.7rem;
+    }
+
+    .player-card-hover {
+        transform: translateY(0);
+        position: static;
+        margin-top: auto;
+    }
+
+    .player-filter-actions {
+        justify-content: stretch !important;
+    }
+
+    .player-filter-actions .btn-app {
+        flex: 1 1 auto;
+    }
+
+    .player-toggle {
+        min-height: auto;
     }
 }

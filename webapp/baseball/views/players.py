@@ -1,10 +1,18 @@
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlencode
+
+from django.http import Http404
 from django.shortcuts import render
 
+from ..player_media import attach_player_media, enrich_players_with_media
 from ..sparql import (
+    get_player_filter_options,
     get_player_allstar_history,
     get_player_award_history,
     get_player_batting_seasons,
     get_player_batting_summary,
+    get_players_catalog,
+    get_players_catalog_count,
     get_player_graph_data,
     get_player_hall_of_fame,
     get_player_options_by_initial,
@@ -84,6 +92,355 @@ def _format_text(value, default="N/A"):
     if value in (None, ""):
         return default
     return str(value)
+
+
+def _format_decimal(value, digits=3):
+    if value is None:
+        return "N/A"
+    text = f"{float(value):.{digits}f}"
+    return text.rstrip("0").rstrip(".") if "." in text else text
+
+
+def _format_person_name_parts(name):
+    name = str(name or "").strip()
+    if not name:
+        return {"first_name": "Unknown", "last_name": "Player", "full_name": "Unknown Player"}
+
+    parts = [part for part in name.split() if part]
+    if len(parts) == 1:
+        return {"first_name": "", "last_name": parts[0], "full_name": parts[0]}
+
+    return {
+        "first_name": parts[0],
+        "last_name": parts[-1],
+        "full_name": name,
+    }
+
+
+def _location_display(*parts):
+    values = []
+    seen = set()
+    for part in parts:
+        text = str(part or "").strip()
+        if not text or text.upper() == "N/A" or text in seen:
+            continue
+        seen.add(text)
+        values.append(text)
+    return ", ".join(values) if values else "Unknown location"
+
+
+def _date_display(year=None, month=None, day=None):
+    months = {
+        1: "Jan",
+        2: "Feb",
+        3: "Mar",
+        4: "Apr",
+        5: "May",
+        6: "Jun",
+        7: "Jul",
+        8: "Aug",
+        9: "Sep",
+        10: "Oct",
+        11: "Nov",
+        12: "Dec",
+    }
+
+    try:
+        year_value = int(str(year).strip())
+    except (TypeError, ValueError, AttributeError):
+        year_value = None
+
+    try:
+        month_value = int(str(month).strip())
+    except (TypeError, ValueError, AttributeError):
+        month_value = None
+
+    try:
+        day_value = int(str(day).strip())
+    except (TypeError, ValueError, AttributeError):
+        day_value = None
+
+    if year_value and month_value in months and day_value:
+        return f"{day_value} {months[month_value]} {year_value}"
+    if year_value and month_value in months:
+        return f"{months[month_value]} {year_value}"
+    if year_value:
+        return str(year_value)
+    return "Unknown date"
+
+
+def _summary_date_location(date_value, place_value):
+    if date_value == "Unknown date" and place_value == "Unknown location":
+        return "N/A"
+    if place_value == "Unknown location":
+        return date_value
+    if date_value == "Unknown date":
+        return place_value
+    return f"{date_value} · {place_value}"
+
+
+def _primary_place(city=None, state=None, country=None):
+    for value in (city, state, country):
+        text = str(value or "").strip()
+        if text and text.upper() != "N/A":
+            return text
+    return "Unknown place"
+
+
+def _build_player_card(player):
+    initials = "".join(part[0] for part in player["name"].split()[:2]).upper() or "P"
+    debut_year = _year_from_date(player.get("debut"))
+    final_year = _year_from_date(player.get("final_game"))
+    name_parts = _format_person_name_parts(player.get("name"))
+
+    if debut_year and final_year:
+        career_span = f"{debut_year} - {final_year}"
+    elif debut_year:
+        career_span = f"Since {debut_year}"
+    else:
+        career_span = "Career data unavailable"
+
+    return {
+        **player,
+        **name_parts,
+        "initials": initials[:2],
+        "birth_year_display": _format_text(player.get("birth_year"), "Unknown year"),
+        "birth_country_display": _format_text(player.get("birth_country"), "Unknown country"),
+        "height_display": _format_text(player.get("height")),
+        "weight_display": _format_text(player.get("weight")),
+        "bats_throws_display": f"{_format_text(player.get('bats'))} / {_format_text(player.get('throws'))}",
+        "debut_display": _format_text(player.get("debut")),
+        "final_game_display": _format_text(player.get("final_game")),
+        "career_span_display": career_span,
+        "birth_date_display": _date_display(
+            player.get("birth_year"),
+            player.get("birth_month"),
+            player.get("birth_day"),
+        ),
+        "death_date_display": _date_display(
+            player.get("death_year"),
+            player.get("death_month"),
+            player.get("death_day"),
+        ),
+        "birth_place_display": _location_display(
+            player.get("birth_city"),
+            player.get("birth_state"),
+            player.get("birth_country"),
+        ),
+        "death_place_display": _location_display(
+            player.get("death_city"),
+            player.get("death_state"),
+            player.get("death_country"),
+        ),
+        "has_death_data": any(
+            player.get(key)
+            for key in ("death_year", "death_month", "death_day", "death_city", "death_state", "death_country")
+        ),
+        "birth_summary_display": _summary_date_location(
+            _date_display(
+                player.get("birth_year"),
+                player.get("birth_month"),
+                player.get("birth_day"),
+            ),
+            _location_display(
+                player.get("birth_city"),
+                player.get("birth_state"),
+                player.get("birth_country"),
+            ),
+        ),
+        "birth_primary_place": _primary_place(
+            player.get("birth_city"),
+            player.get("birth_state"),
+            player.get("birth_country"),
+        ),
+        "death_summary_display": _summary_date_location(
+            _date_display(
+                player.get("death_year"),
+                player.get("death_month"),
+                player.get("death_day"),
+            ),
+            _location_display(
+                player.get("death_city"),
+                player.get("death_state"),
+                player.get("death_country"),
+            ),
+        ),
+        "death_primary_place": _primary_place(
+            player.get("death_city"),
+            player.get("death_state"),
+            player.get("death_country"),
+        ),
+    }
+
+
+def _attach_player_roster_context(player):
+    history = get_player_team_history(player.get("player_id", ""))
+    latest_entry = None
+    for entry in reversed(history):
+        if entry.get("team_name") or entry.get("franchise_name") or entry.get("league"):
+            latest_entry = entry
+            break
+
+    latest_team = ""
+    latest_franchise = ""
+    latest_league = ""
+    latest_season = None
+    if latest_entry:
+        latest_team = latest_entry.get("team_name", "")
+        latest_franchise = latest_entry.get("franchise_name", "")
+        latest_league = latest_entry.get("league", "")
+        latest_season = latest_entry.get("year")
+
+    return {
+        **player,
+        "latest_team_display": _format_text(latest_team or latest_franchise, "No team data"),
+        "latest_franchise_display": _format_text(latest_franchise or latest_team, "No franchise data"),
+        "latest_league_display": _format_text(latest_league, "League N/A"),
+        "latest_season_display": _format_text(latest_season, "Season N/A"),
+    }
+
+
+def _enrich_players_with_roster_context(players, max_workers=8):
+    if not players:
+        return []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(_attach_player_roster_context, players))
+
+
+def _latest_team_snapshot(profile):
+    history = sorted(
+        profile.get("team_history", []),
+        key=lambda item: (item.get("year") or 0, item.get("team_name") or "", item.get("franchise_name") or ""),
+        reverse=True,
+    )
+    for item in history:
+        if item.get("team_name") or item.get("franchise_name") or item.get("league"):
+            return {
+                "team": _format_text(item.get("team_name") or item.get("franchise_name"), "No team data"),
+                "franchise": _format_text(item.get("franchise_name") or item.get("team_name"), "No franchise data"),
+                "league": _format_text(item.get("league"), "League N/A"),
+                "year": _format_text(item.get("year"), "Season N/A"),
+            }
+    return {
+        "team": "No team data",
+        "franchise": "No franchise data",
+        "league": "League N/A",
+        "year": "Season N/A",
+    }
+
+
+def _build_player_detail_payload(profile):
+    latest_snapshot = _latest_team_snapshot(profile)
+    peak_salary_entry = profile.get("peak_salary_entry") or {}
+    birth_date = _date_display(profile.get("birth_year"), profile.get("birth_month"), profile.get("birth_day"))
+    birth_place = _location_display(profile.get("birth_city"), profile.get("birth_state"), profile.get("birth_country"))
+    death_date = _date_display(profile.get("death_year"), profile.get("death_month"), profile.get("death_day"))
+    death_place = _location_display(profile.get("death_city"), profile.get("death_state"), profile.get("death_country"))
+
+    spotlight_stats = [
+        {"label": "Documented seasons", "value": _format_number(profile.get("career_seasons", 0)), "detail": profile.get("career_span_years") and f"Span of {profile['career_span_years']} years" or "Season span unavailable"},
+        {"label": "Teams represented", "value": _format_number(profile.get("team_count", 0)), "detail": latest_snapshot["team"]},
+        {"label": "Awards logged", "value": _format_number(profile.get("award_count_total", 0)), "detail": profile.get("latest_award_year") and f"Latest in {profile['latest_award_year']}" or "No awards logged"},
+        {"label": "All-Star apps", "value": _format_number(profile.get("allstar_count", 0)), "detail": profile.get("allstar_years") and _summarize_values(profile["allstar_years"], limit=4) or "No All-Star appearances"},
+        {"label": "Peak salary", "value": _format_currency(profile.get("peak_salary")), "detail": peak_salary_entry.get("detail", "No salary data")},
+        {"label": "Hall of Fame", "value": "Inducted" if profile["hall_of_fame"].get("inducted") else "Not inducted", "detail": profile["hall_of_fame"].get("inducted_year") and str(profile["hall_of_fame"]["inducted_year"]) or f"{profile['hall_of_fame'].get('vote_count', 0)} ballot entries"},
+    ]
+
+    identity_chips = [
+        latest_snapshot["team"],
+        latest_snapshot["league"],
+        _format_text(profile.get("birth_country"), "Unknown country"),
+    ]
+    if profile["hall_of_fame"].get("inducted"):
+        identity_chips.append("Hall of Fame")
+
+    bio_items = [
+        {"label": "Player ID", "value": _format_text(profile.get("player_id"))},
+        {"label": "Born", "value": _summary_date_location(birth_date, birth_place)},
+        {"label": "Died", "value": _summary_date_location(death_date, death_place) if death_date != "Unknown date" or death_place != "Unknown location" else "Still active / no death data"},
+        {"label": "Bats / throws", "value": f"{_format_text(profile.get('bats'))} / {_format_text(profile.get('throws'))}"},
+        {"label": "Height / weight", "value": f"{_format_text(profile.get('height'))} / {_format_text(profile.get('weight'))}"},
+        {"label": "Debut", "value": _format_text(profile.get("debut"))},
+        {"label": "Final game", "value": _format_text(profile.get("final_game"))},
+        {"label": "First season", "value": _format_text(profile.get("first_season"))},
+        {"label": "Last season", "value": _format_text(profile.get("last_season"))},
+        {"label": "Latest team", "value": latest_snapshot["team"]},
+        {"label": "Franchises", "value": _format_number(profile.get("franchise_count", 0))},
+        {"label": "Leagues", "value": _format_number(profile.get("league_count", 0))},
+    ]
+
+    best_season_highlights = [
+        item for item in (
+            profile.get("best_hr_entry"),
+            profile.get("best_rbi_entry"),
+            profile.get("best_era_entry"),
+            profile.get("peak_salary_entry"),
+        )
+        if item
+    ]
+
+    batting_overview = [
+        {"label": "Games", "value": _format_number(profile["batting_summary"].get("games"))},
+        {"label": "At-bats", "value": _format_number(profile["batting_summary"].get("at_bats"))},
+        {"label": "Hits", "value": _format_number(profile["batting_summary"].get("hits"))},
+        {"label": "Home runs", "value": _format_number(profile["batting_summary"].get("home_runs"))},
+        {"label": "RBI", "value": _format_number(profile["batting_summary"].get("rbi"))},
+        {"label": "AVG", "value": _format_decimal(profile["batting_summary"].get("avg"))},
+        {"label": "OBP", "value": _format_decimal(profile["batting_summary"].get("obp"))},
+        {"label": "SLG", "value": _format_decimal(profile["batting_summary"].get("slg"))},
+        {"label": "OPS", "value": _format_decimal(profile["batting_summary"].get("ops"))},
+        {"label": "HR / season", "value": _format_decimal(profile["batting_summary"].get("hr_per_season"))},
+    ]
+
+    pitching_overview = [
+        {"label": "Pitching seasons", "value": _format_number(profile["pitching_summary"].get("seasons"))},
+        {"label": "Wins", "value": _format_number(profile["pitching_summary"].get("wins"))},
+        {"label": "Losses", "value": _format_number(profile["pitching_summary"].get("losses"))},
+        {"label": "Strikeouts", "value": _format_number(profile["pitching_summary"].get("strikeouts"))},
+        {"label": "Saves", "value": _format_number(profile["pitching_summary"].get("saves"))},
+        {"label": "ERA", "value": _format_decimal(profile["pitching_summary"].get("era"), digits=2)},
+        {"label": "Games started", "value": _format_number(profile["pitching_summary"].get("games_started"))},
+        {"label": "Innings pitched", "value": _format_ip_outs(profile["pitching_summary"].get("innings_outs"))},
+    ]
+
+    affiliation_panels = [
+        {"label": "Teams", "value": _format_number(profile.get("team_count", 0)), "detail": _summarize_values(profile.get("team_names", []), limit=5)},
+        {"label": "Franchises", "value": _format_number(profile.get("franchise_count", 0)), "detail": _summarize_values(profile.get("franchise_names", []), limit=5)},
+        {"label": "Leagues", "value": _format_number(profile.get("league_count", 0)), "detail": _summarize_values(profile.get("league_names", []), limit=5)},
+        {"label": "Latest season", "value": latest_snapshot["year"], "detail": latest_snapshot["team"]},
+    ]
+
+    recognition_items = []
+    for item in profile.get("recent_awards", []):
+        recognition_items.append({"label": item["label"], "value": item["value"], "detail": item.get("detail", "")})
+    if not recognition_items:
+        for item in profile.get("allstar_items", []):
+            recognition_items.append({"label": item["label"], "value": item["value"], "detail": ""})
+    if profile["hall_of_fame"].get("inducted"):
+        recognition_items.insert(0, {"label": "Hall of Fame", "value": "Inducted", "detail": str(profile["hall_of_fame"]["inducted_year"])})
+
+    return {
+        "latest_snapshot": latest_snapshot,
+        "identity_chips": identity_chips,
+        "spotlight_stats": spotlight_stats,
+        "bio_items": bio_items,
+        "best_season_highlights": best_season_highlights,
+        "batting_overview": batting_overview,
+        "pitching_overview": pitching_overview,
+        "affiliation_panels": affiliation_panels,
+        "recognition_items": recognition_items,
+    }
+
+
+def _build_player_list_querystring(params, **updates):
+    query = {key: value for key, value in params.items() if value not in (None, "", False)}
+    for key, value in updates.items():
+        if value in (None, "", False):
+            query.pop(key, None)
+        else:
+            query[key] = value
+    return urlencode(query)
 
 
 def _summarize_values(values, limit=4):
@@ -707,7 +1064,153 @@ def _build_compare_scoreboard(tabs):
 
 
 def players_view(request):
-    return render(request, "players.html")
+    letters = _alphabet()
+    filter_options = get_player_filter_options()
+    selected_letter = request.GET.get("letter", "").strip().upper()
+    search_term = request.GET.get("q", "").strip()
+    birth_country = request.GET.get("birth_country", "").strip()
+    bats = request.GET.get("bats", "").strip().upper()
+    throws = request.GET.get("throws", "").strip().upper()
+    debut_decade = request.GET.get("debut_decade", "").strip()
+    sort = request.GET.get("sort", "name_asc").strip()
+    has_photo = request.GET.get("has_photo") in {"1", "true", "on"}
+
+    try:
+        page = max(int(request.GET.get("page", "1")), 1)
+    except ValueError:
+        page = 1
+
+    if selected_letter and selected_letter not in letters:
+        selected_letter = ""
+    if birth_country and birth_country not in filter_options["countries"]:
+        birth_country = ""
+    if bats not in {"", "L", "R", "B"}:
+        bats = ""
+    if throws not in {"", "L", "R"}:
+        throws = ""
+    valid_decades = {str(decade) for decade in filter_options["debut_decades"]}
+    if debut_decade and debut_decade not in valid_decades:
+        debut_decade = ""
+    valid_sorts = {item["code"] for item in filter_options["sorts"]}
+    if sort not in valid_sorts:
+        sort = "name_asc"
+
+    page_size = 24
+    total_players = get_players_catalog_count(
+        selected_letter,
+        search_term,
+        birth_country,
+        bats,
+        throws,
+        debut_decade,
+        has_photo,
+    )
+    total_pages = max((total_players + page_size - 1) // page_size, 1)
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+
+    players = [
+        _build_player_card(player)
+        for player in get_players_catalog(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            has_photo,
+            sort,
+            page_size,
+            offset,
+        )
+    ]
+    players = _enrich_players_with_roster_context(players)
+    players = enrich_players_with_media(players)
+    page_numbers = list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
+    base_params = {
+        "q": search_term,
+        "letter": selected_letter,
+        "birth_country": birth_country,
+        "bats": bats,
+        "throws": throws,
+        "debut_decade": debut_decade,
+        "sort": sort,
+        "has_photo": "1" if has_photo else "",
+    }
+
+    active_filters = []
+    if search_term:
+        active_filters.append({"label": "Query", "value": search_term, "soft": True})
+    if selected_letter:
+        active_filters.append({"label": "Initial", "value": selected_letter})
+    if birth_country:
+        active_filters.append({"label": "Country", "value": birth_country})
+    if bats:
+        bats_name = next((item["name"] for item in filter_options["bats"] if item["code"] == bats), bats)
+        active_filters.append({"label": "Bats", "value": bats_name})
+    if throws:
+        throws_name = next((item["name"] for item in filter_options["throws"] if item["code"] == throws), throws)
+        active_filters.append({"label": "Throws", "value": throws_name})
+    if debut_decade:
+        active_filters.append({"label": "Debut era", "value": f"{debut_decade}s"})
+    if has_photo:
+        active_filters.append({"label": "Media", "value": "Photo available"})
+
+    context = {
+        "letters": letters,
+        "filter_options": filter_options,
+        "selected_letter": selected_letter,
+        "search_term": search_term,
+        "birth_country": birth_country,
+        "bats": bats,
+        "throws": throws,
+        "debut_decade": debut_decade,
+        "sort": sort,
+        "has_photo": has_photo,
+        "active_filters": active_filters,
+        "players": players,
+        "total_players": total_players,
+        "page": page,
+        "total_pages": total_pages,
+        "page_numbers": page_numbers,
+        "has_previous": page > 1,
+        "has_next": page < total_pages,
+        "previous_page": page - 1,
+        "next_page": page + 1,
+        "pagination_query": _build_player_list_querystring(base_params),
+        "page_query_builder": base_params,
+    }
+    return render(request, "players.html", context)
+
+
+def player_detail_view(request, player_id):
+    player = _build_compare_profile(player_id)
+    if not player:
+        raise Http404("Player not found")
+    player = attach_player_media(player)
+    detail_payload = _build_player_detail_payload(player)
+
+    context = {
+        "player": player,
+        **detail_payload,
+        "recent_salary_history": player["salary_history"][:10],
+        "recent_team_history": sorted(
+            player["team_history"],
+            key=lambda item: (item.get("year") or 0, item.get("team_name") or ""),
+            reverse=True,
+        )[:12],
+        "recent_batting_seasons": sorted(
+            player["batting_seasons_detail"],
+            key=lambda item: item.get("year") or 0,
+            reverse=True,
+        )[:8],
+        "recent_pitching_seasons": sorted(
+            player["pitching_seasons_detail"],
+            key=lambda item: item.get("year") or 0,
+            reverse=True,
+        )[:8],
+    }
+    return render(request, "player_detail.html", context)
 
 
 def compare_players_view(request):
