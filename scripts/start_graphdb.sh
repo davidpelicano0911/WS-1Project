@@ -98,7 +98,6 @@ EOF
 create_repository() {
   local config_file
   config_file="$(mktemp)"
-  trap 'rm -f "$config_file"' RETURN
 
   create_repo_config "$config_file"
 
@@ -107,6 +106,8 @@ create_repository() {
     "$GRAPHDB_URL/rest/repositories" \
     -H 'Content-Type: multipart/form-data' \
     -F "config=@$config_file" >/dev/null
+
+  rm -f "$config_file"
 }
 
 import_rdf() {

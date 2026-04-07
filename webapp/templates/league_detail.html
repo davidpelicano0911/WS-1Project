@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ league.name }}{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-trophy-fill"></i>
+                League
+            </span>
+            <h1 class="page-title">{{ league.name }}</h1>
+            <p class="section-copy mb-0">
+                Historical overview of the {{ league.code }} competition across the baseball archive.
+            </p>
+        </div>
+        <div class="button-row compact">
+            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">
+                All teams
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="hero-stat">
+                <span class="hero-stat-value">{{ league.code }}</span>
+                <span class="hero-stat-label">League Code</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="hero-stat">
+                <span class="hero-stat-value">{{ league.team_seasons }}</span>
+                <span class="hero-stat-label">Team Seasons</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="hero-stat">
+                <span class="hero-stat-value">{{ league.franchises }}</span>
+                <span class="hero-stat-label">Franchises</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="hero-stat">
+                <span class="hero-stat-value">{{ league.first_year }} - {{ league.last_year }}</span>
+                <span class="hero-stat-label">Year Range</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="data-panel">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-shield-fill"></i>
+                Teams
+            </span>
+            <h2 class="page-title mb-0">Teams In {{ league.code }}</h2>
+        </div>
+    </div>
+
+    {% if teams %}
+        <div class="table-responsive">
+            <table class="table table-app align-middle">
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Franchise</th>
+                        <th>Seasons</th>
+                        <th>First Year</th>
+                        <th>Last Year</th>
+                        <th>Park</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team in teams %}
+                        <tr>
+                            <td class="table-highlight">{{ team.name }}</td>
+                            <td>{{ team.franchise|default:"-" }}</td>
+                            <td>{{ team.seasons }}</td>
+                            <td>{{ team.first_year }}</td>
+                            <td>{{ team.last_year }}</td>
+                            <td>{{ team.park|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            No team history available for this league.
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -64,6 +64,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'baseball.context_processors.header_teams',
+                'baseball.context_processors.header_leagues',
             ],
         },
     },
