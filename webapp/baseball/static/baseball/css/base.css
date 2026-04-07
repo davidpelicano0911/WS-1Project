@@ -243,6 +243,72 @@ a {
     margin-bottom: 1.5rem;
 }
 
+.panel-help {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.panel-help-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: 1px solid rgba(136, 174, 232, 0.18);
+    border-radius: 999px;
+    background: rgba(17, 52, 98, 0.22);
+    color: #dce8ff;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.panel-help-trigger:hover,
+.panel-help:focus-within .panel-help-trigger {
+    transform: translateY(-1px);
+    background: rgba(29, 79, 145, 0.36);
+    border-color: rgba(136, 174, 232, 0.28);
+}
+
+.panel-help-tooltip {
+    position: absolute;
+    top: calc(100% + 0.65rem);
+    right: 0;
+    z-index: 20;
+    width: min(320px, 70vw);
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    background: rgba(7, 20, 43, 0.96);
+    border: 1px solid rgba(136, 174, 232, 0.14);
+    box-shadow: 0 20px 50px rgba(3, 11, 24, 0.42);
+    color: #dbe7ff;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+
+.panel-help-tooltip::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 16px;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    background: rgba(7, 20, 43, 0.96);
+    border-top: 1px solid rgba(136, 174, 232, 0.14);
+    border-left: 1px solid rgba(136, 174, 232, 0.14);
+}
+
+.panel-help:hover .panel-help-tooltip,
+.panel-help:focus-within .panel-help-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
 .page-title {
     margin: 0.6rem 0 0.5rem;
     font-family: "Montserrat", sans-serif;
@@ -276,6 +342,38 @@ a {
 
 .btn-app:hover {
     transform: translateY(-2px);
+}
+
+.registry-count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.9rem;
+    height: 1.9rem;
+    padding: 0 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 0.84rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.registry-filter-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.8fr) auto;
+    gap: 1rem;
+    align-items: end;
+    padding: 1rem;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(136, 174, 232, 0.1);
+}
+
+.registry-filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
 }
 
 .btn-primary-app {
@@ -888,6 +986,181 @@ a {
     margin-top: 0.35rem;
     color: var(--text-muted);
     font-size: 0.86rem;
+}
+
+.league-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.league-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.35rem;
+    height: 2.35rem;
+    padding: 0 0.7rem;
+    border-radius: 999px;
+    background: rgba(244, 197, 66, 0.14);
+    border: 1px solid rgba(244, 197, 66, 0.18);
+    color: #ffe7a2;
+    font-size: 0.9rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.recent-postseason-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.recent-postseason-card {
+    position: relative;
+    overflow: hidden;
+    padding: 1.15rem;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at top right, rgba(244, 197, 66, 0.18), transparent 32%),
+        linear-gradient(180deg, rgba(15, 44, 86, 0.98), rgba(8, 25, 52, 0.98));
+    border: 1px solid rgba(136, 174, 232, 0.14);
+    box-shadow: 0 18px 36px rgba(5, 16, 33, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.recent-postseason-card::after {
+    content: "";
+    position: absolute;
+    inset: auto -20% -35% auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(44, 116, 229, 0.14), transparent 68%);
+    pointer-events: none;
+}
+
+.recent-postseason-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 42px rgba(5, 16, 33, 0.34);
+    border-color: rgba(244, 197, 66, 0.18);
+}
+
+.recent-postseason-topline,
+.recent-postseason-scorebar,
+.recent-postseason-teamstack {
+    position: relative;
+    z-index: 1;
+}
+
+.recent-postseason-topline,
+.recent-postseason-scorebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.recent-postseason-year,
+.recent-postseason-round,
+.recent-postseason-score,
+.recent-postseason-result {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.recent-postseason-year {
+    min-width: 4.2rem;
+    padding: 0.5rem 0.8rem;
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf4ff;
+    font-size: 0.88rem;
+}
+
+.recent-postseason-round {
+    padding: 0.5rem 0.8rem;
+    background: rgba(44, 116, 229, 0.16);
+    border: 1px solid rgba(136, 174, 232, 0.16);
+    color: #dbe7ff;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.recent-postseason-scorebar {
+    margin-top: 1rem;
+}
+
+.recent-postseason-score {
+    padding: 0.68rem 0.92rem;
+    background: linear-gradient(135deg, rgba(244, 197, 66, 0.18), rgba(244, 197, 66, 0.08));
+    border: 1px solid rgba(244, 197, 66, 0.18);
+    color: #ffe7a2;
+    font-size: 1rem;
+}
+
+.recent-postseason-result {
+    padding: 0.68rem 0.92rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: #9fb6d9;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.recent-postseason-teamstack {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.9rem;
+    align-items: stretch;
+    margin-top: 1rem;
+}
+
+.recent-postseason-team {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(136, 174, 232, 0.1);
+    min-height: 100%;
+}
+
+.recent-postseason-team.winner {
+    background: linear-gradient(180deg, rgba(244, 197, 66, 0.12), rgba(255, 255, 255, 0.05));
+    border-color: rgba(244, 197, 66, 0.16);
+}
+
+.recent-postseason-team-label {
+    color: #9fb6d9;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.recent-postseason-team-name {
+    font-size: 1.02rem;
+    line-height: 1.35;
+    color: #edf4ff;
+}
+
+.recent-postseason-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    color: #9fb6d9;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .compare-best-duel {

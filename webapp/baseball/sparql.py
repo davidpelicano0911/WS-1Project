@@ -1203,7 +1203,7 @@ def get_teams_by_league(league_code):
     query = f"""
     PREFIX bb: <http://baseball.ws.pt/>
 
-    SELECT ?teamName ?franchise ?park
+    SELECT ?teamName ?franchise (SAMPLE(?park) AS ?park)
            (COUNT(DISTINCT ?year) AS ?seasons)
            (MIN(?year) AS ?firstYear)
            (MAX(?year) AS ?lastYear)
@@ -1216,7 +1216,7 @@ def get_teams_by_league(league_code):
         OPTIONAL {{ ?team bb:franchID ?franchise . }}
         OPTIONAL {{ ?team bb:park ?park . }}
     }}
-    GROUP BY ?teamName ?franchise ?park
+    GROUP BY ?teamName ?franchise
     ORDER BY ?teamName ?firstYear
     """
 

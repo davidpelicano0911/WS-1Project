@@ -8,60 +8,106 @@
         <div>
             <span class="eyebrow">
                 <i class="bi bi-trophy-fill"></i>
-                League
+                League profile
             </span>
             <h1 class="page-title">{{ league.name }}</h1>
             <p class="section-copy mb-0">
-                Historical overview of the {{ league.code }} competition across the baseball archive.
+                Historical view of {{ league.name }} across {{ league.first_year }} to {{ league.last_year }}, combining club presence and postseason outcomes from the baseball archive.
             </p>
         </div>
         <div class="button-row compact">
-            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">
-                All teams
-            </a>
+            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">All teams</a>
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-md-3">
-            <div class="hero-stat">
-                <span class="hero-stat-value">{{ league.code }}</span>
-                <span class="hero-stat-label">League Code</span>
-            </div>
+    <div class="hero-stat-grid">
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ league.code }}</span>
+            <span class="hero-stat-label">League Code</span>
         </div>
-        <div class="col-md-3">
-            <div class="hero-stat">
-                <span class="hero-stat-value">{{ league.team_seasons }}</span>
-                <span class="hero-stat-label">Team Seasons</span>
-            </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ league.team_seasons }}</span>
+            <span class="hero-stat-label">Team Seasons</span>
         </div>
-        <div class="col-md-3">
-            <div class="hero-stat">
-                <span class="hero-stat-value">{{ league.franchises }}</span>
-                <span class="hero-stat-label">Franchises</span>
-            </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ league.franchises }}</span>
+            <span class="hero-stat-label">Franchises</span>
         </div>
-        <div class="col-md-3">
-            <div class="hero-stat">
-                <span class="hero-stat-value">{{ league.first_year }} - {{ league.last_year }}</span>
-                <span class="hero-stat-label">Year Range</span>
-            </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ league.seasons }}</span>
+            <span class="hero-stat-label">Documented Seasons</span>
         </div>
     </div>
 </section>
 
-<section class="data-panel">
+<section class="data-panel mb-4" id="league-registry">
     <div class="page-header">
         <div>
             <span class="eyebrow">
-                <i class="bi bi-shield-fill"></i>
-                Teams
+                <i class="bi bi-table"></i>
+                Full registry
             </span>
-            <h2 class="page-title mb-0">Teams In {{ league.code }}</h2>
+            <h2 class="feature-title h4 mb-0">All teams in {{ league.name }}</h2>
+            <p class="hint-app mb-0 mt-2">
+                {% if registry_mode == "periods" %}
+                    Viewing distinct historical periods and repeated club names where the archive separates them.
+                {% else %}
+                    Viewing unique club names consolidated across the league timeline.
+                {% endif %}
+            </p>
+        </div>
+        <div class="panel-help" tabindex="0">
+            <button type="button" class="panel-help-trigger" aria-label="Explain full registry">
+                <i class="bi bi-info-circle"></i>
+            </button>
+            <div class="panel-help-tooltip">
+                Use Unique clubs for one row per club name, or Historical periods to inspect repeated entries and separated time spans from the archive.
+            </div>
         </div>
     </div>
 
-    {% if teams %}
+    <div class="button-row compact mb-3">
+        <a href="{% url 'league_detail' league.code %}?registry=clubs#league-registry" class="btn-app {% if registry_mode == 'clubs' %}btn-primary-app{% else %}btn-secondary-app{% endif %}">
+            Unique clubs
+            <span class="registry-count-pill">{{ registry_club_count }}</span>
+        </a>
+        <a href="{% url 'league_detail' league.code %}?registry=periods#league-registry" class="btn-app {% if registry_mode == 'periods' %}btn-primary-app{% else %}btn-secondary-app{% endif %}">
+            Historical periods
+            <span class="registry-count-pill">{{ registry_period_count }}</span>
+        </a>
+    </div>
+
+    {% if registry_mode == "periods" %}
+        <form method="get" action="{% url 'league_detail' league.code %}#league-registry" class="registry-filter-bar mb-3">
+            <input type="hidden" name="registry" value="periods">
+            <div>
+                <label class="form-label-app" for="registry-team">Team search</label>
+                <input
+                    id="registry-team"
+                    type="text"
+                    name="team"
+                    value="{{ registry_search }}"
+                    class="input-app"
+                    placeholder="Search by historical team name"
+                >
+            </div>
+            <div>
+                <label class="form-label-app" for="registry-franchise">Franchise</label>
+                <select id="registry-franchise" name="franchise" class="input-app select-app">
+                    <option value="">All franchises</option>
+                    {% for franchise_code in registry_franchises %}
+                        <option value="{{ franchise_code }}" {% if registry_franchise == franchise_code %}selected{% endif %}>{{ franchise_code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="registry-filter-actions">
+                <button type="submit" class="btn-app btn-primary-app">Apply filters</button>
+                <a href="{% url 'league_detail' league.code %}?registry=periods#league-registry" class="btn-app btn-secondary-app">Reset</a>
+            </div>
+        </form>
+    {% endif %}
+
+    {% if registry_teams %}
         <div class="table-responsive">
             <table class="table table-app align-middle">
                 <thead>
@@ -75,7 +121,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for team in teams %}
+                    {% for team in registry_teams %}
                         <tr>
                             <td class="table-highlight">{{ team.name }}</td>
                             <td>{{ team.franchise|default:"-" }}</td>
@@ -96,114 +142,253 @@
     {% endif %}
 </section>
 
-<section class="data-panel mt-5">
-    <div class="page-header mb-4">
+<section class="compare-grid mb-4">
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-diagram-3-fill"></i>
+                    Competition overview
+                </span>
+                <h2 class="feature-title h4 mb-0">League snapshot</h2>
+            </div>
+            <div class="panel-help" tabindex="0">
+                <button type="button" class="panel-help-trigger" aria-label="Explain league snapshot">
+                    <i class="bi bi-info-circle"></i>
+                </button>
+                <div class="panel-help-tooltip">
+                    These tiles summarize the league at a glance: historical range, number of parks, World Series record and internal playoff outcomes found in the dataset.
+                </div>
+            </div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-tile">
+                <span class="stat-label">Year range</span>
+                <span class="stat-value">{{ league.first_year }} - {{ league.last_year }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Distinct parks</span>
+                <span class="stat-value">{{ park_count }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">World Series titles</span>
+                <span class="stat-value">{{ world_series_titles }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">World Series runner-up</span>
+                <span class="stat-value">{{ world_series_runner_up }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">League playoff wins</span>
+                <span class="stat-value">{{ playoff_titles }}</span>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">League playoff losses</span>
+                <span class="stat-value">{{ playoff_runner_up }}</span>
+            </div>
+        </div>
+    </article>
+
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    Venue footprint
+                </span>
+                <h2 class="feature-title h4 mb-0">Parks in the record</h2>
+            </div>
+            <div class="panel-help" tabindex="0">
+                <button type="button" class="panel-help-trigger" aria-label="Explain parks in the record">
+                    <i class="bi bi-info-circle"></i>
+                </button>
+                <div class="panel-help-tooltip">
+                    This list highlights distinct parks associated with teams from this league. It is a quick venue footprint, not a complete stadium chronology.
+                </div>
+            </div>
+        </div>
+        {% if parks %}
+            <div class="compare-aside-list">
+                {% for park in parks|slice:":8" %}
+                    <div class="compare-aside-item">
+                        <strong class="compare-aside-value">{{ park }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="hint-app mb-0">No park data available for this league.</p>
+        {% endif %}
+    </article>
+</section>
+
+<section class="data-panel mb-4">
+    <div class="page-header">
         <div>
             <span class="eyebrow">
-                <i class="bi bi-star-fill text-warning"></i>
-                Postseason
+                <i class="bi bi-shield-fill"></i>
+                Clubs
             </span>
-            <h2 class="page-title mb-0">Series Results ({{ league.code }})</h2>
+            <h2 class="feature-title h4 mb-0">Most persistent teams</h2>
+        </div>
+        <div class="panel-help" tabindex="0">
+            <button type="button" class="panel-help-trigger" aria-label="Explain most persistent teams">
+                <i class="bi bi-info-circle"></i>
+            </button>
+            <div class="panel-help-tooltip">
+                These cards rank the clubs with the longest presence in this league after historical periods are merged by team name. Each card shows total seasons, span and a representative park.
+            </div>
         </div>
     </div>
 
-    {% if world_series or playoffs %}
-        {# --- SECÇÃO 1: WORLD SERIES (A Grande Final Inter-Ligas) --- #}
-        {% if world_series %}
-            <h3 class="h5 fw-bold mb-3 text-uppercase" style="letter-spacing: 1px; color: #a1a1a1;">
-                <i class="bi bi-globe2 me-2"></i>World Series Appearances
-            </h3>
-            <div class="row g-4 mb-5">
-                {% for series in world_series %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="feature-card h-100 border-warning" style="border-left: 4px solid #ffc107;">
-                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                <span class="badge bg-dark fw-bold px-3 py-2">{{ series.year }} | {{ series.round|default:"WS" }}</span>
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-success" title="Wins">{{ series.wins }} W</span>
-                                    <span class="badge bg-danger" title="Losses">{{ series.losses }} L</span>
-                                    {% if series.ties > 0 %}
-                                        <span class="badge bg-secondary" title="Ties">{{ series.ties }} T</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-bold text-success"><i class="bi bi-trophy-fill me-1"></i> Winner</span>
-                                    <div class="text-end">
-                                        <span class="fw-bold d-block">{{ series.winner_team_name }}</span>
-                                        {% if series.winner_league != league.code %}
-                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ series.winner_league }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted"><i class="bi bi-x-circle me-1"></i> Loser</span>
-                                    <div class="text-end">
-                                        <span class="text-secondary d-block">{{ series.loser_team_name }}</span>
-                                        {% if series.loser_league != league.code %}
-                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ series.loser_league }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+    {% if featured_teams %}
+        <div class="compare-best-grid">
+            {% for team in featured_teams %}
+                <article class="feature-card">
+                    <div class="league-card-topline">
+                        <span class="compare-aside-label">{{ team.franchise|default:"No franchise tag" }}</span>
+                        <span class="league-rank-badge">#{{ team.rank }}</span>
+                    </div>
+                    <h3 class="feature-title h5 mt-3 mb-1">{{ team.name }}</h3>
+                    <p class="muted-copy mb-3">{{ team.presence_label }}</p>
+                    <div class="stat-grid">
+                        <div class="stat-tile">
+                            <span class="stat-label">Seasons</span>
+                            <span class="stat-value">{{ team.seasons }}</span>
+                        </div>
+                        <div class="stat-tile">
+                            <span class="stat-label">Range</span>
+                            <span class="stat-value">{{ team.first_year }} - {{ team.last_year }}</span>
                         </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        {# --- SECÇÃO 2: LEAGUE PLAYOFFS (Competição Interna) --- #}
-        {% if playoffs %}
-            <h3 class="h5 fw-bold mb-3 text-uppercase" style="letter-spacing: 1px; color: #a1a1a1;">
-                <i class="bi bi-trophy-fill me-2"></i>{{ league.code }} Playoffs
-            </h3>
-            <div class="row g-4 mb-5">
-                {% for series in playoffs %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="feature-card h-100">
-                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                <span class="badge bg-dark fw-bold px-3 py-2">{{ series.year }} | {{ series.round|default:"WS" }}</span>
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-success" title="Wins">{{ series.wins }} W</span>
-                                    <span class="badge bg-danger" title="Losses">{{ series.losses }} L</span>
-                                    {% if series.ties > 0 %}
-                                        <span class="badge bg-secondary" title="Ties">{{ series.ties }} T</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-bold text-success"><i class="bi bi-trophy-fill me-1"></i> Winner</span>
-                                    <div class="text-end">
-                                        <span class="fw-bold d-block">{{ series.winner_team_name }}</span>
-                                        {% if series.winner_league != league.code %}
-                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ series.winner_league }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted"><i class="bi bi-x-circle me-1"></i> Loser</span>
-                                    <div class="text-end">
-                                        <span class="text-secondary d-block">{{ series.loser_team_name }}</span>
-                                        {% if series.loser_league != league.code %}
-                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ series.loser_league }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="compare-aside-list mt-3">
+                        <div class="compare-aside-item">
+                            <span class="compare-aside-label">League share</span>
+                            <strong class="compare-aside-value">{{ team.league_share }}%</strong>
+                            <span class="compare-aside-detail">{{ team.era_ratio }}% of the documented league span</span>
+                        </div>
+                        <div class="compare-aside-item">
+                            <span class="compare-aside-label">Historical run</span>
+                            <strong class="compare-aside-value">{{ team.active_years }} calendar years</strong>
+                            <span class="compare-aside-detail">{{ team.recent_flag }}</span>
                         </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+                    <p class="muted-copy mb-0 mt-3">
+                        {% if team.park %}Representative park: <strong>{{ team.park }}</strong>{% else %}No park recorded for this team history.{% endif %}
+                    </p>
+                </article>
+            {% endfor %}
+        </div>
     {% else %}
         <div class="empty-state">
-            <i class="bi bi-journal-x"></i>
-            No championship records available for teams in this league.
+            <i class="bi bi-inbox"></i>
+            No team history available for this league.
         </div>
     {% endif %}
+</section>
+
+<section class="compare-grid mb-4">
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-list-stars"></i>
+                    Round mix
+                </span>
+                <h2 class="feature-title h4 mb-0">Playoff round breakdown</h2>
+            </div>
+            <div class="panel-help" tabindex="0">
+                <button type="button" class="panel-help-trigger" aria-label="Explain playoff round breakdown">
+                    <i class="bi bi-info-circle"></i>
+                </button>
+                <div class="panel-help-tooltip">
+                    Each item summarizes one postseason round code: how many series exist, the time range covered, total games played and the latest recorded winner for that round.
+                </div>
+            </div>
+        </div>
+
+        {% if round_breakdown %}
+            <div class="compare-aside-list">
+                {% for round in round_breakdown %}
+                    <div class="compare-aside-item">
+                        <span class="compare-aside-label">{{ round.round }}</span>
+                        <strong class="compare-aside-value">{{ round.round_label }}</strong>
+                        <span class="compare-aside-detail">
+                            {{ round.series_count }} series
+                            {% if round.first_year and round.last_year %} · {{ round.first_year }}-{{ round.last_year }}{% endif %}
+                            · {{ round.total_games }} total games
+                        </span>
+                        <span class="compare-aside-detail">
+                            {% if round.internal_series %}
+                                {{ round.internal_series }} internal {{ league.code }} matchup{{ round.internal_series|pluralize }}
+                            {% endif %}
+                            {% if round.cross_league_series %}
+                                {% if round.internal_series %} · {% endif %}
+                                {{ round.cross_league_series }} cross-league tie{{ round.cross_league_series|pluralize:"s" }}
+                            {% endif %}
+                        </span>
+                        {% if round.latest_winner %}
+                            <span class="compare-aside-detail">
+                                Latest winner: {{ round.latest_winner }}{% if round.latest_loser %} over {{ round.latest_loser }}{% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="hint-app mb-0">No internal playoff rounds recorded for this league.</p>
+        {% endif %}
+    </article>
+
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-clock-history"></i>
+                    Recent results
+                </span>
+                <h2 class="feature-title h4 mb-0">Latest postseason timeline</h2>
+            </div>
+            <div class="panel-help" tabindex="0">
+                <button type="button" class="panel-help-trigger" aria-label="Explain latest postseason timeline">
+                    <i class="bi bi-info-circle"></i>
+                </button>
+                <div class="panel-help-tooltip">
+                    This feed shows the latest postseason series linked to the league, including round, winner, loser and the recorded series score when available.
+                </div>
+            </div>
+        </div>
+
+        {% if recent_series %}
+            <div class="recent-postseason-grid">
+                {% for series in recent_series %}
+                    <article class="recent-postseason-card">
+                        <div class="recent-postseason-topline">
+                            <span class="recent-postseason-year">{{ series.year }}</span>
+                            <span class="recent-postseason-round">{{ series.round_label }}</span>
+                        </div>
+                        <div class="recent-postseason-scorebar">
+                            <span class="recent-postseason-score">{{ series.scoreline }}</span>
+                            <span class="recent-postseason-result">{{ series.winner_result }}</span>
+                        </div>
+                        <div class="recent-postseason-teamstack">
+                            <div class="recent-postseason-team winner">
+                                <span class="recent-postseason-team-label">Winner</span>
+                                <strong class="recent-postseason-team-name">{{ series.winner_team_name }}</strong>
+                            </div>
+                            <div class="recent-postseason-divider">
+                                <span>vs</span>
+                            </div>
+                            <div class="recent-postseason-team">
+                                <span class="recent-postseason-team-label">Runner-up</span>
+                                <strong class="recent-postseason-team-name">{{ series.loser_team_name }}</strong>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="hint-app mb-0">No postseason series available.</p>
+        {% endif %}
+    </article>
 </section>
 {% endblock %}

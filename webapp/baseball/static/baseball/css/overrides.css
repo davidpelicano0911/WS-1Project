@@ -302,6 +302,15 @@
         align-items: flex-start;
     }
 
+    .panel-help {
+        align-self: flex-end;
+    }
+
+    .panel-help-tooltip {
+        right: 0;
+        width: min(300px, calc(100vw - 3rem));
+    }
+
     .hero-stat-grid {
         grid-template-columns: 1fr;
     }
@@ -365,6 +374,26 @@
     .compare-best-grid,
     .compare-best-duel {
         grid-template-columns: 1fr;
+    }
+
+    .recent-postseason-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .recent-postseason-teamstack {
+        grid-template-columns: 1fr;
+    }
+
+    .recent-postseason-divider {
+        min-height: 1rem;
+    }
+
+    .registry-filter-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .registry-filter-actions .btn-app {
+        width: 100%;
     }
 
     .compare-tab-bar {
