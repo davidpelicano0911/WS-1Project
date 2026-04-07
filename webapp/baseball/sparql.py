@@ -120,6 +120,293 @@ def get_player_options_by_initial(initial):
 def escape_sparql_string(value):
     return str(value).replace("\\", "\\\\").replace('"', '\\"')
 
+
+PLAYER_SORTS = {
+    "name_asc": "ORDER BY ?name ?playerID",
+    "name_desc": "ORDER BY DESC(?name) DESC(?playerID)",
+    "debut_desc": "ORDER BY DESC(?debut) ?name ?playerID",
+    "birth_year_desc": "ORDER BY DESC(?birthYear) ?name ?playerID",
+}
+
+
+def _player_catalog_filters(
+    letter="",
+    search_term="",
+    birth_country="",
+    bats="",
+    throws="",
+    debut_decade="",
+    has_photo=False,
+):
+    filters = []
+
+    if letter:
+        safe_letter = escape_sparql_string(str(letter).strip().upper())
+        if len(safe_letter) == 1 and safe_letter.isalpha():
+            filters.append(f'FILTER(STRSTARTS(UCASE(STR(?name)), "{safe_letter}"))')
+
+    if search_term:
+        safe_search = escape_sparql_string(str(search_term).strip().lower())
+        if safe_search:
+            filters.append(f'FILTER(CONTAINS(LCASE(STR(?searchBlob)), "{safe_search}"))')
+
+    if birth_country:
+        safe_country = escape_sparql_string(str(birth_country).strip())
+        if safe_country:
+            filters.append(f'FILTER(?birthCountry = "{safe_country}")')
+
+    if bats:
+        safe_bats = escape_sparql_string(str(bats).strip().upper())
+        if safe_bats in {"L", "R", "B"}:
+            filters.append(f'FILTER(?bats = "{safe_bats}")')
+
+    if throws:
+        safe_throws = escape_sparql_string(str(throws).strip().upper())
+        if safe_throws in {"L", "R"}:
+            filters.append(f'FILTER(?throws = "{safe_throws}")')
+
+    if debut_decade:
+        try:
+            decade = int(str(debut_decade).strip())
+            filters.append(
+                f'FILTER(?debut >= "{decade}-01-01"^^<http://www.w3.org/2001/XMLSchema#date> && '
+                f'?debut < "{decade + 10}-01-01"^^<http://www.w3.org/2001/XMLSchema#date>)'
+            )
+        except ValueError:
+            pass
+
+    if has_photo:
+        filters.append('FILTER(STRLEN(STR(?bbrefID)) > 0)')
+
+    return "\n        ".join(filters)
+
+
+@lru_cache(maxsize=256)
+def get_players_catalog_count(
+    letter="",
+    search_term="",
+    birth_country="",
+    bats="",
+    throws="",
+    debut_decade="",
+    has_photo=False,
+):
+    filters = _player_catalog_filters(
+        letter,
+        search_term,
+        birth_country,
+        bats,
+        throws,
+        debut_decade,
+        has_photo,
+    )
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+    SELECT (COUNT(DISTINCT ?player) AS ?total)
+    WHERE {{
+        ?player a bb:Player ;
+                bb:playerID ?playerID ;
+                foaf:name ?name .
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
+        OPTIONAL {{ ?player bb:bbrefID ?bbrefID . }}
+        OPTIONAL {{ ?player bb:birthCountry ?birthCountry . }}
+        OPTIONAL {{ ?player bb:bats ?bats . }}
+        OPTIONAL {{ ?player bb:throws ?throws . }}
+        OPTIONAL {{ ?player bb:debut ?debut . }}
+        BIND(
+            CONCAT(
+                LCASE(COALESCE(STR(?name), "")), " ",
+                LCASE(COALESCE(STR(?nameFirst), "")), " ",
+                LCASE(COALESCE(STR(?nameLast), "")), " ",
+                LCASE(COALESCE(STR(?nameGiven), ""))
+            ) AS ?searchBlob
+        )
+        {filters}
+    }}
+    """
+
+    results = run_query(query)
+    if not results:
+        return 0
+    return _row_int(results[0], "total", 0)
+
+
+@lru_cache(maxsize=256)
+def get_players_catalog(
+    letter="",
+    search_term="",
+    birth_country="",
+    bats="",
+    throws="",
+    debut_decade="",
+    has_photo=False,
+    sort="name_asc",
+    limit=24,
+    offset=0,
+):
+    limit = max(int(limit), 1)
+    offset = max(int(offset), 0)
+    filters = _player_catalog_filters(
+        letter,
+        search_term,
+        birth_country,
+        bats,
+        throws,
+        debut_decade,
+        has_photo,
+    )
+    sort_clause = PLAYER_SORTS.get(sort, PLAYER_SORTS["name_asc"])
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+    SELECT ?playerID ?bbrefID ?name ?nameFirst ?nameLast ?nameGiven
+           ?birthYear ?birthMonth ?birthDay ?birthCountry ?birthState ?birthCity
+           ?deathYear ?deathMonth ?deathDay ?deathCountry ?deathState ?deathCity
+           ?height ?weight ?bats ?throws ?debut ?finalGame
+    WHERE {{
+        ?player a bb:Player ;
+                bb:playerID ?playerID ;
+                foaf:name ?name .
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
+        OPTIONAL {{ ?player bb:bbrefID ?bbrefID . }}
+        OPTIONAL {{ ?player bb:birthYear ?birthYear . }}
+        OPTIONAL {{ ?player bb:birthMonth ?birthMonth . }}
+        OPTIONAL {{ ?player bb:birthDay ?birthDay . }}
+        OPTIONAL {{ ?player bb:birthCountry ?birthCountry . }}
+        OPTIONAL {{ ?player bb:birthState ?birthState . }}
+        OPTIONAL {{ ?player bb:birthCity ?birthCity . }}
+        OPTIONAL {{ ?player bb:deathYear ?deathYear . }}
+        OPTIONAL {{ ?player bb:deathMonth ?deathMonth . }}
+        OPTIONAL {{ ?player bb:deathDay ?deathDay . }}
+        OPTIONAL {{ ?player bb:deathCountry ?deathCountry . }}
+        OPTIONAL {{ ?player bb:deathState ?deathState . }}
+        OPTIONAL {{ ?player bb:deathCity ?deathCity . }}
+        OPTIONAL {{ ?player bb:height ?height . }}
+        OPTIONAL {{ ?player bb:weight ?weight . }}
+        OPTIONAL {{ ?player bb:bats ?bats . }}
+        OPTIONAL {{ ?player bb:throws ?throws . }}
+        OPTIONAL {{ ?player bb:debut ?debut . }}
+        OPTIONAL {{ ?player bb:finalGame ?finalGame . }}
+        BIND(
+            CONCAT(
+                LCASE(COALESCE(STR(?name), "")), " ",
+                LCASE(COALESCE(STR(?nameFirst), "")), " ",
+                LCASE(COALESCE(STR(?nameLast), "")), " ",
+                LCASE(COALESCE(STR(?nameGiven), ""))
+            ) AS ?searchBlob
+        )
+        {filters}
+    }}
+    {sort_clause}
+    LIMIT {limit}
+    OFFSET {offset}
+    """
+
+    players = []
+    for row in run_query(query):
+        first_name = _row_value(row, "nameFirst", "")
+        last_name = _row_value(row, "nameLast", "")
+        given_name = _row_value(row, "nameGiven", "")
+        base_name = _row_value(row, "name", "Unknown Player")
+        full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+        display_name = full_name or given_name or base_name
+
+        players.append({
+            "player_id": _row_value(row, "playerID", ""),
+            "bbref_id": _row_value(row, "bbrefID", ""),
+            "name": display_name,
+            "name_first": first_name,
+            "name_last": last_name,
+            "name_given": given_name,
+            "birth_year": _row_value(row, "birthYear", ""),
+            "birth_month": _row_value(row, "birthMonth", ""),
+            "birth_day": _row_value(row, "birthDay", ""),
+            "birth_country": _row_value(row, "birthCountry", ""),
+            "birth_state": _row_value(row, "birthState", ""),
+            "birth_city": _row_value(row, "birthCity", ""),
+            "death_year": _row_value(row, "deathYear", ""),
+            "death_month": _row_value(row, "deathMonth", ""),
+            "death_day": _row_value(row, "deathDay", ""),
+            "death_country": _row_value(row, "deathCountry", ""),
+            "death_state": _row_value(row, "deathState", ""),
+            "death_city": _row_value(row, "deathCity", ""),
+            "height": _row_value(row, "height", ""),
+            "weight": _row_value(row, "weight", ""),
+            "bats": _row_value(row, "bats", ""),
+            "throws": _row_value(row, "throws", ""),
+            "debut": _row_value(row, "debut", ""),
+            "final_game": _row_value(row, "finalGame", ""),
+        })
+    return players
+
+
+@lru_cache(maxsize=1)
+def get_player_filter_options():
+    country_query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT DISTINCT ?birthCountry
+    WHERE {
+        ?player a bb:Player ;
+                bb:birthCountry ?birthCountry .
+        FILTER(STRLEN(STR(?birthCountry)) > 0)
+    }
+    ORDER BY ?birthCountry
+    """
+
+    decade_query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT DISTINCT ?debut
+    WHERE {
+        ?player a bb:Player ;
+                bb:debut ?debut .
+    }
+    ORDER BY ?debut
+    """
+
+    countries = [_row_value(row, "birthCountry", "") for row in run_query(country_query)]
+    decades = []
+    seen = set()
+    for row in run_query(decade_query):
+        debut = _row_value(row, "debut", "")
+        try:
+            year = int(str(debut)[:4])
+        except (TypeError, ValueError):
+            continue
+        decade = year - (year % 10)
+        if decade not in seen:
+            seen.add(decade)
+            decades.append(decade)
+
+    return {
+        "countries": [country for country in countries if country],
+        "debut_decades": sorted(decades, reverse=True),
+        "bats": [
+            {"code": "R", "name": "Right"},
+            {"code": "L", "name": "Left"},
+            {"code": "B", "name": "Switch"},
+        ],
+        "throws": [
+            {"code": "R", "name": "Right"},
+            {"code": "L", "name": "Left"},
+        ],
+        "sorts": [
+            {"code": "name_asc", "name": "Name A-Z"},
+            {"code": "name_desc", "name": "Name Z-A"},
+            {"code": "debut_desc", "name": "Latest debut"},
+            {"code": "birth_year_desc", "name": "Youngest first"},
+        ],
+    }
+
 @lru_cache(maxsize=1024)
 def get_player_summary(player_id):
     player_id = _normalize_player_id(player_id)
@@ -130,15 +417,30 @@ def get_player_summary(player_id):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?name ?playerID ?birthYear ?birthCountry ?height ?weight ?bats ?throws ?debut ?finalGame ?awardsCount ?maxSalary ?careerHomeRuns ?careerRBI ?battingSeasons
+    SELECT ?name ?playerID ?bbrefID
+           ?birthYear ?birthMonth ?birthDay ?birthCountry ?birthState ?birthCity
+           ?deathYear ?deathMonth ?deathDay ?deathCountry ?deathState ?deathCity
+           ?height ?weight ?bats ?throws ?debut ?finalGame
+           ?awardsCount ?maxSalary ?careerHomeRuns ?careerRBI ?battingSeasons
     WHERE {{
         ?player a bb:Player ;
                 foaf:name ?name ;
                 bb:playerID ?playerID .
         FILTER(?playerID = "{player_id}")
 
+        OPTIONAL {{ ?player bb:bbrefID ?bbrefID . }}
         OPTIONAL {{ ?player bb:birthYear ?birthYear . }}
+        OPTIONAL {{ ?player bb:birthMonth ?birthMonth . }}
+        OPTIONAL {{ ?player bb:birthDay ?birthDay . }}
         OPTIONAL {{ ?player bb:birthCountry ?birthCountry . }}
+        OPTIONAL {{ ?player bb:birthState ?birthState . }}
+        OPTIONAL {{ ?player bb:birthCity ?birthCity . }}
+        OPTIONAL {{ ?player bb:deathYear ?deathYear . }}
+        OPTIONAL {{ ?player bb:deathMonth ?deathMonth . }}
+        OPTIONAL {{ ?player bb:deathDay ?deathDay . }}
+        OPTIONAL {{ ?player bb:deathCountry ?deathCountry . }}
+        OPTIONAL {{ ?player bb:deathState ?deathState . }}
+        OPTIONAL {{ ?player bb:deathCity ?deathCity . }}
         OPTIONAL {{ ?player bb:height ?height . }}
         OPTIONAL {{ ?player bb:weight ?weight . }}
         OPTIONAL {{ ?player bb:bats ?bats . }}
@@ -193,8 +495,19 @@ def get_player_summary(player_id):
     return {
         "name": value_for("name"),
         "player_id": value_for("playerID"),
+        "bbref_id": value_for("bbrefID", ""),
         "birth_year": value_for("birthYear"),
+        "birth_month": value_for("birthMonth", ""),
+        "birth_day": value_for("birthDay", ""),
         "birth_country": value_for("birthCountry"),
+        "birth_state": value_for("birthState", ""),
+        "birth_city": value_for("birthCity", ""),
+        "death_year": value_for("deathYear", ""),
+        "death_month": value_for("deathMonth", ""),
+        "death_day": value_for("deathDay", ""),
+        "death_country": value_for("deathCountry", ""),
+        "death_state": value_for("deathState", ""),
+        "death_city": value_for("deathCity", ""),
         "height": value_for("height"),
         "weight": value_for("weight"),
         "bats": value_for("bats"),
