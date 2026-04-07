@@ -417,7 +417,7 @@ def get_player_summary(player_id):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?name ?playerID ?bbrefID
+    SELECT ?name ?nameFirst ?nameLast ?nameGiven ?playerID ?bbrefID
            ?birthYear ?birthMonth ?birthDay ?birthCountry ?birthState ?birthCity
            ?deathYear ?deathMonth ?deathDay ?deathCountry ?deathState ?deathCity
            ?height ?weight ?bats ?throws ?debut ?finalGame
@@ -429,6 +429,9 @@ def get_player_summary(player_id):
         FILTER(?playerID = "{player_id}")
 
         OPTIONAL {{ ?player bb:bbrefID ?bbrefID . }}
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
         OPTIONAL {{ ?player bb:birthYear ?birthYear . }}
         OPTIONAL {{ ?player bb:birthMonth ?birthMonth . }}
         OPTIONAL {{ ?player bb:birthDay ?birthDay . }}
@@ -492,8 +495,20 @@ def get_player_summary(player_id):
     def value_for(key, default="N/A"):
         return row.get(key, {}).get("value", default)
 
+    first_name = value_for("nameFirst", "")
+    last_name = value_for("nameLast", "")
+    given_name = value_for("nameGiven", "")
+    full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+    if not full_name:
+        full_name = value_for("name", "")
+    if not full_name:
+        full_name = given_name or value_for("playerID")
+
     return {
-        "name": value_for("name"),
+        "name": full_name,
+        "name_first": first_name,
+        "name_last": last_name,
+        "name_given": given_name,
         "player_id": value_for("playerID"),
         "bbref_id": value_for("bbrefID", ""),
         "birth_year": value_for("birthYear"),
@@ -1229,12 +1244,15 @@ def get_player_graph_data(player_id):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?playerID ?name
+    SELECT ?playerID ?name ?nameFirst ?nameLast ?nameGiven
     WHERE {{
         ?player a bb:Player ;
                 bb:playerID ?playerID ;
                 foaf:name ?name .
         FILTER(?playerID = "{player_id}")
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
     }}
     LIMIT 1
     """
@@ -1277,11 +1295,17 @@ def get_player_graph_data(player_id):
 
     player_row = player_results[0]
     player_node_id = f"player:{player_row['playerID']['value']}"
+    player_first = _row_value(player_row, "nameFirst", "")
+    player_last = _row_value(player_row, "nameLast", "")
+    player_given = _row_value(player_row, "nameGiven", "")
+    player_label = " ".join(part for part in [player_first, player_last] if part).strip()
+    if not player_label:
+        player_label = _row_value(player_row, "name", "") or player_given or player_row["playerID"]["value"]
 
     nodes = [{
         "data": {
             "id": player_node_id,
-            "label": player_row["name"]["value"],
+            "label": player_label,
             "type": "player",
         }
     }]
@@ -1389,3 +1413,53 @@ def get_player_graph_data(player_id):
         "nodes": nodes,
         "edges": edges,
     }
+
+@lru_cache(maxsize=32)
+def get_league_series_results(league_code):
+    league_code = escape_sparql_string(str(league_code).strip().upper())
+    if not league_code:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?round ?winnerTeamName ?loserTeamName ?wins ?losses ?ties ?lgWinner ?lgLoser
+    WHERE {{
+        ?series a bb:WorldSeriesResult ;
+                bb:yearID ?year ;
+                bb:round ?round .
+                
+        # --- FILTRO DE QUALIDADE ---
+        # Ao remover o OPTIONAL daqui, as "Unknown Teams" desaparecem automaticamente
+        ?series bb:winnerTeam ?winnerTeam .
+        ?winnerTeam bb:teamName ?winnerTeamName .
+                
+        ?series bb:loserTeam ?loserTeam .
+        ?loserTeam bb:teamName ?loserTeamName .
+        # ---------------------------
+
+        OPTIONAL {{ ?series bb:wins ?wins . }}
+        OPTIONAL {{ ?series bb:losses ?losses . }}
+        OPTIONAL {{ ?series bb:ties ?ties . }}
+        OPTIONAL {{ ?series bb:lgIDwinner ?lgWinner . }}
+        OPTIONAL {{ ?series bb:lgIDloser ?lgLoser . }}
+        
+        FILTER(STR(?lgWinner) = "{league_code}" || STR(?lgLoser) = "{league_code}")
+    }}
+    ORDER BY DESC(?year) ?round
+    """
+
+    results = []
+    for row in run_query(query):
+        results.append({
+            "year": _row_int(row, "year", None),
+            "round": _row_value(row, "round", ""),
+            "winner_team_name": _row_value(row, "winnerTeamName", "Unknown Team"),
+            "loser_team_name": _row_value(row, "loserTeamName", "Unknown Team"),
+            "wins": _row_int(row, "wins", 0),
+            "losses": _row_int(row, "losses", 0),
+            "ties": _row_int(row, "ties", 0),
+            "winner_league": _row_value(row, "lgWinner", ""),
+            "loser_league": _row_value(row, "lgLoser", ""),
+        })
+    return results

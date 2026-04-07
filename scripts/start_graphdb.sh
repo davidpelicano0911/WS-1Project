@@ -114,10 +114,10 @@ import_rdf() {
   [[ -f "$RDF_FILE" ]] || fail "RDF file not found at $RDF_FILE"
 
   print_step "Importing $(basename "$RDF_FILE") into '$REPOSITORY_ID'"
-  curl -fsS -X POST \
-    "$GRAPHDB_URL/repositories/$REPOSITORY_ID/statements" \
-    -H 'Content-Type: application/n-triples' \
-    --data-binary "@$RDF_FILE" >/dev/null
+  
+  curl -X POST "$GRAPHDB_URL/repositories/$REPOSITORY_ID/statements" \
+       -H "Content-Type:application/n-triples" \
+       -T "$RDF_FILE"
 }
 
 main() {

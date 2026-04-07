@@ -36,16 +36,22 @@
 
             <div class="player-detail-identity-grid">
                 <div class="player-detail-portrait">
-                    {% if player.photo_url %}
-                        <img src="{{ player.photo_url }}" alt="{{ player.name }}" class="player-detail-photo" loading="lazy">
-                    {% else %}
-                        <div class="player-detail-photo-fallback">
-                            <span class="player-detail-avatar">{{ player.name|slice:":1" }}</span>
-                            <div class="player-detail-photo-copy">
-                                <strong>{{ player.name }}</strong>
-                                <span>No external headshot available</span>
-                            </div>
+                    <div class="player-detail-photo-fallback">
+                        <span class="player-detail-avatar">{{ player.name|slice:":1" }}</span>
+                        <div class="player-detail-photo-copy">
+                            <strong>{{ player.name }}</strong>
+                            <span>No external headshot available</span>
                         </div>
+                    </div>
+                    {% if player.photo_url %}
+                        <img
+                            src="{{ player.photo_url }}"
+                            data-fallback="{{ player.photo_fallback_url }}"
+                            alt="{{ player.name }}"
+                            class="player-detail-photo"
+                            loading="lazy"
+                            onerror="if(this.dataset.fallback && this.src !== this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.style.display='none';}"
+                        >
                     {% endif %}
                 </div>
 
