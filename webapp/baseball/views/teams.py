@@ -730,6 +730,34 @@ def _filter_team_directory(franchise_catalog, search_term, league_code, status, 
     reverse = sort_code in {"latest_year_desc", "seasons_desc"}
     return sorted(filtered, key=_sort_key, reverse=reverse)
 
+
+def _dedupe_team_directory(catalog):
+    grouped = {}
+    for entry in catalog:
+        name = (entry.get("name") or "").strip()
+        if not name:
+            name = entry.get("franchise_id", "")
+        grouped.setdefault(name, []).append(entry)
+
+    deduped = []
+    for name, entries in grouped.items():
+        best = sorted(
+            entries,
+            key=lambda entry: (
+                1 if entry.get("active") else 0,
+                entry.get("latest_year") or 0,
+                entry.get("season_count") or 0,
+                entry.get("franchise_id", ""),
+            ),
+            reverse=True,
+        )[0].copy()
+        best["merged_count"] = len(entries)
+        if len(entries) > 1:
+            best["merged_franchise_ids"] = [entry.get("franchise_id", "") for entry in entries]
+        deduped.append(best)
+
+    return deduped
+
 ROUND_LABELS = {
     "WS": "World Series",
     "ALCS": "American League Championship Series",
@@ -744,6 +772,16 @@ ROUND_LABELS = {
     "AWDIV": "American League West Division Series",
     "NEDIV": "National League East Division Series",
     "NWDIV": "National League West Division Series",
+}
+
+LEAGUE_IMAGE_ASSETS = {
+    "AL": "AL.png",
+    "NL": "NL.png",
+    "AA": "AA.png",
+    "NA": "NLA.png",
+    "PL": "PL.png",
+    "FL": "FLL.png",
+    "UA": "UA.png",
 }
 
 
@@ -780,10 +818,11 @@ def teams_view(request):
         league_code = ""
 
     filtered_catalog = _filter_team_directory(franchise_catalog, search_term, league_code, status, sort_code)
-    team_cards = _build_team_cards(filtered_catalog, "")
+    directory_catalog = _dedupe_team_directory(filtered_catalog)
+    team_cards = _build_team_cards(directory_catalog, "")
     team_options = [
         {"player_id": entry["franchise_id"], "name": entry["name"]}
-        for entry in franchise_catalog
+        for entry in _dedupe_team_directory(franchise_catalog)
     ]
     active_filters = []
     if search_term:
@@ -799,7 +838,7 @@ def teams_view(request):
         "page_title": "Teams",
         "team_cards": team_cards,
         "team_options": team_options,
-        "total_teams": len(filtered_catalog),
+        "total_teams": len(directory_catalog),
         "search_term": search_term,
         "league_code": league_code,
         "status": status,
@@ -967,6 +1006,7 @@ def league_detail_view(request, league_code):
     league = get_league_detail(league_code)
     if not league:
         raise Http404("League not found")
+    league["image_asset"] = LEAGUE_IMAGE_ASSETS.get(league["code"], "")
     teams_raw = get_teams_by_league(league_code)
     teams = _merge_league_team_periods(teams_raw)
     registry_mode = request.GET.get("registry", "clubs").strip().lower()

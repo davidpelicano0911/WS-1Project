@@ -1,41 +1,91 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ league.name }}{% endblock %}
 
 {% block content %}
 <section class="hero-panel mb-4">
-    <div class="page-header">
-        <div>
+    <div class="league-hero-layout">
+        <div class="league-hero-stage">
+            <div class="league-hero-stage-art">
+                {% if league.image_asset %}
+                    <img src="{% static league.image_asset %}" alt="{{ league.name }} badge" class="league-hero-image">
+                {% else %}
+                    <div class="league-hero-fallback">
+                        <span>{{ league.code }}</span>
+                    </div>
+                {% endif %}
+            </div>
             <span class="eyebrow">
                 <i class="bi bi-trophy-fill"></i>
                 League profile
             </span>
-            <h1 class="page-title">{{ league.name }}</h1>
+            <h1 class="league-stage-title">{{ league.name }}</h1>
             <p class="section-copy mb-0">
-                Historical view of {{ league.name }} across {{ league.first_year }} to {{ league.last_year }}, combining club presence and postseason outcomes from the baseball archive.
+                Historical league snapshot with club continuity, documented seasons and postseason outcomes pulled from the baseball archive.
             </p>
+            <div class="league-stage-meta">
+                <span class="league-stage-chip">
+                    <i class="bi bi-calendar-range"></i>
+                    {{ league.first_year }} - {{ league.last_year }}
+                </span>
+                <span class="league-stage-chip">
+                    <i class="bi bi-diagram-3-fill"></i>
+                    {{ league.franchises }} franchises
+                </span>
+            </div>
         </div>
-        <div class="button-row compact">
-            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">All teams</a>
-        </div>
-    </div>
+        <div class="league-hero-content">
+            <div class="league-hero-header">
+                <div class="league-season-pill">
+                    <i class="bi bi-collection-fill"></i>
+                    {{ league.seasons }} documented seasons
+                </div>
+                <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">All teams</a>
+            </div>
 
-    <div class="hero-stat-grid">
-        <div class="hero-stat">
-            <span class="hero-stat-value">{{ league.code }}</span>
-            <span class="hero-stat-label">League Code</span>
-        </div>
-        <div class="hero-stat">
-            <span class="hero-stat-value">{{ league.team_seasons }}</span>
-            <span class="hero-stat-label">Team Seasons</span>
-        </div>
-        <div class="hero-stat">
-            <span class="hero-stat-value">{{ league.franchises }}</span>
-            <span class="hero-stat-label">Franchises</span>
-        </div>
-        <div class="hero-stat">
-            <span class="hero-stat-value">{{ league.seasons }}</span>
-            <span class="hero-stat-label">Documented Seasons</span>
+            <h2 class="league-hero-title">{{ league.name }}</h2>
+            <p class="league-hero-subtitle">
+                {{ league.name }} in the historical baseball archive, with club participation, league continuity and postseason context from {{ league.first_year }} to {{ league.last_year }}.
+            </p>
+
+            <div class="league-hero-chip-row">
+                <span class="league-hero-chip">
+                    <i class="bi bi-patch-check-fill"></i>
+                    {{ league.code }}
+                </span>
+                <span class="league-hero-chip">
+                    <i class="bi bi-people-fill"></i>
+                    {{ league.team_seasons }} team seasons
+                </span>
+                <span class="league-hero-chip">
+                    <i class="bi bi-shield-fill"></i>
+                    {{ league.franchises }} franchises
+                </span>
+                <span class="league-hero-chip">
+                    <i class="bi bi-journal-richtext"></i>
+                    {{ league.seasons }} seasons tracked
+                </span>
+            </div>
+
+            <div class="hero-stat-grid">
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ league.code }}</span>
+                    <span class="hero-stat-label">League Code</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ league.team_seasons }}</span>
+                    <span class="hero-stat-label">Team Seasons</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ league.franchises }}</span>
+                    <span class="hero-stat-label">Franchises</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ league.seasons }}</span>
+                    <span class="hero-stat-label">Documented Seasons</span>
+                </div>
+            </div>
         </div>
     </div>
 </section>

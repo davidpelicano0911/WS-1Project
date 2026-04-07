@@ -443,6 +443,52 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .player-hero-shell {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .team-hero-shell {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .player-hero-shortcuts {
+        grid-template-columns: 1fr;
+    }
+
+    .team-hero-shortcuts {
+        grid-template-columns: 1fr;
+    }
+
+    .player-filter-panel-compact {
+        min-height: auto;
+        max-height: none;
+    }
+
+    .team-filter-panel-compact {
+        min-height: auto;
+        max-height: none;
+    }
+
+    .player-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .team-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .player-filter-search,
+    .player-filter-toggle-slot {
+        grid-column: span 2;
+    }
+
+    .team-filter-search,
+    .team-filter-toolbar {
+        grid-column: span 2;
+    }
+
     .player-filter-head {
         flex-direction: column;
         align-items: flex-start;
@@ -495,6 +541,34 @@
 
     .hero-stat-grid {
         grid-template-columns: 1fr;
+    }
+
+    .league-hero-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .league-hero-stage,
+    .league-hero-content {
+        border-radius: 24px;
+    }
+
+    .league-hero-image,
+    .league-hero-fallback {
+        max-width: 84px;
+    }
+
+    .league-hero-stage-art {
+        width: 108px;
+        height: 108px;
+    }
+
+    .league-hero-title {
+        font-size: clamp(3.5rem, 13vw, 5.2rem);
+    }
+
+    .league-stage-title {
+        font-size: clamp(3rem, 11vw, 4.6rem);
     }
 
     .compare-grid,
@@ -569,6 +643,10 @@
 
     .recent-postseason-divider {
         min-height: 1rem;
+    }
+
+    .player-filter-toolbar {
+        grid-column: span 2;
     }
 
     .registry-filter-bar {
@@ -694,6 +772,33 @@
 
     .player-filter-actions .btn-app {
         flex: 1 1 auto;
+    }
+
+    .player-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .player-filter-search,
+    .player-filter-toggle-slot,
+    .player-filter-toolbar {
+        grid-column: span 1;
+    }
+
+    .team-filter-search,
+    .team-filter-toolbar {
+        grid-column: span 1;
+    }
+
+    .player-hero-snapshot {
+        grid-template-columns: 1fr;
+    }
+
+    .team-hero-snapshot {
+        grid-template-columns: 1fr;
     }
 
     .player-toggle {

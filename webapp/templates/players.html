@@ -3,9 +3,9 @@
 {% block title %}Players{% endblock %}
 
 {% block content %}
-<section class="hero-panel mb-4">
-    <div class="page-header">
-        <div>
+<section class="hero-panel mb-3 player-hero-panel">
+    <div class="directory-hero-header">
+        <div class="directory-hero-main">
             <span class="eyebrow">
                 <i class="bi bi-person-bounding-box"></i>
                 Players
@@ -14,26 +14,66 @@
             <p class="section-copy mb-0">
                 Browse player cards built from the master biographical dataset, then open full profiles for deeper career context.
             </p>
+            <div class="directory-hero-summary">
+                <span class="player-filter-chip soft">
+                    <strong>Catalog</strong>
+                    <span>{{ total_players }} players</span>
+                </span>
+                <span class="player-filter-chip soft">
+                    <strong>Filters</strong>
+                    <span>{{ active_filters|length }} active</span>
+                </span>
+            </div>
         </div>
-        <div class="button-row compact">
-            <a href="{% url 'compare_players' %}" class="btn-app btn-primary-app">Open comparator</a>
-            <a href="{% url 'analytics' %}" class="btn-app btn-secondary-app">Open analytics</a>
+
+        <div class="directory-hero-actions">
+            <a href="{% url 'compare_players' %}" class="directory-hero-item directory-hero-item-primary">
+                <i class="bi bi-columns-gap"></i>
+                Comparator
+            </a>
+            <a href="{% url 'analytics' %}" class="directory-hero-item">
+                <i class="bi bi-graph-up-arrow"></i>
+                Analytics
+            </a>
+            <a href="{% url 'players' %}?has_photo=1" class="directory-hero-item">
+                <i class="bi bi-image-fill"></i>
+                Only photos
+            </a>
+            <a href="{% url 'players' %}" class="directory-hero-item">
+                <i class="bi bi-stars"></i>
+                Reset view
+            </a>
         </div>
     </div>
 
-    <form method="get" class="data-panel player-filter-panel">
+    <div class="player-hero-snapshot directory-hero-snapshot">
+            <div class="player-hero-snapshot-item">
+                <span class="player-hero-snapshot-label">Catalog view</span>
+                <strong class="player-hero-snapshot-value">{{ total_players }}</strong>
+                <span class="player-hero-snapshot-copy">players currently in scope</span>
+            </div>
+            <div class="player-hero-snapshot-item">
+                <span class="player-hero-snapshot-label">Filter stack</span>
+                <strong class="player-hero-snapshot-value">{{ active_filters|length }}</strong>
+                <span class="player-hero-snapshot-copy">active criteria</span>
+            </div>
+    </div>
+</section>
+
+<section class="hero-panel mb-4 player-filter-hero-panel">
+    <form method="get" class="data-panel player-filter-panel player-filter-panel-compact">
         <div class="player-filter-head">
             <div>
                 <span class="eyebrow">
                     <i class="bi bi-sliders"></i>
                     Smart filters
                 </span>
-                <p class="hint-app mb-0 mt-2">Combine biographical and career-entry filters to narrow the catalog faster.</p>
+                <p class="hint-app mb-0 mt-2">Compact filter cockpit for fast catalog narrowing.</p>
             </div>
         </div>
 
-        <div class="row g-3 align-items-end">
-            <div class="col-xl-4 col-lg-4">
+        <div class="player-filter-grid">
+            <div class="player-filter-search">
                 <label for="player-search" class="form-label-app">Search player</label>
                 <div class="player-search-shell">
                     <i class="bi bi-search player-search-icon"></i>
@@ -47,7 +87,13 @@
                     >
                 </div>
             </div>
-            <div class="col-md-6 col-lg-2">
+
+            <div class="player-filter-toolbar">
+                <button type="submit" class="btn-app btn-primary-app">Apply</button>
+                <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Reset</a>
+            </div>
+
+            <div>
                 <label for="player-letter" class="form-label-app">Initial</label>
                 <select id="player-letter" name="letter" class="input-app select-app">
                     <option value="">Any initial</option>
@@ -56,7 +102,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-6 col-lg-2">
+
+            <div>
                 <label for="player-country" class="form-label-app">Birth country</label>
                 <select id="player-country" name="birth_country" class="input-app select-app">
                     <option value="">Any country</option>
@@ -65,7 +112,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-6 col-lg-2">
+
+            <div>
                 <label for="player-era" class="form-label-app">Debut era</label>
                 <select id="player-era" name="debut_decade" class="input-app select-app">
                     <option value="">Any era</option>
@@ -74,16 +122,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-6 col-lg-2">
-                <div class="button-row compact player-filter-actions">
-                    <button type="submit" class="btn-app btn-primary-app">Apply filters</button>
-                    <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Reset</a>
-                </div>
-            </div>
-        </div>
 
-        <div class="row g-3 align-items-end mt-1">
-            <div class="col-md-4 col-lg-2">
+            <div>
                 <label for="player-bats" class="form-label-app">Bats</label>
                 <select id="player-bats" name="bats" class="input-app select-app">
                     <option value="">Any side</option>
@@ -92,7 +132,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4 col-lg-2">
+
+            <div>
                 <label for="player-throws" class="form-label-app">Throws</label>
                 <select id="player-throws" name="throws" class="input-app select-app">
                     <option value="">Any side</option>
@@ -101,7 +142,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4 col-lg-3">
+
+            <div>
                 <label for="player-sort" class="form-label-app">Sort by</label>
                 <select id="player-sort" name="sort" class="input-app select-app">
                     {% for item in filter_options.sorts %}
@@ -109,7 +151,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-lg-5">
+
+            <div class="player-filter-toggle-slot">
                 <label class="form-label-app">Display options</label>
                 <label class="player-toggle">
                     <input type="checkbox" name="has_photo" value="1"{% if has_photo %} checked{% endif %}>
@@ -124,7 +167,7 @@
 
         <div class="player-filter-meta mt-3">
             {% if active_filters %}
-                {% for item in active_filters %}
+                {% for item in active_filters|slice:":6" %}
                     <span class="player-filter-chip{% if item.soft %} soft{% endif %}">
                         <strong>{{ item.label }}</strong>
                         <span>{{ item.value }}</span>

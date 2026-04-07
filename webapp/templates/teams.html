@@ -4,9 +4,9 @@
 {% block title %}Teams{% endblock %}
 
 {% block content %}
-<section class="hero-panel mb-4">
-    <div class="page-header">
-        <div>
+<section class="hero-panel mb-3 team-hero-panel">
+    <div class="directory-hero-header">
+        <div class="directory-hero-main">
             <span class="eyebrow">
                 <i class="bi bi-shield-fill"></i>
                 Teams
@@ -15,26 +15,76 @@
             <p class="section-copy mb-0">
                 Browse franchise cards built from the team archive, then open dedicated club pages for season detail, rosters, history, and postseason context.
             </p>
+            <div class="directory-hero-summary">
+                <span class="player-filter-chip soft">
+                    <strong>Catalog</strong>
+                    <span>{{ total_teams }} franchises</span>
+                </span>
+                <span class="player-filter-chip soft">
+                    <strong>Filters</strong>
+                    <span>{{ active_filters|length }} active</span>
+                </span>
+            </div>
         </div>
-        <div class="button-row compact">
-            <a href="{% url 'analytics' %}" class="btn-app btn-primary-app">Open analytics</a>
-            <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Open players</a>
+
+        <div class="directory-hero-actions">
+            <a href="{% url 'analytics' %}" class="directory-hero-item directory-hero-item-primary">
+                <i class="bi bi-graph-up-arrow"></i>
+                Analytics
+            </a>
+            <a href="{% url 'players' %}" class="directory-hero-item">
+                <i class="bi bi-person-bounding-box"></i>
+                Players
+            </a>
         </div>
     </div>
 
-    <form method="get" class="data-panel team-filter-panel">
+    <div class="team-hero-snapshot directory-hero-snapshot">
+            <div class="team-hero-snapshot-item">
+                <span class="team-hero-snapshot-label">Catalog view</span>
+                <strong class="team-hero-snapshot-value">{{ total_teams }}</strong>
+                <span class="team-hero-snapshot-copy">franchises currently in scope</span>
+            </div>
+            <div class="team-hero-snapshot-item">
+                <span class="team-hero-snapshot-label">Filter stack</span>
+                <strong class="team-hero-snapshot-value">{{ active_filters|length }}</strong>
+                <span class="team-hero-snapshot-copy">active criteria</span>
+            </div>
+    </div>
+</section>
+
+<section class="hero-panel mb-4 team-filter-hero-panel">
+    <form method="get" class="data-panel team-filter-panel team-filter-panel-compact">
         <div class="player-filter-head">
             <div>
                 <span class="eyebrow">
                     <i class="bi bi-sliders"></i>
                     Smart filters
                 </span>
-                <p class="hint-app mb-0 mt-2">Filter the franchise catalog before opening a dedicated team page.</p>
+                <p class="hint-app mb-0 mt-2">Compact franchise filter cockpit for fast browsing.</p>
             </div>
         </div>
 
-        <div class="row g-3 align-items-end">
-            <div class="col-xl-4 col-lg-4">
+        <div class="team-filter-status-row">
+            <span class="form-label-app mb-0">Status view</span>
+            <div class="team-filter-status-group">
+                <label class="team-filter-status-option">
+                    <input type="radio" name="status" value="all"{% if status == "all" %} checked{% endif %}>
+                    <span>All teams</span>
+                </label>
+                <label class="team-filter-status-option">
+                    <input type="radio" name="status" value="active"{% if status == "active" %} checked{% endif %}>
+                    <span>Active</span>
+                </label>
+                <label class="team-filter-status-option">
+                    <input type="radio" name="status" value="historical"{% if status == "historical" %} checked{% endif %}>
+                    <span>Historical</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="team-filter-grid">
+            <div class="team-filter-search">
                 <label for="team-search" class="form-label-app">Search team</label>
                 <div class="player-search-shell">
                     <i class="bi bi-search player-search-icon"></i>
@@ -48,7 +98,13 @@
                     >
                 </div>
             </div>
-            <div class="col-md-4 col-lg-3">
+
+            <div class="team-filter-toolbar">
+                <button type="submit" class="btn-app btn-primary-app">Apply</button>
+                <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">Reset</a>
+            </div>
+
+            <div>
                 <label for="team-league" class="form-label-app">League</label>
                 <select id="team-league" name="league" class="input-app select-app">
                     <option value="">Any league</option>
@@ -57,15 +113,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4 col-lg-2">
-                <label for="team-status" class="form-label-app">Status</label>
-                <select id="team-status" name="status" class="input-app select-app">
-                    <option value="all"{% if status == "all" %} selected{% endif %}>All teams</option>
-                    <option value="active"{% if status == "active" %} selected{% endif %}>Active</option>
-                    <option value="historical"{% if status == "historical" %} selected{% endif %}>Historical</option>
-                </select>
-            </div>
-            <div class="col-md-4 col-lg-3">
+
+            <div>
                 <label for="team-sort" class="form-label-app">Sort by</label>
                 <select id="team-sort" name="sort" class="input-app select-app">
                     {% for option in sort_options %}
@@ -75,21 +124,16 @@
             </div>
         </div>
 
-        <div class="player-filter-actions mt-3">
-            <button type="submit" class="btn-app btn-primary-app">Apply filters</button>
-            <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">Reset</a>
-        </div>
-
-        <div class="player-filter-summary">
+        <div class="player-filter-meta mt-3">
             {% if active_filters %}
-                {% for item in active_filters %}
+                {% for item in active_filters|slice:":6" %}
                     <span class="player-filter-chip">
                         <strong>{{ item.label }}</strong>
-                        {{ item.value }}
+                        <span>{{ item.value }}</span>
                     </span>
                 {% endfor %}
             {% else %}
-                <span class="player-filter-chip neutral">
+                <span class="player-filter-chip soft">
                     <i class="bi bi-funnel-fill"></i>
                     No team filters active
                 </span>
