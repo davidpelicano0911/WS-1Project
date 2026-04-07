@@ -1076,3 +1076,53 @@ def get_player_graph_data(player_id):
         "nodes": nodes,
         "edges": edges,
     }
+
+@lru_cache(maxsize=32)
+def get_league_series_results(league_code):
+    league_code = escape_sparql_string(str(league_code).strip().upper())
+    if not league_code:
+        return []
+
+    query = f"""
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?round ?winnerTeamName ?loserTeamName ?wins ?losses ?ties ?lgWinner ?lgLoser
+    WHERE {{
+        ?series a bb:WorldSeriesResult ;
+                bb:yearID ?year ;
+                bb:round ?round .
+                
+        # --- FILTRO DE QUALIDADE ---
+        # Ao remover o OPTIONAL daqui, as "Unknown Teams" desaparecem automaticamente
+        ?series bb:winnerTeam ?winnerTeam .
+        ?winnerTeam bb:teamName ?winnerTeamName .
+                
+        ?series bb:loserTeam ?loserTeam .
+        ?loserTeam bb:teamName ?loserTeamName .
+        # ---------------------------
+
+        OPTIONAL {{ ?series bb:wins ?wins . }}
+        OPTIONAL {{ ?series bb:losses ?losses . }}
+        OPTIONAL {{ ?series bb:ties ?ties . }}
+        OPTIONAL {{ ?series bb:lgIDwinner ?lgWinner . }}
+        OPTIONAL {{ ?series bb:lgIDloser ?lgLoser . }}
+        
+        FILTER(STR(?lgWinner) = "{league_code}" || STR(?lgLoser) = "{league_code}")
+    }}
+    ORDER BY DESC(?year) ?round
+    """
+
+    results = []
+    for row in run_query(query):
+        results.append({
+            "year": _row_int(row, "year", None),
+            "round": _row_value(row, "round", ""),
+            "winner_team_name": _row_value(row, "winnerTeamName", "Unknown Team"),
+            "loser_team_name": _row_value(row, "loserTeamName", "Unknown Team"),
+            "wins": _row_int(row, "wins", 0),
+            "losses": _row_int(row, "losses", 0),
+            "ties": _row_int(row, "ties", 0),
+            "winner_league": _row_value(row, "lgWinner", ""),
+            "loser_league": _row_value(row, "lgLoser", ""),
+        })
+    return results

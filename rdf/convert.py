@@ -778,9 +778,13 @@ def convert_series_post():
         add_fields(s, row, SERIES_POST_FIELDS)
         add(s, BB.yearID, lit_int(year))
         add(s, BB.round, lit(round_id))
+        
         add(s, BB.wins, lit_int(row.get("wins")))
         add(s, BB.losses, lit_int(row.get("losses")))
         add(s, BB.ties, lit_int(row.get("ties")))
+
+        add(s, BB.lgIDwinner, lit(row.get("lgIDwinner"))) 
+        add(s, BB.lgIDloser, lit(row.get("lgIDloser")))    
 
         w_team = row.get("teamIDwinner")
         l_team = row.get("teamIDloser")
@@ -788,8 +792,6 @@ def convert_series_post():
             add(s, BB.winnerTeam, entity_uri("team", w_team, year))
         if l_team:
             add(s, BB.loserTeam, entity_uri("team", l_team, year))
-
-
 # --- Main ---
 def main():
     try:
