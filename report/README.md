@@ -1,4 +1,4 @@
-# LaTeX Report Scaffold
+N# LaTeX Report Scaffold
 
 This folder contains a LaTeX project scaffold matching the section structure from `docs/Report_P1_NBA-compressed.pdf`.
 
