@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}{{ player.name }}{% endblock %}
+
+{% block content %}
+<section class="hero-panel player-detail-hero mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-person-vcard-fill"></i>
+                Player dossier
+            </span>
+            <h1 class="page-title">{{ player.name }}</h1>
+            <p class="section-copy mb-0">
+                {{ player.player_id }} · {{ latest_snapshot.team }} · {{ latest_snapshot.league }} · {{ player.career_seasons }} documented seasons.
+            </p>
+        </div>
+        <div class="button-row compact">
+            <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Back to players</a>
+            <a href="{% url 'graph_view' %}?player={{ player.player_id }}" class="btn-app btn-primary-app">Open graph</a>
+        </div>
+    </div>
+
+    <div class="player-detail-top">
+        <article class="feature-card player-detail-identity">
+            <div class="player-detail-identity-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-stars"></i>
+                        Profile
+                    </span>
+                    <h2 class="compare-player-name mb-0 mt-2">{{ player.name }}</h2>
+                </div>
+                <span class="compare-meta">{{ player.player_id }}</span>
+            </div>
+
+            <div class="player-detail-identity-grid">
+                <div class="player-detail-portrait">
+                    {% if player.photo_url %}
+                        <img src="{{ player.photo_url }}" alt="{{ player.name }}" class="player-detail-photo" loading="lazy">
+                    {% else %}
+                        <div class="player-detail-photo-fallback">
+                            <span class="player-detail-avatar">{{ player.name|slice:":1" }}</span>
+                            <div class="player-detail-photo-copy">
+                                <strong>{{ player.name }}</strong>
+                                <span>No external headshot available</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="player-detail-intro">
+                    <div class="player-detail-chip-row">
+                        {% for item in identity_chips %}
+                            <span class="player-summary-chip{% if item == latest_snapshot.team %} accent{% endif %}">{{ item }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="player-detail-bio-list">
+                        {% for item in bio_items %}
+                            <div class="player-detail-bio-item">
+                                <span class="stat-label">{{ item.label }}</span>
+                                <span class="stat-value">{{ item.value }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="feature-card player-detail-spotlight">
+            <div class="compare-card-header">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Spotlight
+                    </span>
+                    <h2 class="compare-player-name">Career pulse</h2>
+                </div>
+            </div>
+
+            <div class="player-detail-spotlight-grid">
+                {% for item in spotlight_stats %}
+                    <div class="stat-tile">
+                        <span class="stat-label">{{ item.label }}</span>
+                        <span class="stat-value">{{ item.value }}</span>
+                        <span class="compare-aside-detail">{{ item.detail }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if best_season_highlights %}
+                <div class="player-detail-highlight-list">
+                    {% for item in best_season_highlights %}
+                        <div class="compare-aside-item">
+                            <span class="compare-aside-label">{{ item.title }}</span>
+                            <strong class="compare-aside-value">{{ item.display }}</strong>
+                            <span class="compare-aside-detail">{{ item.detail }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </article>
+    </div>
+</section>
+
+<section class="compare-grid mb-4">
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-clock-history"></i>
+                    Timeline
+                </span>
+                <h2 class="feature-title h4 mb-0">Career landmarks</h2>
+            </div>
+        </div>
+        <div class="compare-aside-list">
+            {% for item in player.timeline_items %}
+                <div class="compare-aside-item">
+                    <span class="compare-aside-label">{{ item.label }}</span>
+                    <strong class="compare-aside-value">{{ item.value }}</strong>
+                    {% if item.detail %}
+                        <span class="compare-aside-detail">{{ item.detail }}</span>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p class="hint-app mb-0">No timeline items available.</p>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-diagram-3-fill"></i>
+                    Affiliations
+                </span>
+                <h2 class="feature-title h4 mb-0">Teams, franchises and leagues</h2>
+            </div>
+        </div>
+        <div class="stat-grid">
+            {% for item in affiliation_panels %}
+                <div class="stat-tile">
+                    <span class="stat-label">{{ item.label }}</span>
+                    <span class="stat-value">{{ item.value }}</span>
+                    <span class="compare-aside-detail">{{ item.detail }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="compare-grid mb-4">
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-bullseye"></i>
+                    Batting
+                </span>
+                <h2 class="feature-title h4 mb-0">Career batting profile</h2>
+            </div>
+        </div>
+        <div class="stat-grid">
+            {% for item in batting_overview %}
+                <div class="stat-tile">
+                    <span class="stat-label">{{ item.label }}</span>
+                    <span class="stat-value">{{ item.value }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-activity"></i>
+                    Pitching
+                </span>
+                <h2 class="feature-title h4 mb-0">Career pitching profile</h2>
+            </div>
+        </div>
+        <div class="stat-grid">
+            {% for item in pitching_overview %}
+                <div class="stat-tile">
+                    <span class="stat-label">{{ item.label }}</span>
+                    <span class="stat-value">{{ item.value }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="compare-grid mb-4">
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-cash-stack"></i>
+                    Salaries
+                </span>
+                <h2 class="feature-title h4 mb-0">Top salary seasons</h2>
+            </div>
+        </div>
+
+        {% if recent_salary_history %}
+            <div class="compare-aside-list">
+                {% for item in recent_salary_history %}
+                    <div class="compare-aside-item">
+                        <span class="compare-aside-label">{{ item.year|default:"Year N/A" }}</span>
+                        <strong class="compare-aside-value">${{ item.salary }}</strong>
+                        <span class="compare-aside-detail">{{ item.team_name|default:"Unknown team" }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="hint-app mb-0">No salary history available.</p>
+        {% endif %}
+    </article>
+
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-trophy-fill"></i>
+                    Recognition
+                </span>
+                <h2 class="feature-title h4 mb-0">Awards, All-Star and Hall of Fame</h2>
+            </div>
+        </div>
+
+        <div class="compare-aside-list">
+            {% for item in recognition_items %}
+                <div class="compare-aside-item">
+                    <span class="compare-aside-label">{{ item.label }}</span>
+                    <strong class="compare-aside-value">{{ item.value }}</strong>
+                    {% if item.detail %}
+                        <span class="compare-aside-detail">{{ item.detail }}</span>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p class="hint-app mb-0">No recognition history available.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="data-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-shield-fill"></i>
+                Team history
+            </span>
+            <h2 class="feature-title h4 mb-0">Recent team history</h2>
+        </div>
+    </div>
+
+    {% if recent_team_history %}
+    <div class="table-responsive">
+        <table class="table table-app align-middle">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Team</th>
+                    <th>Franchise</th>
+                    <th>League</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_team_history %}
+                <tr>
+                    <td>{{ item.year|default:"-" }}</td>
+                    <td class="table-highlight">{{ item.team_name|default:"-" }}</td>
+                    <td>{{ item.franchise_name|default:"-" }}</td>
+                    <td>{{ item.league|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        No team history available.
+    </div>
+    {% endif %}
+</section>
+
+<section class="compare-grid mb-4">
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-bar-chart-fill"></i>
+                    Batting seasons
+                </span>
+                <h2 class="feature-title h4 mb-0">Latest batting seasons</h2>
+            </div>
+        </div>
+        {% if recent_batting_seasons %}
+            <div class="table-responsive">
+                <table class="table table-app align-middle">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Team</th>
+                            <th>AVG</th>
+                            <th>HR</th>
+                            <th>RBI</th>
+                            <th>OPS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_batting_seasons %}
+                        <tr>
+                            <td>{{ item.year|default:"-" }}</td>
+                            <td class="table-highlight">{{ item.team_label|default:"-" }}</td>
+                            <td>{{ item.avg|floatformat:3|default:"-" }}</td>
+                            <td>{{ item.home_runs|default:"-" }}</td>
+                            <td>{{ item.rbi|default:"-" }}</td>
+                            <td>{{ item.ops|floatformat:3|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="hint-app mb-0">No batting season history available.</p>
+        {% endif %}
+    </article>
+
+    <article class="data-panel">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-speedometer2"></i>
+                    Pitching seasons
+                </span>
+                <h2 class="feature-title h4 mb-0">Latest pitching seasons</h2>
+            </div>
+        </div>
+        {% if recent_pitching_seasons %}
+            <div class="table-responsive">
+                <table class="table table-app align-middle">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Team</th>
+                            <th>W</th>
+                            <th>SO</th>
+                            <th>SV</th>
+                            <th>ERA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_pitching_seasons %}
+                        <tr>
+                            <td>{{ item.year|default:"-" }}</td>
+                            <td class="table-highlight">{{ item.team_label|default:"-" }}</td>
+                            <td>{{ item.wins|default:"-" }}</td>
+                            <td>{{ item.strikeouts|default:"-" }}</td>
+                            <td>{{ item.saves|default:"-" }}</td>
+                            <td>{{ item.era|floatformat:2|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="hint-app mb-0">No pitching season history available.</p>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}
