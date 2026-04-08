@@ -19,10 +19,6 @@
         <header class="portal-header">
             <div class="top-club-bar">
                 <div class="container portal-container top-club-inner">
-                    <a class="top-club-label" href="{% url 'home' %}">
-                        Data Hub
-                        <i class="bi bi-arrow-up-right"></i>
-                    </a>
                     <div class="club-badge-strip" aria-hidden="true">
                         {% for team in header_teams %}
                             <a
@@ -51,7 +47,7 @@
                 </div>
             </div>
 
-            <div class="container portal-container">
+            <div class="portal-container portal-header-container">
                 <nav class="portal-nav">
                     <div class="portal-brand-wrap">
                         <a class="portal-brand" href="{% url 'home' %}">
@@ -73,22 +69,52 @@
                     </div>
 
                     <div class="portal-actions">
-                        <a href="{% url 'players' %}" class="icon-circle-link" aria-label="Open player directory">
-                            <i class="bi bi-search"></i>
-                        </a>
-                        <a href="{% url 'compare_players' %}" class="portal-cta">Explore Data</a>
+                        <div class="portal-search" data-search-url="{% url 'portal_search' %}" data-players-url="{% url 'players' %}">
+                            <button type="button" class="icon-circle-link portal-search-link js-portal-search-toggle" aria-label="Open search" aria-expanded="false">
+                                <i class="bi bi-search"></i>
+                            </button>
+
+                            <div class="portal-search-panel" hidden>
+                                <form class="portal-search-form" action="{% url 'players' %}" method="get">
+                                    <i class="bi bi-search portal-search-form-icon"></i>
+                                    <input
+                                        type="text"
+                                        name="q"
+                                        class="portal-search-input"
+                                        placeholder="Search players or teams"
+                                        autocomplete="off"
+                                    >
+                                    <button type="submit" class="btn-app btn-secondary-app portal-search-submit">Open</button>
+                                </form>
+
+                                <div class="portal-search-meta">
+                                    <span class="portal-search-hint">Type at least 2 characters to see quick results.</span>
+                                </div>
+
+                                <div class="portal-search-results">
+                                    <div class="portal-search-group">
+                                        <div class="portal-search-group-title">Players</div>
+                                        <div class="portal-search-list" data-search-section="players"></div>
+                                    </div>
+                                    <div class="portal-search-group">
+                                        <div class="portal-search-group-title">Teams</div>
+                                        <div class="portal-search-list" data-search-section="teams"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </nav>
             </div>
 
             <div class="subnav-bar">
                 <div class="container portal-container subnav-inner">
-                    <a href="{% url 'home' %}" class="subnav-link">Home</a>
-                    <a href="{% url 'players' %}" class="subnav-link">Players</a>
-                    <a href="{% url 'teams' %}" class="subnav-link">Teams</a>
-                    <a href="{% url 'compare_players' %}" class="subnav-link">Comparator</a>
-                    <a href="{% url 'analytics' %}" class="subnav-link">Analytics / Stats</a>
-                    <a href="{% url 'about' %}" class="subnav-link">About</a>
+                    <a href="{% url 'home' %}" class="subnav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}">Home</a>
+                    <a href="{% url 'players' %}" class="subnav-link{% if request.resolver_match.url_name == 'players' or request.resolver_match.url_name == 'player_detail' or request.resolver_match.url_name == 'graph_view' %} active{% endif %}">Players</a>
+                    <a href="{% url 'teams' %}" class="subnav-link{% if request.resolver_match.url_name == 'teams' or request.resolver_match.url_name == 'team_detail' or request.resolver_match.url_name == 'league_detail' %} active{% endif %}">Teams</a>
+                    <a href="{% url 'compare_players' %}" class="subnav-link{% if request.resolver_match.url_name == 'compare_players' %} active{% endif %}">Comparator</a>
+                    <a href="{% url 'analytics' %}" class="subnav-link{% if request.resolver_match.url_name == 'analytics' or request.resolver_match.url_name == 'awards_list' or request.resolver_match.url_name == 'salaries_list' %} active{% endif %}">Analytics / Stats</a>
+                    <a href="{% url 'about' %}" class="subnav-link{% if request.resolver_match.url_name == 'about' %} active{% endif %}">About</a>
                 </div>
             </div>
         </header>
@@ -97,10 +123,12 @@
             {% block content %}{% endblock %}
 
             <footer class="site-footer text-center mt-5 pt-3">
+                <small>Tomás Brás nº112665  David Pelicano nº113391  Afonso Ferreira nº113480</small><br>
                 <small>Practical Assignment 1 · BaseBallX</small>
             </footer>
         </div>
     </div>
     {% block extra_scripts %}{% endblock %}
+    <script src="{% static 'baseball/js/header-search.js' %}"></script>
 </body>
 </html>
