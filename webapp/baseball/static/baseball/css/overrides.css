@@ -839,6 +839,19 @@
         height: 58px;
     }
 
+    .auth-shell-split {
+        padding: 0;
+    }
+
+    .auth-stage {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-stage-side,
+    .auth-panel {
+        padding: 1.35rem;
+    }
+
     .player-card-title {
         font-size: 1.7rem;
     }

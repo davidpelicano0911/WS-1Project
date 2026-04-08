@@ -3,52 +3,93 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<section class="hero-panel auth-shell">
-    <div class="auth-panel data-panel">
-        <div class="auth-head">
+<section class="hero-panel auth-shell auth-shell-split">
+    <div class="auth-stage">
+        <aside class="auth-stage-side">
             <span class="eyebrow">
                 <i class="bi bi-person-lock"></i>
                 Login
             </span>
             <h1 class="page-title">Sign in</h1>
-            <p class="section-copy mb-0">Access your account.</p>
-        </div>
+            <p class="section-copy mb-0">
+                Access your account to manage selections, use the comparator flow, and move through the archive with a persistent session.
+            </p>
 
-        <form method="post" class="auth-form">
-            {% csrf_token %}
-            {% if next_url %}
-                <input type="hidden" name="next" value="{{ next_url }}">
-            {% endif %}
+            <div class="auth-stage-badges">
+                <span class="player-filter-chip soft">
+                    <strong>Archive</strong>
+                    <span>Players, teams, awards and graphs</span>
+                </span>
+                <span class="player-filter-chip soft">
+                    <strong>Session</strong>
+                    <span>Saved compare picks and protected actions</span>
+                </span>
+            </div>
 
-            {% if form.non_field_errors %}
-                <div class="auth-errors">
-                    {% for error in form.non_field_errors %}
-                        <div>{{ error }}</div>
-                    {% endfor %}
+            <div class="auth-stage-points">
+                <article class="auth-stage-point">
+                    <span class="auth-stage-point-icon"><i class="bi bi-columns-gap"></i></span>
+                    <div>
+                        <strong>Keep your compare flow</strong>
+                        <p>Move from players to teams without losing the selection context you already built.</p>
+                    </div>
+                </article>
+                <article class="auth-stage-point">
+                    <span class="auth-stage-point-icon"><i class="bi bi-shield-check"></i></span>
+                    <div>
+                        <strong>Protected access</strong>
+                        <p>Unlock authenticated features and keep administrative actions isolated from public browsing.</p>
+                    </div>
+                </article>
+            </div>
+        </aside>
+
+        <div class="auth-panel data-panel">
+            <div class="auth-head">
+                <span class="eyebrow">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Account access
+                </span>
+                <h2 class="feature-title h2 mb-2">Welcome back</h2>
+                <p class="section-copy mb-0">Enter your credentials to continue.</p>
+            </div>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                {% if next_url %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                    <div class="auth-errors">
+                        {% for error in form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="auth-field">
+                    <label for="{{ form.username.id_for_label }}" class="form-label-app">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="auth-field-error">{{ form.username.errors|join:", " }}</div>
+                    {% endif %}
                 </div>
-            {% endif %}
 
-            <div class="auth-field">
-                <label for="{{ form.username.id_for_label }}" class="form-label-app">Username</label>
-                {{ form.username }}
-                {% if form.username.errors %}
-                    <div class="auth-field-error">{{ form.username.errors|join:", " }}</div>
-                {% endif %}
-            </div>
+                <div class="auth-field">
+                    <label for="{{ form.password.id_for_label }}" class="form-label-app">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="auth-field-error">{{ form.password.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
 
-            <div class="auth-field">
-                <label for="{{ form.password.id_for_label }}" class="form-label-app">Password</label>
-                {{ form.password }}
-                {% if form.password.errors %}
-                    <div class="auth-field-error">{{ form.password.errors|join:", " }}</div>
-                {% endif %}
-            </div>
-
-            <div class="auth-actions">
-                <button type="submit" class="btn-app btn-primary-app">Login</button>
-                <a href="{% url 'register' %}" class="btn-app btn-secondary-app">Create account</a>
-            </div>
-        </form>
+                <div class="auth-actions">
+                    <button type="submit" class="btn-app btn-primary-app">Login</button>
+                    <a href="{% url 'register' %}" class="btn-app btn-secondary-app">Create account</a>
+                </div>
+            </form>
+        </div>
     </div>
 </section>
 {% endblock %}
