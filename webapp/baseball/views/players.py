@@ -1,12 +1,24 @@
-from concurrent.futures import ThreadPoolExecutor
+import json
 from copy import deepcopy
+from functools import lru_cache
 from urllib.parse import urlencode
 
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
-from ..player_media import attach_player_media, enrich_players_with_media
+from ..compare_selection import (
+    clear_compare_selection,
+    get_compare_selection,
+    toggle_compare_selection,
+)
+from ..player_media import (
+    attach_player_media,
+    enrich_players_with_media,
+    get_catalog_photo_count,
+    player_has_catalog_photo,
+)
 from ..sparql import (
     get_player_filter_options,
     get_player_allstar_history,
@@ -101,6 +113,18 @@ def _format_decimal(value, digits=3):
         return "N/A"
     text = f"{float(value):.{digits}f}"
     return text.rstrip("0").rstrip(".") if "." in text else text
+
+
+def _format_percentage(value, digits=1):
+    if value in (None, "", "N/A"):
+        return "N/A"
+    return f"{float(value) * 100:.{digits}f}%"
+
+
+def _format_signed_number(value):
+    if value in (None, "", "N/A"):
+        return "N/A"
+    return f"{int(value):+d}"
 
 
 def _format_person_name_parts(name):
@@ -275,41 +299,6 @@ def _build_player_card(player):
     }
 
 
-def _attach_player_roster_context(player):
-    history = get_player_team_history(player.get("player_id", ""))
-    latest_entry = None
-    for entry in reversed(history):
-        if entry.get("team_name") or entry.get("franchise_name") or entry.get("league"):
-            latest_entry = entry
-            break
-
-    latest_team = ""
-    latest_franchise = ""
-    latest_league = ""
-    latest_season = None
-    if latest_entry:
-        latest_team = latest_entry.get("team_name", "")
-        latest_franchise = latest_entry.get("franchise_name", "")
-        latest_league = latest_entry.get("league", "")
-        latest_season = latest_entry.get("year")
-
-    return {
-        **player,
-        "latest_team_display": _format_text(latest_team or latest_franchise, "No team data"),
-        "latest_franchise_display": _format_text(latest_franchise or latest_team, "No franchise data"),
-        "latest_league_display": _format_text(latest_league, "League N/A"),
-        "latest_season_display": _format_text(latest_season, "Season N/A"),
-    }
-
-
-def _enrich_players_with_roster_context(players, max_workers=8):
-    if not players:
-        return []
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        return list(executor.map(_attach_player_roster_context, players))
-
-
 def _latest_team_snapshot(profile):
     history = sorted(
         profile.get("team_history", []),
@@ -463,6 +452,85 @@ def _build_player_list_querystring(params, **updates):
     return urlencode(query)
 
 
+def _filter_catalog_players_with_photo(players):
+    return [player for player in players if player_has_catalog_photo(player.get("bbref_id", ""))]
+
+
+@lru_cache(maxsize=128)
+def _count_catalog_players_with_photo(letter="", search_term="", birth_country="", bats="", throws="", debut_decade=""):
+    if not any((letter, search_term, birth_country, bats, throws, debut_decade)):
+        return get_catalog_photo_count()
+
+    total = 0
+    batch_offset = 0
+    batch_size = 500
+
+    while True:
+        chunk = get_players_catalog(
+            letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            False,
+            "name_asc",
+            batch_size,
+            batch_offset,
+        )
+        if not chunk:
+            break
+
+        total += len(_filter_catalog_players_with_photo(chunk))
+        batch_offset += batch_size
+
+        if len(chunk) < batch_size:
+            break
+
+    return total
+
+
+def _get_catalog_players_page_with_photo(
+    letter="",
+    search_term="",
+    birth_country="",
+    bats="",
+    throws="",
+    debut_decade="",
+    sort="name_asc",
+    page_size=16,
+    offset=0,
+):
+    target_end = offset + page_size
+    batch_offset = 0
+    batch_size = max(page_size * 4, 64)
+    filtered_players = []
+
+    while len(filtered_players) < target_end:
+        chunk = get_players_catalog(
+            letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            False,
+            sort,
+            batch_size,
+            batch_offset,
+        )
+        if not chunk:
+            break
+
+        filtered_players.extend(_filter_catalog_players_with_photo(chunk))
+        batch_offset += batch_size
+
+        if len(chunk) < batch_size:
+            break
+
+    return filtered_players[offset:target_end]
+
+
 def _summarize_values(values, limit=4):
     if not values:
         return "No overlap yet"
@@ -483,6 +551,8 @@ def _build_compare_row(
     delta_formatter=None,
     better="higher",
     note="",
+    side_1_label="Player 1",
+    side_2_label="Player 2",
 ):
     player1_display = display_formatter(player1_value)
     player2_display = display_formatter(player2_value)
@@ -505,7 +575,7 @@ def _build_compare_row(
             delta_display = "Shared" if left else "Neither"
         else:
             winner_side = "player1" if left else "player2"
-            winner_display = "Player 1" if left else "Player 2"
+            winner_display = side_1_label if left else side_2_label
             delta_display = "Yes vs No"
         return {
             "label": label,
@@ -524,11 +594,11 @@ def _build_compare_row(
         pass
     elif right is None:
         winner_side = "player1"
-        winner_display = "Player 1"
+        winner_display = side_1_label
         delta_display = "Only player with data"
     elif left is None:
         winner_side = "player2"
-        winner_display = "Player 2"
+        winner_display = side_2_label
         delta_display = "Only player with data"
     elif abs(left - right) < 1e-9:
         winner_side = "tie"
@@ -537,7 +607,7 @@ def _build_compare_row(
     else:
         player1_wins = left < right if better == "lower" else left > right
         winner_side = "player1" if player1_wins else "player2"
-        winner_display = "Player 1" if player1_wins else "Player 2"
+        winner_display = side_1_label if player1_wins else side_2_label
         delta_value = abs(left - right)
         formatter = delta_formatter or display_formatter
         formatted_gap = formatter(delta_value)
@@ -1083,6 +1153,143 @@ def _build_compare_scoreboard(tabs):
     }
 
 
+def _selected_compare_map(request, item_type):
+    selection = get_compare_selection(request)
+    if selection["type"] != item_type:
+        return {}
+    return {
+        item["id"]: item
+        for item in selection["items"]
+    }
+
+
+def _build_team_compare_profile(franchise_id, year=""):
+    from .teams import _build_team_detail_context
+
+    detail_context = _build_team_detail_context(franchise_id, str(year or "").strip())
+    selected_team = detail_context.get("selected_team")
+    if not selected_team:
+        return None
+
+    history_rows = detail_context.get("history_rows", [])
+    world_series_titles = sum(1 for row in history_rows if row.get("world_series_winner"))
+    league_titles = sum(1 for row in history_rows if row.get("league_winner"))
+    division_titles = sum(1 for row in history_rows if row.get("division_winner"))
+    wild_cards = sum(1 for row in history_rows if row.get("wild_card_winner"))
+    season_years = [row.get("year") for row in history_rows if row.get("year")]
+
+    return {
+        "franchise_id": franchise_id,
+        "name": selected_team.get("team_name"),
+        "team_name": selected_team.get("team_name"),
+        "franchise_name": selected_team.get("franchise_name"),
+        "league_name": selected_team.get("league_name"),
+        "division_name": selected_team.get("division_name"),
+        "logo_id": selected_team.get("logo_id"),
+        "year": selected_team.get("year"),
+        "record_display": selected_team.get("record_display"),
+        "win_pct_display": selected_team.get("win_pct_display"),
+        "attendance_display": selected_team.get("attendance_display"),
+        "season_outcome": detail_context.get("season_outcome"),
+        "history_rows": history_rows,
+        "season_context_cards": detail_context.get("season_context_cards", []),
+        "best_season_cards": detail_context.get("best_season_cards", []),
+        "postseason_history": detail_context.get("postseason_history", []),
+        "selected_season_postseason": detail_context.get("selected_season_postseason", []),
+        "selected_team": selected_team,
+        "card_stats": [
+            {"label": "Season", "value": str(selected_team.get("year") or "N/A")},
+            {"label": "League", "value": selected_team.get("league_name") or "N/A"},
+            {"label": "Record", "value": selected_team.get("record_display") or "N/A"},
+            {"label": "Win pct", "value": selected_team.get("win_pct_display") or "N/A"},
+            {"label": "Park", "value": selected_team.get("park") or "N/A"},
+            {"label": "Attendance", "value": selected_team.get("attendance_display") or "N/A"},
+        ],
+        "franchise_summary": {
+            "seasons": len(history_rows),
+            "first_year": min(season_years) if season_years else None,
+            "last_year": max(season_years) if season_years else None,
+            "world_series_titles": world_series_titles,
+            "league_titles": league_titles,
+            "division_titles": division_titles,
+            "wild_cards": wild_cards,
+        },
+    }
+
+
+def _build_team_compare_tabs(team1, team2):
+    team_compare_kwargs = {"side_1_label": "Team 1", "side_2_label": "Team 2"}
+    franchise_rows = [
+        _build_compare_row("Seasons tracked", team1["franchise_summary"]["seasons"], team2["franchise_summary"]["seasons"], **team_compare_kwargs),
+        _build_compare_row("First year", team1["franchise_summary"]["first_year"], team2["franchise_summary"]["first_year"], better="lower", **team_compare_kwargs),
+        _build_compare_row("Last year", team1["franchise_summary"]["last_year"], team2["franchise_summary"]["last_year"], **team_compare_kwargs),
+        _build_compare_row("World Series titles", team1["franchise_summary"]["world_series_titles"], team2["franchise_summary"]["world_series_titles"], **team_compare_kwargs),
+        _build_compare_row("League titles", team1["franchise_summary"]["league_titles"], team2["franchise_summary"]["league_titles"], **team_compare_kwargs),
+        _build_compare_row("Division titles", team1["franchise_summary"]["division_titles"], team2["franchise_summary"]["division_titles"], **team_compare_kwargs),
+        _build_compare_row("Wild cards", team1["franchise_summary"]["wild_cards"], team2["franchise_summary"]["wild_cards"], **team_compare_kwargs),
+    ]
+
+    season_rows = [
+        _build_compare_row("Wins", team1["selected_team"].get("wins"), team2["selected_team"].get("wins"), **team_compare_kwargs),
+        _build_compare_row("Losses", team1["selected_team"].get("losses"), team2["selected_team"].get("losses"), better="lower", note="Lower is better.", **team_compare_kwargs),
+        _build_compare_row("Win pct", team1["selected_team"].get("win_pct"), team2["selected_team"].get("win_pct"), display_formatter=_format_percentage, delta_formatter=_format_percentage, **team_compare_kwargs),
+        _build_compare_row("Rank", team1["selected_team"].get("rank"), team2["selected_team"].get("rank"), better="lower", note="Lower is better.", **team_compare_kwargs),
+        _build_compare_row("Run diff", team1["selected_team"].get("run_diff"), team2["selected_team"].get("run_diff"), display_formatter=_format_signed_number, delta_formatter=_format_number, **team_compare_kwargs),
+        _build_compare_row("Team OPS", team1["selected_team"].get("ops"), team2["selected_team"].get("ops"), display_formatter=_format_rate, delta_formatter=_format_rate, **team_compare_kwargs),
+        _build_compare_row("Attendance", team1["selected_team"].get("attendance"), team2["selected_team"].get("attendance"), **team_compare_kwargs),
+    ]
+
+    production_rows = [
+        _build_compare_row("Runs", team1["selected_team"].get("runs"), team2["selected_team"].get("runs"), **team_compare_kwargs),
+        _build_compare_row("Hits", team1["selected_team"].get("hits"), team2["selected_team"].get("hits"), **team_compare_kwargs),
+        _build_compare_row("Home runs", team1["selected_team"].get("home_runs"), team2["selected_team"].get("home_runs"), **team_compare_kwargs),
+        _build_compare_row("AVG", team1["selected_team"].get("avg"), team2["selected_team"].get("avg"), display_formatter=_format_rate, delta_formatter=_format_rate, **team_compare_kwargs),
+        _build_compare_row("OBP", team1["selected_team"].get("obp"), team2["selected_team"].get("obp"), display_formatter=_format_rate, delta_formatter=_format_rate, **team_compare_kwargs),
+        _build_compare_row("SLG", team1["selected_team"].get("slg"), team2["selected_team"].get("slg"), display_formatter=_format_rate, delta_formatter=_format_rate, **team_compare_kwargs),
+        _build_compare_row("ERA", team1["selected_team"].get("era"), team2["selected_team"].get("era"), display_formatter=_format_era, delta_formatter=_format_era, better="lower", note="Lower is better.", **team_compare_kwargs),
+        _build_compare_row("Pitching strikeouts", team1["selected_team"].get("strikeouts_pitching"), team2["selected_team"].get("strikeouts_pitching"), **team_compare_kwargs),
+        _build_compare_row("Saves", team1["selected_team"].get("saves"), team2["selected_team"].get("saves"), **team_compare_kwargs),
+    ]
+
+    context_cards = [
+        {
+            "title": team1["name"],
+            "value": team1["season_outcome"],
+            "detail": f"{team1['league_name']} · {team1['division_name']} · {team1['year']}",
+        },
+        {
+            "title": team2["name"],
+            "value": team2["season_outcome"],
+            "detail": f"{team2['league_name']} · {team2['division_name']} · {team2['year']}",
+        },
+    ]
+
+    return [
+        {
+            "id": "franchise",
+            "label": "Franchise",
+            "icon": "bi-buildings-fill",
+            "description": "Long-run franchise footprint across the recorded archive.",
+            "rows": franchise_rows,
+        },
+        {
+            "id": "season",
+            "label": "Season",
+            "icon": "bi-calendar-event-fill",
+            "description": "Selected season performance and environment.",
+            "rows": season_rows,
+            "pair_cards": context_cards,
+        },
+        {
+            "id": "production",
+            "label": "Production",
+            "icon": "bi-bar-chart-fill",
+            "description": "Offense and pitching side-by-side for the selected season.",
+            "rows": production_rows,
+        },
+    ]
+
+
 def players_view(request):
     letters = _alphabet()
     filter_options = get_player_filter_options()
@@ -1115,37 +1322,62 @@ def players_view(request):
     if sort not in valid_sorts:
         sort = "name_asc"
 
-    page_size = 24
-    total_players = get_players_catalog_count(
-        selected_letter,
-        search_term,
-        birth_country,
-        bats,
-        throws,
-        debut_decade,
-        has_photo,
-    )
-    total_pages = max((total_players + page_size - 1) // page_size, 1)
-    page = min(page, total_pages)
-    offset = (page - 1) * page_size
-
-    players = [
-        _build_player_card(player)
-        for player in get_players_catalog(
+    page_size = 12
+    if has_photo:
+        total_players = _count_catalog_players_with_photo(
             selected_letter,
             search_term,
             birth_country,
             bats,
             throws,
             debut_decade,
-            has_photo,
+        )
+    else:
+        total_players = get_players_catalog_count(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            False,
+        )
+    total_pages = max((total_players + page_size - 1) // page_size, 1)
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+
+    raw_players = (
+        _get_catalog_players_page_with_photo(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
             sort,
             page_size,
             offset,
         )
-    ]
-    players = _enrich_players_with_roster_context(players)
+        if has_photo
+        else get_players_catalog(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            False,
+            sort,
+            page_size,
+            offset,
+        )
+    )
+
+    players = [_build_player_card(player) for player in raw_players]
     players = enrich_players_with_media(players)
+    selected_players = _selected_compare_map(request, "player")
+    for player in players:
+        player["compare_selected"] = player["player_id"] in selected_players
     page_numbers = list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
     base_params = {
         "q": search_term,
@@ -1199,7 +1431,7 @@ def players_view(request):
         "next_page": page + 1,
         "pagination_query": _build_player_list_querystring(base_params),
         "page_query_builder": base_params,
-        "comparator_url": reverse("compare_players"),
+        "comparator_url": f"{reverse('compare_players')}?mode=players",
         "analytics_url": reverse("analytics"),
     }
     return render(request, "players.html", context)
@@ -1210,6 +1442,8 @@ def player_detail_view(request, player_id):
     if not player:
         raise Http404("Player not found")
     player = attach_player_media(player)
+    selected_players = _selected_compare_map(request, "player")
+    player["compare_selected"] = player["player_id"] in selected_players
     detail_payload = _build_player_detail_payload(player)
     graph_payload = _build_player_graph_payload(player)
 
@@ -1238,11 +1472,49 @@ def player_detail_view(request, player_id):
 
 
 def compare_players_view(request):
+    selection = get_compare_selection(request)
+    requested_mode = str(request.GET.get("mode", "")).strip().lower()
     letters = _alphabet()
     player1_letter = request.GET.get("player1_letter", "").strip().upper()
     player2_letter = request.GET.get("player2_letter", "").strip().upper()
     player1_term = request.GET.get("player1", "").strip()
     player2_term = request.GET.get("player2", "").strip()
+    compare_kind = requested_mode if requested_mode in {"players", "teams"} else "players"
+
+    if requested_mode not in {"players", "teams"} and selection["type"] == "team":
+        compare_kind = "teams"
+
+    if compare_kind == "teams":
+        selected_items = selection["items"] if selection["type"] == "team" else []
+        team1_item = selected_items[0] if len(selected_items) >= 1 else None
+        team2_item = selected_items[1] if len(selected_items) >= 2 else None
+
+        team1 = _build_team_compare_profile(team1_item["id"], team1_item.get("year", "")) if team1_item else None
+        team2 = _build_team_compare_profile(team2_item["id"], team2_item.get("year", "")) if team2_item else None
+        compare_ready = bool(team1 and team2)
+        compare_tabs = _build_team_compare_tabs(team1, team2) if compare_ready else []
+        compare_scoreboard = _build_compare_scoreboard(compare_tabs) if compare_tabs else None
+
+        context = {
+            "compare_kind": "teams",
+            "team1": team1,
+            "team2": team2,
+            "compare_ready": compare_ready,
+            "compare_tabs": compare_tabs,
+            "compare_scoreboard": compare_scoreboard,
+            "submitted": bool(team1_item or team2_item),
+            "selection_count": len(selected_items),
+            "selection_type": selection["type"],
+        }
+        return render(request, "compare.html", context)
+
+    if not player1_term and not player2_term and selection["type"] == "player":
+        selected_items = selection["items"]
+        if len(selected_items) >= 1:
+            player1_term = selected_items[0]["id"]
+        if len(selected_items) >= 2:
+            player2_term = selected_items[1]["id"]
+
     player1_options = get_player_options_by_initial(player1_letter) if player1_letter in letters else []
     player2_options = get_player_options_by_initial(player2_letter) if player2_letter in letters else []
 
@@ -1254,6 +1526,7 @@ def compare_players_view(request):
     best_season_cards = _build_best_season_cards(player1, player2) if compare_ready else []
 
     context = {
+        "compare_kind": "players",
         "letters": letters,
         "player1_letter": player1_letter,
         "player2_letter": player2_letter,
@@ -1272,6 +1545,8 @@ def compare_players_view(request):
         "submitted": bool(player1_term or player2_term),
         "player1_missing": bool(player1_term and not player1),
         "player2_missing": bool(player2_term and not player2),
+        "selection_count": selection["count"] if selection["type"] == "player" else 0,
+        "selection_type": selection["type"],
     }
     return render(request, "compare.html", context)
 
@@ -1282,3 +1557,31 @@ def graph_view(request):
         target = reverse("player_detail", kwargs={"player_id": player_term})
         return redirect(f"{target}#relationship-graph")
     return redirect(reverse("players"))
+
+
+@require_POST
+def compare_selection_view(request):
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        payload = {}
+
+    action = str(payload.get("action", "toggle")).strip().lower()
+    if action == "clear":
+        selection = clear_compare_selection(request)
+        return JsonResponse(
+            {
+                "ok": True,
+                "status": "cleared",
+                "selection": selection,
+            }
+        )
+
+    result = toggle_compare_selection(
+        request,
+        payload.get("item_type"),
+        payload.get("item_id"),
+        payload.get("label", ""),
+        payload.get("year", ""),
+    )
+    return JsonResponse(result, status=200 if result.get("ok") else 400)

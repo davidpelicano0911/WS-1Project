@@ -54,7 +54,7 @@
 </section>
 
 <section class="hero-panel mb-4 team-filter-hero-panel">
-    <form method="get" class="data-panel team-filter-panel team-filter-panel-compact">
+    <form method="get" class="data-panel team-filter-panel team-filter-panel-compact" data-auto-submit-filters data-auto-submit-delay="450">
         <div class="player-filter-head">
             <div>
                 <span class="eyebrow">
@@ -100,7 +100,6 @@
             </div>
 
             <div class="team-filter-toolbar">
-                <button type="submit" class="btn-app btn-primary-app">Apply</button>
                 <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">Reset</a>
             </div>
 
@@ -125,6 +124,10 @@
         </div>
 
         <div class="player-filter-meta mt-3">
+            <span class="player-filter-chip soft">
+                <i class="bi bi-lightning-charge-fill"></i>
+                Filters update automatically
+            </span>
             {% if active_filters %}
                 {% for item in active_filters|slice:":6" %}
                     <span class="player-filter-chip">
@@ -158,8 +161,22 @@
 {% if team_cards %}
 <section class="team-card-grid">
     {% for card in team_cards %}
-    <a href="{% url 'team_detail' card.franchise_id %}" class="feature-card team-browser-card">
-        <article class="team-card-shell">
+    <div class="team-card-entry{% if card.compare_selected %} compare-selected{% endif %}">
+        <button
+            type="button"
+            class="compare-select-button compare-select-button-team{% if card.compare_selected %} active{% endif %}"
+            data-compare-select
+            data-compare-type="team"
+            data-compare-id="{{ card.franchise_id }}"
+            data-compare-label="{{ card.team_name }}"
+            aria-pressed="{% if card.compare_selected %}true{% else %}false{% endif %}"
+        >
+            <i class="bi {% if card.compare_selected %}bi-check2-circle{% else %}bi-plus-circle{% endif %}"></i>
+            <span data-compare-select-label>{% if card.compare_selected %}Selected{% else %}Compare{% endif %}</span>
+        </button>
+
+        <a href="{% url 'team_detail' card.franchise_id %}" class="feature-card team-browser-card">
+            <article class="team-card-shell">
             <div class="team-card-front">
                 <div class="team-card-stage">
                     <div class="team-card-logo-wrap">
@@ -249,10 +266,34 @@
                     <span class="team-card-cta">Open team page <i class="bi bi-arrow-right"></i></span>
                 </div>
             </div>
-        </article>
-    </a>
+            </article>
+        </a>
+    </div>
     {% endfor %}
 </section>
+{% if total_pages > 1 %}
+<nav class="pager-app" aria-label="Teams pagination">
+    {% if has_previous %}
+        <a class="btn-app btn-secondary-app" href="{% url 'teams' %}?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ previous_page }}">
+            Previous
+        </a>
+    {% endif %}
+
+    <div class="pager-pages">
+        {% for page_number in page_numbers %}
+            <a class="pager-page{% if page_number == page %} active{% endif %}" href="{% url 'teams' %}?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ page_number }}">
+                {{ page_number }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if has_next %}
+        <a class="btn-app btn-secondary-app" href="{% url 'teams' %}?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ next_page }}">
+            Next
+        </a>
+    {% endif %}
+</nav>
+{% endif %}
 {% else %}
 <div class="empty-state">
     <i class="bi bi-shield-x"></i>

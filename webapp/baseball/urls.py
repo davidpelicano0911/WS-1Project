@@ -14,5 +14,6 @@ urlpatterns = [
     path('awards/', views.awards_view, name='awards_list'),
     path('salaries/', views.salaries_view, name='salaries_list'),
     path('compare/', views.compare_players_view, name='compare_players'),
+    path('compare/selection/', views.compare_selection_view, name='compare_selection'),
     path('graph/', views.graph_view, name='graph_view'),
 ]

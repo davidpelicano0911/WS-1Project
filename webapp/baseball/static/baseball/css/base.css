@@ -896,6 +896,119 @@ a {
     margin-bottom: 1.25rem;
 }
 
+.compare-hero-panel {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.compare-hero-topline {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.compare-hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.compare-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(136, 174, 232, 0.12);
+}
+
+.compare-mode-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.65rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 800;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.compare-mode-pill:hover {
+    color: #edf4ff;
+    transform: translateY(-1px);
+}
+
+.compare-mode-pill.active {
+    background: linear-gradient(135deg, rgba(244, 197, 66, 0.18), rgba(244, 197, 66, 0.08));
+    border: 1px solid rgba(244, 197, 66, 0.18);
+    color: #ffe7a2;
+}
+
+.compare-selection-tray {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.compare-slot-card {
+    position: relative;
+    display: grid;
+    gap: 0.45rem;
+    min-height: 8.75rem;
+    padding: 1.1rem 1.15rem;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(136, 174, 232, 0.12);
+}
+
+.compare-slot-card.active {
+    background:
+        radial-gradient(circle at top right, rgba(244, 197, 66, 0.12), transparent 28%),
+        rgba(255, 255, 255, 0.055);
+    border-color: rgba(244, 197, 66, 0.18);
+}
+
+.compare-slot-title {
+    color: #edf4ff;
+    font-size: 1.16rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.compare-slot-copy {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.compare-slot-remove {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 2.45rem;
+    height: 2.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf4ff;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.compare-slot-remove:hover {
+    background: rgba(244, 197, 66, 0.16);
+    color: #ffe7a2;
+    transform: translateY(-1px);
+}
+
 .compare-scoreboard {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1367,6 +1480,83 @@ a {
     border: 1px solid rgba(198, 56, 69, 0.12);
 }
 
+.compare-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(2, 8, 20, 0.72);
+    backdrop-filter: blur(8px);
+}
+
+.compare-modal-card {
+    width: min(100%, 460px);
+    padding: 1.35rem;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top right, rgba(244, 197, 66, 0.12), transparent 30%),
+        linear-gradient(180deg, rgba(10, 27, 52, 0.98), rgba(6, 16, 32, 0.98));
+    border: 1px solid rgba(136, 174, 232, 0.16);
+    box-shadow: 0 28px 54px rgba(2, 8, 20, 0.42);
+}
+
+.compare-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+}
+
+.compare-modal-close {
+    width: 2.7rem;
+    height: 2.7rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf4ff;
+}
+
+body.compare-modal-open {
+    overflow: hidden;
+}
+
+.compare-select-button,
+.compare-select-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 2.45rem;
+    padding: 0.45rem 0.82rem;
+    border-radius: 999px;
+    border: 1px solid rgba(136, 174, 232, 0.18);
+    background: rgba(8, 27, 56, 0.9);
+    color: #edf4ff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 24px rgba(4, 12, 24, 0.18);
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.compare-select-button:hover,
+.compare-select-inline:hover {
+    transform: translateY(-1px);
+    border-color: rgba(244, 197, 66, 0.26);
+    color: #fff6d1;
+}
+
+.compare-select-button.active,
+.compare-select-inline.active {
+    background: linear-gradient(135deg, rgba(244, 197, 66, 0.18), rgba(244, 197, 66, 0.1));
+    border-color: rgba(244, 197, 66, 0.22);
+    color: #ffe7a2;
+}
+
 .team-browser-panel,
 .team-showcase-panel {
     position: relative;
@@ -1406,6 +1596,17 @@ a {
     gap: 1.25rem;
 }
 
+.team-card-entry {
+    position: relative;
+}
+
+.team-card-entry .compare-select-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9;
+}
+
 .team-browser-card {
     display: block;
     min-height: 0;
@@ -1423,7 +1624,9 @@ a {
     transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease, background 0.24s ease;
 }
 
-.team-browser-card:hover {
+.team-browser-card:hover,
+.team-card-entry:hover .team-browser-card,
+.team-card-entry:focus-within .team-browser-card {
     color: inherit;
     transform: translateY(-8px);
     border-color: rgba(166, 201, 255, 0.26);
@@ -1705,14 +1908,18 @@ a {
 }
 
 .team-browser-card:hover .team-card-stage,
-.team-browser-card:focus-visible .team-card-stage {
+.team-browser-card:focus-visible .team-card-stage,
+.team-card-entry:hover .team-card-stage,
+.team-card-entry:focus-within .team-card-stage {
     transform: translateY(-3px);
     border-color: rgba(214, 228, 255, 0.16);
     box-shadow: 0 20px 34px rgba(4, 12, 24, 0.2);
 }
 
 .team-browser-card:hover .team-card-glow,
-.team-browser-card:focus-visible .team-card-glow {
+.team-browser-card:focus-visible .team-card-glow,
+.team-card-entry:hover .team-card-glow,
+.team-card-entry:focus-within .team-card-glow {
     transform: scale(1.08);
     opacity: 1;
 }
@@ -1722,33 +1929,47 @@ a {
 .team-browser-card:hover .team-hover-mini-item,
 .team-browser-card:focus-visible .team-hover-mini-item,
 .team-browser-card:hover .team-hover-stat,
-.team-browser-card:focus-visible .team-hover-stat {
+.team-browser-card:focus-visible .team-hover-stat,
+.team-card-entry:hover .team-card-nameplate,
+.team-card-entry:focus-within .team-card-nameplate,
+.team-card-entry:hover .team-hover-mini-item,
+.team-card-entry:focus-within .team-hover-mini-item,
+.team-card-entry:hover .team-hover-stat,
+.team-card-entry:focus-within .team-hover-stat {
     transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.07);
     border-color: rgba(220, 233, 255, 0.12);
 }
 
 .team-browser-card:hover .team-card-hover-panel,
-.team-browser-card:focus-visible .team-card-hover-panel {
+.team-browser-card:focus-visible .team-card-hover-panel,
+.team-card-entry:hover .team-card-hover-panel,
+.team-card-entry:focus-within .team-card-hover-panel {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
 }
 
 .team-browser-card:hover .team-card-actionbar,
-.team-browser-card:focus-visible .team-card-actionbar {
+.team-browser-card:focus-visible .team-card-actionbar,
+.team-card-entry:hover .team-card-actionbar,
+.team-card-entry:focus-within .team-card-actionbar {
     border-color: rgba(220, 233, 255, 0.12);
 }
 
 .team-browser-card:hover .team-card-front,
-.team-browser-card:focus-visible .team-card-front {
+.team-browser-card:focus-visible .team-card-front,
+.team-card-entry:hover .team-card-front,
+.team-card-entry:focus-within .team-card-front {
     opacity: 0.16;
     filter: blur(2px) saturate(0.72);
     transform: scale(0.985);
 }
 
 .team-browser-card:hover .team-card-cta,
-.team-browser-card:focus-visible .team-card-cta {
+.team-browser-card:focus-visible .team-card-cta,
+.team-card-entry:hover .team-card-cta,
+.team-card-entry:focus-within .team-card-cta {
     transform: translateX(3px);
     color: #fff0bc;
 }
@@ -3095,6 +3316,19 @@ a {
     gap: 1.25rem;
 }
 
+.player-card-entry {
+    position: relative;
+    content-visibility: auto;
+    contain-intrinsic-size: 560px;
+}
+
+.player-card-entry .compare-select-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9;
+}
+
 .feature-card.player-card-link {
     display: block;
     min-height: 0;
@@ -3122,7 +3356,9 @@ a {
     transition: opacity 0.24s ease, transform 0.6s ease;
 }
 
-.player-card-link:hover {
+.player-card-link:hover,
+.player-card-entry:hover .player-card-link,
+.player-card-entry:focus-within .player-card-link {
     color: inherit;
     transform: translateY(-8px);
     border-color: rgba(166, 201, 255, 0.26);
@@ -3132,7 +3368,9 @@ a {
 }
 
 .player-card-link:hover::before,
-.player-card-link:focus-visible::before {
+.player-card-link:focus-visible::before,
+.player-card-entry:hover .player-card-link::before,
+.player-card-entry:focus-within .player-card-link::before {
     opacity: 1;
     transform: rotate(14deg) translateX(340%);
 }
@@ -3401,20 +3639,26 @@ a {
 }
 
 .player-card-link:hover .player-card-portrait-frame,
-.player-card-link:focus-visible .player-card-portrait-frame {
+.player-card-link:focus-visible .player-card-portrait-frame,
+.player-card-entry:hover .player-card-portrait-frame,
+.player-card-entry:focus-within .player-card-portrait-frame {
     transform: translateY(-3px);
     border-color: rgba(214, 228, 255, 0.16);
     box-shadow: 0 20px 34px rgba(4, 12, 24, 0.2);
 }
 
 .player-card-link:hover .player-card-photo,
-.player-card-link:focus-visible .player-card-photo {
+.player-card-link:focus-visible .player-card-photo,
+.player-card-entry:hover .player-card-photo,
+.player-card-entry:focus-within .player-card-photo {
     transform: scale(1.045);
     filter: saturate(1.08) contrast(1.08);
 }
 
 .player-card-link:hover .player-card-glow,
-.player-card-link:focus-visible .player-card-glow {
+.player-card-link:focus-visible .player-card-glow,
+.player-card-entry:hover .player-card-glow,
+.player-card-entry:focus-within .player-card-glow {
     transform: scale(1.08);
     opacity: 1;
 }
@@ -3422,33 +3666,45 @@ a {
 .player-card-link:hover .player-card-nameplate,
 .player-card-link:focus-visible .player-card-nameplate,
 .player-card-link:hover .player-hover-mini-item,
-.player-card-link:focus-visible .player-hover-mini-item {
+.player-card-link:focus-visible .player-hover-mini-item,
+.player-card-entry:hover .player-card-nameplate,
+.player-card-entry:focus-within .player-card-nameplate,
+.player-card-entry:hover .player-hover-mini-item,
+.player-card-entry:focus-within .player-hover-mini-item {
     transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.07);
     border-color: rgba(220, 233, 255, 0.12);
 }
 
 .player-card-link:hover .player-card-hover-panel,
-.player-card-link:focus-visible .player-card-hover-panel {
+.player-card-link:focus-visible .player-card-hover-panel,
+.player-card-entry:hover .player-card-hover-panel,
+.player-card-entry:focus-within .player-card-hover-panel {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
 }
 
 .player-card-link:hover .player-card-actionbar,
-.player-card-link:focus-visible .player-card-actionbar {
+.player-card-link:focus-visible .player-card-actionbar,
+.player-card-entry:hover .player-card-actionbar,
+.player-card-entry:focus-within .player-card-actionbar {
     border-color: rgba(220, 233, 255, 0.12);
 }
 
 .player-card-link:hover .player-card-front,
-.player-card-link:focus-visible .player-card-front {
+.player-card-link:focus-visible .player-card-front,
+.player-card-entry:hover .player-card-front,
+.player-card-entry:focus-within .player-card-front {
     opacity: 0.16;
     filter: blur(2px) saturate(0.72);
     transform: scale(0.985);
 }
 
 .player-card-link:hover .player-card-cta,
-.player-card-link:focus-visible .player-card-cta {
+.player-card-link:focus-visible .player-card-cta,
+.player-card-entry:hover .player-card-cta,
+.player-card-entry:focus-within .player-card-cta {
     transform: translateX(3px);
     color: #fff0bc;
 }

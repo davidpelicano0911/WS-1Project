@@ -18,6 +18,18 @@
         </div>
         <div class="button-row compact">
             <a href="{% url 'players' %}" class="btn-app btn-secondary-app">Back to players</a>
+            <button
+                type="button"
+                class="btn-app btn-secondary-app compare-select-inline{% if player.compare_selected %} active{% endif %}"
+                data-compare-select
+                data-compare-type="player"
+                data-compare-id="{{ player.player_id }}"
+                data-compare-label="{{ player.name }}"
+                aria-pressed="{% if player.compare_selected %}true{% else %}false{% endif %}"
+            >
+                <i class="bi {% if player.compare_selected %}bi-check2-circle{% else %}bi-plus-circle{% endif %}"></i>
+                <span data-compare-select-label>{% if player.compare_selected %}Selected{% else %}Compare{% endif %}</span>
+            </button>
             <a href="#relationship-graph" class="btn-app btn-primary-app">Jump to graph</a>
         </div>
     </div>

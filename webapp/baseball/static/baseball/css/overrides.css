@@ -676,6 +676,24 @@
         align-items: flex-start;
     }
 
+    .compare-hero-topline {
+        flex-direction: column;
+    }
+
+    .compare-hero-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .compare-mode-switch {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .compare-selection-tray {
+        grid-template-columns: 1fr;
+    }
+
     .compare-scoreboard {
         min-width: 0;
         width: 100%;

@@ -10,6 +10,7 @@ from .base import (
     escape_sparql_string,
     run_query,
 )
+@lru_cache(maxsize=64)
 def get_player_options_by_initial(initial):
     initial = str(initial).strip().upper()
     if len(initial) != 1 or not initial.isalpha():
@@ -99,6 +100,7 @@ def _player_catalog_filters(
     return "\n        ".join(filters)
 
 
+@lru_cache(maxsize=256)
 def get_players_catalog_count(
     letter="",
     search_term="",
@@ -152,6 +154,7 @@ def get_players_catalog_count(
     return _row_int(results[0], "total", 0)
 
 
+@lru_cache(maxsize=256)
 def get_players_catalog(
     letter="",
     search_term="",
@@ -264,6 +267,7 @@ def get_players_catalog(
     return players
 
 
+@lru_cache(maxsize=1)
 def get_player_filter_options():
     country_query = """
     PREFIX bb: <http://baseball.ws.pt/>

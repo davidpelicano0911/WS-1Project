@@ -18,6 +18,19 @@
         </div>
         <div class="button-row compact">
             <a href="{% url 'teams' %}" class="btn-app btn-secondary-app">Back to teams</a>
+            <button
+                type="button"
+                class="btn-app btn-secondary-app compare-select-inline{% if compare_selected %} active{% endif %}"
+                data-compare-select
+                data-compare-type="team"
+                data-compare-id="{{ selected_team.franchise_id }}"
+                data-compare-label="{{ selected_team.team_name }}"
+                data-compare-year="{{ selected_team.year }}"
+                aria-pressed="{% if compare_selected %}true{% else %}false{% endif %}"
+            >
+                <i class="bi {% if compare_selected %}bi-check2-circle{% else %}bi-plus-circle{% endif %}"></i>
+                <span data-compare-select-label>{% if compare_selected %}Selected{% else %}Compare{% endif %}</span>
+            </button>
             <a href="{% url 'analytics' %}" class="btn-app btn-primary-app">Open analytics</a>
         </div>
     </div>

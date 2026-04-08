@@ -5,6 +5,7 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
+from ..compare_selection import get_compare_selection
 from ..sparql import (
     DIVISION_LABELS,
     LEAGUE_LABELS,
@@ -788,6 +789,16 @@ def _dedupe_team_directory(catalog):
 
     return deduped
 
+
+def _selected_compare_map(request, item_type):
+    selection = get_compare_selection(request)
+    if selection["type"] != item_type:
+        return {}
+    return {
+        item["id"]: item
+        for item in selection["items"]
+    }
+
 ROUND_LABELS = {
     "WS": "World Series",
     "ALCS": "American League Championship Series",
@@ -832,6 +843,10 @@ def teams_view(request):
     league_code = request.GET.get("league", "").strip().upper()
     status = request.GET.get("status", "all").strip().lower()
     sort_code = request.GET.get("sort", "name_asc").strip()
+    try:
+        page = max(int(request.GET.get("page", "1")), 1)
+    except ValueError:
+        page = 1
 
     valid_status = {"all", "active", "historical"}
     if status not in valid_status:
@@ -849,7 +864,17 @@ def teams_view(request):
 
     filtered_catalog = _filter_team_directory(franchise_catalog, search_term, league_code, status, sort_code)
     directory_catalog = _dedupe_team_directory(filtered_catalog)
-    team_cards = _build_team_cards(directory_catalog, "")
+    page_size = 12
+    total_teams = len(directory_catalog)
+    total_pages = max((total_teams + page_size - 1) // page_size, 1)
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    paged_catalog = directory_catalog[offset:offset + page_size]
+
+    team_cards = _build_team_cards(paged_catalog, "")
+    selected_teams = _selected_compare_map(request, "team")
+    for card in team_cards:
+        card["compare_selected"] = card["franchise_id"] in selected_teams
     team_options = [
         {"player_id": entry["franchise_id"], "name": entry["name"]}
         for entry in _dedupe_team_directory(franchise_catalog)
@@ -868,7 +893,7 @@ def teams_view(request):
         "page_title": "Teams",
         "team_cards": team_cards,
         "team_options": team_options,
-        "total_teams": len(directory_catalog),
+        "total_teams": total_teams,
         "search_term": search_term,
         "league_code": league_code,
         "status": status,
@@ -880,6 +905,25 @@ def teams_view(request):
             {"code": "seasons_desc", "name": "Most seasons"},
         ],
         "active_filters": active_filters,
+        "page": page,
+        "total_pages": total_pages,
+        "page_numbers": list(range(max(1, page - 2), min(total_pages, page + 2) + 1)),
+        "has_previous": page > 1,
+        "has_next": page < total_pages,
+        "previous_page": page - 1,
+        "next_page": page + 1,
+        "pagination_query": urlencode(
+            {
+                key: value
+                for key, value in {
+                    "q": search_term,
+                    "league": league_code,
+                    "status": status if status != "all" else "",
+                    "sort": sort_code,
+                }.items()
+                if value not in (None, "")
+            }
+        ),
         "analytics_url": reverse("analytics"),
         "players_url": reverse("players"),
     }
@@ -891,6 +935,8 @@ def team_detail_view(request, franchise_id):
     detail_context = _build_team_detail_context(requested_franchise, str(request.GET.get("year", "")).strip())
     if not detail_context.get("selected_team"):
         raise Http404("Team not found")
+    selected_teams = _selected_compare_map(request, "team")
+    detail_context["compare_selected"] = requested_franchise in selected_teams
     return render(request, "team_detail.html", detail_context)
 
 

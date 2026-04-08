@@ -1,10 +1,11 @@
 import json
-from concurrent.futures import ThreadPoolExecutor
+import re
 from functools import lru_cache
 from pathlib import Path
 
 
 PHOTO_CATALOG_PATH = Path(__file__).with_name("data").joinpath("player_photos.json")
+MLB_WIDTH_RE = re.compile(r"w_(\d+)")
 
 
 def build_bbref_player_url(bbref_id):
@@ -12,6 +13,15 @@ def build_bbref_player_url(bbref_id):
     if not bbref_id:
         return ""
     return f"https://www.baseball-reference.com/players/{bbref_id[0]}/{bbref_id}.shtml"
+
+
+def _resize_mlb_photo_url(url, width):
+    url = str(url or "").strip()
+    if not url:
+        return ""
+    if "img.mlbstatic.com" not in url:
+        return url
+    return MLB_WIDTH_RE.sub(f"w_{int(width)}", url, count=1)
 
 
 @lru_cache(maxsize=1)
@@ -30,15 +40,33 @@ def get_player_photo_entry(bbref_id):
     return _load_player_photo_catalog().get(bbref_id, {})
 
 
+def player_has_catalog_photo(bbref_id):
+    photo_entry = get_player_photo_entry(bbref_id)
+    return bool(photo_entry.get("photo_url") or photo_entry.get("photo_fallback_url"))
+
+
+@lru_cache(maxsize=1)
+def get_catalog_photo_count():
+    return sum(
+        1
+        for photo_entry in _load_player_photo_catalog().values()
+        if photo_entry.get("photo_url") or photo_entry.get("photo_fallback_url")
+    )
+
+
 def attach_player_media(player):
     bbref_id = str(player.get("bbref_id", "")).strip()
     photo_entry = get_player_photo_entry(bbref_id)
+    photo_url = photo_entry.get("photo_url", "")
+    photo_fallback_url = photo_entry.get("photo_fallback_url", "")
     return {
         **player,
         "bbref_id": bbref_id,
         "bbref_url": build_bbref_player_url(bbref_id),
-        "photo_url": photo_entry.get("photo_url", ""),
-        "photo_fallback_url": photo_entry.get("photo_fallback_url", ""),
+        "photo_url": photo_url,
+        "photo_fallback_url": photo_fallback_url,
+        "card_photo_url": _resize_mlb_photo_url(photo_url, 220),
+        "card_photo_fallback_url": _resize_mlb_photo_url(photo_fallback_url, 220),
         "photo_source": photo_entry.get("source", ""),
     }
 
@@ -46,6 +74,4 @@ def attach_player_media(player):
 def enrich_players_with_media(players, max_workers=8):
     if not players:
         return []
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        return list(executor.map(attach_player_media, players))
+    return [attach_player_media(player) for player in players]

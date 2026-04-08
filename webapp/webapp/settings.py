@@ -65,6 +65,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'baseball.context_processors.header_teams',
                 'baseball.context_processors.header_leagues',
+                'baseball.context_processors.compare_selection',
             ],
         },
     },
