@@ -35,8 +35,23 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="awards-tab" data-bs-toggle="pill" data-bs-target="#awards-stats" type="button" role="tab" aria-controls="awards-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i class="bi bi-award-fill"></i> Awards
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="hall-tab" data-bs-toggle="pill" data-bs-target="#hall-stats" type="button" role="tab" aria-controls="hall-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i class="bi bi-bank"></i> Hall of Fame
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="managers-tab" data-bs-toggle="pill" data-bs-target="#managers-stats" type="button" role="tab" aria-controls="managers-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i class="bi bi-person-badge"></i> Managers
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="legends-tab" data-bs-toggle="pill" data-bs-target="#legends-stats" type="button" role="tab" aria-controls="legends-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                <i class="bi bi-trophy-fill"></i> Awards & Legends
+                <i class="bi bi-trophy-fill"></i> Combined view
             </button>
         </li>
     </ul>
@@ -188,6 +203,113 @@
                                     <i class="bi bi-database-exclamation"></i> No salary data available.
                                 </td>
                             </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AWARDS TAB -->
+        <div class="tab-pane fade" id="awards-stats" role="tabpanel" aria-labelledby="awards-tab">
+            <div class="data-panel">
+                <h2 class="h3 mb-4"><i class="bi bi-award-fill text-warning pe-2"></i> Awards timeline</h2>
+                <div class="table-responsive table-app">
+                    <table class="table align-middle text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-start">Player</th>
+                                <th class="text-start">Award</th>
+                                <th>Year</th>
+                                <th>League</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for award in awards|slice:":25" %}
+                            <tr>
+                                <td class="text-start">
+                                    {% if award.player_id %}
+                                    <a href="{% url 'player_detail' award.player_id %}" class="fw-bold text-white text-decoration-none">{{ award.name }}</a>
+                                    {% else %}
+                                    <strong>{{ award.name }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td class="text-start">{{ award.award_name }}</td>
+                                <td><span class="pill">{{ award.year }}</span></td>
+                                <td>{{ award.league|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="empty-state">No awards data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALL OF FAME TAB -->
+        <div class="tab-pane fade" id="hall-stats" role="tabpanel" aria-labelledby="hall-tab">
+            <div class="data-panel">
+                <h2 class="h3 mb-4"><i class="bi bi-bank text-warning pe-2"></i> Hall of Fame</h2>
+                <div class="table-responsive table-app">
+                    <table class="table align-middle text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-start">Inductee</th>
+                                <th>Year</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in members %}
+                            <tr>
+                                <td class="text-start">
+                                    {% if m.player_id %}
+                                    <a href="{% url 'player_detail' m.player_id %}" class="fw-bold text-white text-decoration-none">{{ m.name }}</a>
+                                    {% else %}
+                                    <strong>{{ m.name }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td><span class="pill">{{ m.year }}</span></td>
+                                <td><strong>{{ m.percent }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="empty-state">No Hall of Fame data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MANAGERS TAB -->
+        <div class="tab-pane fade" id="managers-stats" role="tabpanel" aria-labelledby="managers-tab">
+            <div class="data-panel">
+                <h2 class="h3 mb-4"><i class="bi bi-person-badge text-info pe-2"></i> Managers</h2>
+                <div class="table-responsive table-app">
+                    <table class="table align-middle text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-start">Manager</th>
+                                <th>Wins</th>
+                                <th>Win %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in managers %}
+                            <tr>
+                                <td class="text-start">
+                                    {% if m.player_id %}
+                                    <a href="{% url 'player_detail' m.player_id %}" class="fw-bold text-white text-decoration-none">{{ m.name }}</a>
+                                    {% else %}
+                                    <strong>{{ m.name }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td><span class="pill pill-success">{{ m.wins }}</span></td>
+                                <td><strong>{{ m.win_pct }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="empty-state">No manager data available.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
