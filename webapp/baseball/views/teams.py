@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlencode
 
 from django.http import Http404
 from django.shortcuts import redirect, render
@@ -56,6 +57,16 @@ def _format_percentage(value, digits=1, default="N/A"):
     if value in (None, "", "N/A"):
         return default
     return f"{float(value) * 100:.{digits}f}%"
+
+
+def _build_team_list_querystring(params, **updates):
+    query = {key: value for key, value in params.items() if value not in (None, "", False)}
+    for key, value in updates.items():
+        if value in (None, "", False):
+            query.pop(key, None)
+        else:
+            query[key] = value
+    return urlencode(query)
 
 
 def _format_record(wins, losses):
@@ -803,6 +814,10 @@ def teams_view(request):
     league_code = request.GET.get("league", "").strip().upper()
     status = request.GET.get("status", "all").strip().lower()
     sort_code = request.GET.get("sort", "name_asc").strip()
+    try:
+        page = max(int(request.GET.get("page", "1")), 1)
+    except ValueError:
+        page = 1
 
     valid_status = {"all", "active", "historical"}
     if status not in valid_status:
@@ -820,14 +835,27 @@ def teams_view(request):
 
     filtered_catalog = _filter_team_directory(franchise_catalog, search_term, league_code, status, sort_code)
     directory_catalog = _dedupe_team_directory(filtered_catalog)
-    team_cards = _build_team_cards(directory_catalog, "")
+    page_size = 18
+    total_teams = len(directory_catalog)
+    total_pages = max((total_teams + page_size - 1) // page_size, 1)
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    page_entries = directory_catalog[offset:offset + page_size]
+    team_cards = _build_team_cards(page_entries, "")
+    page_numbers = list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
     team_options = [
         {"player_id": entry["franchise_id"], "name": entry["name"]}
         for entry in _dedupe_team_directory(franchise_catalog)
     ]
+    base_params = {
+        "q": search_term,
+        "league": league_code,
+        "status": status,
+        "sort": sort_code,
+    }
     active_filters = []
     if search_term:
-        active_filters.append({"label": "Query", "value": search_term})
+        active_filters.append({"label": "", "value": search_term})
     if league_code:
         active_filters.append({"label": "League", "value": _league_display(league_code)})
     if status == "active":
@@ -839,7 +867,7 @@ def teams_view(request):
         "page_title": "Teams",
         "team_cards": team_cards,
         "team_options": team_options,
-        "total_teams": len(directory_catalog),
+        "total_teams": total_teams,
         "search_term": search_term,
         "league_code": league_code,
         "status": status,
@@ -851,6 +879,14 @@ def teams_view(request):
             {"code": "seasons_desc", "name": "Most seasons"},
         ],
         "active_filters": active_filters,
+        "page": page,
+        "total_pages": total_pages,
+        "page_numbers": page_numbers,
+        "has_previous": page > 1,
+        "has_next": page < total_pages,
+        "previous_page": page - 1,
+        "next_page": page + 1,
+        "pagination_query": _build_team_list_querystring(base_params),
     }
     return render(request, "teams.html", context)
 

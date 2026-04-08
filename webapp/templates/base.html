@@ -76,24 +76,53 @@
                         <a href="{% url 'players' %}" class="icon-circle-link" aria-label="Open player directory">
                             <i class="bi bi-search"></i>
                         </a>
-                        <a href="{% url 'compare_players' %}" class="portal-cta">Explore Data</a>
+                        {% if request.user.is_authenticated %}
+                            <span class="portal-user-chip">
+                                <strong>{{ request.user.username }}</strong>
+                                <span>{% if request.user.is_staff %}Administrator{% else %}Normal user{% endif %}</span>
+                            </span>
+                            {% if request.user.is_staff %}
+                                <a href="/admin/" class="portal-cta">Admin</a>
+                            {% endif %}
+                            <a href="{% url 'logout' %}" class="portal-cta">Logout</a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="portal-cta">Login</a>
+                            <a href="{% url 'register' %}" class="portal-cta portal-cta-accent">Register</a>
+                        {% endif %}
                     </div>
                 </nav>
             </div>
 
             <div class="subnav-bar">
                 <div class="container portal-container subnav-inner">
-                    <a href="{% url 'home' %}" class="subnav-link">Home</a>
-                    <a href="{% url 'players' %}" class="subnav-link">Players</a>
-                    <a href="{% url 'teams' %}" class="subnav-link">Teams</a>
-                    <a href="{% url 'compare_players' %}" class="subnav-link">Comparator</a>
-                    <a href="{% url 'analytics' %}" class="subnav-link">Analytics / Stats</a>
-                    <a href="{% url 'about' %}" class="subnav-link">About</a>
+                    {% url 'home' as home_url %}
+                    {% url 'players' as players_url %}
+                    {% url 'teams' as teams_url %}
+                    {% url 'compare_players' as compare_url %}
+                    {% url 'analytics' as analytics_url %}
+                    {% url 'quiz' as quiz_url %}
+                    {% url 'about' as about_url %}
+                    <a href="{{ home_url }}" class="subnav-link{% if request.path == home_url %} active{% endif %}">Home</a>
+                    <a href="{{ players_url }}" class="subnav-link{% if request.path == players_url %} active{% endif %}">Players</a>
+                    <a href="{{ teams_url }}" class="subnav-link{% if request.path == teams_url %} active{% endif %}">Teams</a>
+                    <a href="{{ compare_url }}" class="subnav-link{% if request.path == compare_url %} active{% endif %}">Comparator</a>
+                    <a href="{{ analytics_url }}" class="subnav-link{% if request.path == analytics_url %} active{% endif %}">Analytics / Stats</a>
+                    <a href="{{ quiz_url }}" class="subnav-link{% if request.path == quiz_url %} active{% endif %}">Quiz</a>
+                    <a href="{{ about_url }}" class="subnav-link{% if request.path == about_url %} active{% endif %}">About</a>
                 </div>
             </div>
         </header>
 
         <div class="container portal-container">
+            {% if messages %}
+                <div class="message-stack">
+                    {% for message in messages %}
+                        <div class="message-banner {{ message.tags|default:'info' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% block content %}{% endblock %}
 
             <footer class="site-footer text-center mt-5 pt-3">

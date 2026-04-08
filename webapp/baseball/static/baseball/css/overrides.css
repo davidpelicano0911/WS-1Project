@@ -72,6 +72,10 @@
     color: #edf4ff;
 }
 
+.leaderboard-rank {
+    border-color: rgba(136, 174, 232, 0.16);
+}
+
 .table-app tbody td {
     border-color: rgba(136, 174, 232, 0.08);
     background: rgba(18, 44, 84, 0.9);

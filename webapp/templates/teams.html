@@ -128,8 +128,12 @@
             {% if active_filters %}
                 {% for item in active_filters|slice:":6" %}
                     <span class="player-filter-chip">
-                        <strong>{{ item.label }}</strong>
-                        <span>{{ item.value }}</span>
+                        {% if item.label %}
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.value }}</span>
+                        {% else %}
+                            <span>{{ item.value }}</span>
+                        {% endif %}
                     </span>
                 {% endfor %}
             {% else %}
@@ -253,6 +257,32 @@
     </a>
     {% endfor %}
 </section>
+
+{% if total_pages > 1 %}
+<nav class="pager-app" aria-label="Teams pagination">
+    {% if has_previous %}
+        <a class="btn-app btn-secondary-app" href="{% url 'teams' %}?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ previous_page }}">
+            <i class="bi bi-arrow-left"></i>
+            Previous
+        </a>
+    {% endif %}
+
+    <div class="pager-pages">
+        {% for page_number in page_numbers %}
+            <a class="pager-page{% if page_number == page %} active{% endif %}" href="{% url 'teams' %}?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ page_number }}">
+                {{ page_number }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if has_next %}
+        <a class="btn-app btn-secondary-app" href="{% url 'teams' %}?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ next_page }}">
+            Next
+            <i class="bi bi-arrow-right"></i>
+        </a>
+    {% endif %}
+</nav>
+{% endif %}
 {% else %}
 <div class="empty-state">
     <i class="bi bi-shield-x"></i>
