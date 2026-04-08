@@ -1,6 +1,8 @@
 from functools import lru_cache
 
 from .base import _row_value, run_query
+from ..sparql import _row_int
+
 def get_top_salaries():
     query = """
     PREFIX bb: <http://baseball.ws.pt/>
@@ -194,5 +196,77 @@ def get_managers_list():
             "win_pct": f"{win_pct:.3f}",
             "first_year": _row_int(row, "firstYear", 0),
             "last_year": _row_int(row, "lastYear", 0)
+        })
+    return results
+
+def get_global_player_leaders():
+    # Helper for top sum queries
+    def _get_top_sum(stat_type_class, stat_property, has_relation):
+        query = f"""
+        PREFIX bb: <http://baseball.ws.pt/>
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+        SELECT ?playerID ?nameFirst ?nameLast ?nameGiven ?name (SUM(?statValue) AS ?totalStat)
+        WHERE {{
+            ?stat a bb:{stat_type_class} ;
+                  bb:{stat_property} ?statValue .
+            ?player bb:{has_relation} ?stat ;
+                    bb:playerID ?playerID .
+
+            OPTIONAL {{ ?player foaf:name ?name . }}
+            OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+            OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+            OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
+        }}
+        GROUP BY ?playerID ?nameFirst ?nameLast ?nameGiven ?name
+        ORDER BY DESC(?totalStat)
+        LIMIT 5
+        """
+        results = []
+        for row in run_query(query):
+            first_name = _row_value(row, "nameFirst", "")
+            last_name = _row_value(row, "nameLast", "")
+            full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+            if not full_name:
+                full_name = _row_value(row, "name", "")
+            if not full_name:
+                full_name = _row_value(row, "nameGiven", _row_value(row, "playerID", ""))
+
+            results.append({
+                "name": full_name,
+                "player_id": _row_value(row, "playerID", ""),
+                "value": _row_int(row, "totalStat", 0)
+            })
+        return results
+
+    return {
+        "hr": _get_top_sum("BattingStat", "homeRuns", "hasBatting"),
+        "rbi": _get_top_sum("BattingStat", "RBI", "hasBatting"),
+        "strikeouts": _get_top_sum("PitchingStat", "SO", "hasPitching"),
+    }
+
+def get_global_team_leaders():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?franchID ?franchName (SUM(?w) AS ?totalWins)
+    WHERE {
+        ?team a bb:Team ;
+              bb:franchID ?franchID ;
+              bb:W ?w .
+        ?franch a bb:Franchise ;
+                bb:franchID ?franchID ;
+                bb:franchiseName ?franchName .
+    }
+    GROUP BY ?franchID ?franchName
+    ORDER BY DESC(?totalWins)
+    LIMIT 10
+    """
+    results = []
+    for row in run_query(query):
+        results.append({
+            "franch_id": _row_value(row, "franchID", ""),
+            "name": _row_value(row, "franchName", ""),
+            "wins": _row_int(row, "totalWins", 0)
         })
     return results

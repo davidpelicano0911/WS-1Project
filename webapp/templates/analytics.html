@@ -1,47 +1,298 @@
 {% extends "base.html" %}
 
-{% block title %}Analytics / Stats{% endblock %}
+{% block title %}Analytics Dashboard · Baseball Data Explorer{% endblock %}
 
 {% block content %}
-<section class="hero-panel mb-4">
-    <div class="page-header">
-        <div>
-            <span class="eyebrow">
-                <i class="bi bi-graph-up-arrow"></i>
-                Analytics / Stats
-            </span>
-            <h1 class="page-title">Analytics / Stats</h1>
-            <p class="section-copy mb-0">
-                Jump into the most useful statistical views already available in the app.
-            </p>
-        </div>
-    </div>
-
-    <div class="row g-4 mt-1">
-        <div class="col-md-6">
-            <article class="feature-card h-100">
-                <div class="feature-icon gold">
-                    <i class="bi bi-trophy-fill"></i>
-                </div>
-                <h2 class="feature-title h3">Awards</h2>
-                <p class="section-copy">
-                    Browse award records and distinctions across seasons directly from GraphDB.
-                </p>
-                <a href="{% url 'awards_list' %}" class="btn-app btn-primary-app">Open awards</a>
-            </article>
-        </div>
-        <div class="col-md-6">
-            <article class="feature-card h-100">
-                <div class="feature-icon green">
-                    <i class="bi bi-cash-stack"></i>
-                </div>
-                <h2 class="feature-title h3">Salaries</h2>
-                <p class="section-copy">
-                    See top salary records and use them as a simple stats-style leaderboard.
-                </p>
-                <a href="{% url 'salaries_list' %}" class="btn-app btn-secondary-app">Open salaries</a>
-            </article>
-        </div>
+<section class="page-header mb-4">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-graph-up-arrow"></i>
+            Analytics / Stats
+        </span>
+        <h1 class="page-title">Advanced Dashboard</h1>
+        <p class="section-copy mb-0">
+            A comprehensive overview of global baseball statistics, historical records, and financial leaderboards fetched directly via SPARQL.
+        </p>
     </div>
 </section>
+
+<div class="card mb-5 border-0 bg-transparent">
+    <!-- Navbar Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2" id="analytics-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="btn-app btn-primary-app active d-flex align-items-center gap-2" id="players-tab" data-bs-toggle="pill" data-bs-target="#players-stats" type="button" role="tab" aria-controls="players-stats" aria-selected="true" style="padding: 0.5rem 1.2rem; border-radius: 8px;">
+                <i class="bi bi-person-fill"></i> Global Leaders
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="teams-tab" data-bs-toggle="pill" data-bs-target="#teams-stats" type="button" role="tab" aria-controls="teams-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i class="bi bi-shield-fill"></i> Franchises
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="salaries-tab" data-bs-toggle="pill" data-bs-target="#salaries-stats" type="button" role="tab" aria-controls="salaries-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i class="bi bi-cash-stack"></i> Top Salaries
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="legends-tab" data-bs-toggle="pill" data-bs-target="#legends-stats" type="button" role="tab" aria-controls="legends-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i class="bi bi-trophy-fill"></i> Awards & Legends
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="analytics-tabs-content">
+        <!-- GLOBAL LEADERS TAB -->
+        <div class="tab-pane fade show active" id="players-stats" role="tabpanel" aria-labelledby="players-tab">
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="feature-card h-100 border-top border-danger" style="border-top-width: 3px !important; padding: 1.5rem; background: var(--bg-card);">
+                        <div class="d-flex justify-content-between align-items-center mb-2" 
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Automatic runs scored by hitting the ball out of the field.">
+                            <h3 class="feature-title h5 mb-0" style="cursor: help;">
+                                <i class="bi bi-fire me-1 text-danger"></i> Home Runs
+                            </h3>
+                            <i class="bi bi-question-circle text-muted"></i>
+                        </div>
+                        <div class="compare-aside-list mt-3">
+                            {% for p in global_batting.hr %}
+                                <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 py-2">
+                                    <span class="text-truncate pe-2 text-light fw-medium">
+                                        {% if p.player_id %}
+                                        <a href="{% url 'player_detail' p.player_id %}" class="text-white text-decoration-none">{{ p.name }}</a>
+                                        {% else %}
+                                        {{ p.name }}
+                                        {% endif %}
+                                    </span>
+                                    <strong class="fs-5 text-danger font-monospace">{{ p.value }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="feature-card h-100 border-top border-success" style="border-top-width: 3px !important; padding: 1.5rem; background: var(--bg-card);">
+                        <div class="d-flex justify-content-between align-items-center mb-2" 
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Runs Batted In: runs scored on a batter's turn at the plate.">
+                            <h3 class="feature-title h5 mb-0" style="cursor: help;">
+                                <i class="bi bi-lightning-fill me-1 text-success"></i> RBI
+                            </h3>
+                            <i class="bi bi-question-circle text-muted"></i>
+                        </div>
+                        <div class="compare-aside-list mt-3">
+                            {% for p in global_batting.rbi %}
+                                <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 py-2">
+                                    <span class="text-truncate pe-2 text-light fw-medium">
+                                        {% if p.player_id %}
+                                        <a href="{% url 'player_detail' p.player_id %}" class="text-white text-decoration-none">{{ p.name }}</a>
+                                        {% else %}
+                                        {{ p.name }}
+                                        {% endif %}
+                                    </span>
+                                    <strong class="fs-5 text-success font-monospace">{{ p.value }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="feature-card h-100 border-top border-warning" style="border-top-width: 3px !important; padding: 1.5rem; background: var(--bg-card);">
+                        <div class="d-flex justify-content-between align-items-center mb-2" 
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Strikeouts: pitcher retiring a batter on three strikes.">
+                            <h3 class="feature-title h5 mb-0" style="cursor: help;">
+                                <i class="bi bi-x-circle-fill me-1 text-warning"></i> Strikeouts
+                            </h3>
+                            <i class="bi bi-question-circle text-muted"></i>
+                        </div>
+                        <div class="compare-aside-list mt-3">
+                            {% for p in global_batting.strikeouts %}
+                                <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 py-2">
+                                    <span class="text-truncate pe-2 text-light fw-medium">
+                                        {% if p.player_id %}
+                                        <a href="{% url 'player_detail' p.player_id %}" class="text-white text-decoration-none">{{ p.name }}</a>
+                                        {% else %}
+                                        {{ p.name }}
+                                        {% endif %}
+                                    </span>
+                                    <strong class="fs-5 text-warning font-monospace">{{ p.value }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEAMS TAB -->
+        <div class="tab-pane fade" id="teams-stats" role="tabpanel" aria-labelledby="teams-tab">
+            <div class="data-panel">
+                <h2 class="h3 mb-4"><i class="bi bi-shield-fill text-primary pe-2"></i> Franchise History Leaders</h2>
+                <div class="table-responsive table-app">
+                    <table class="table align-middle text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="text-start">Franchise</th>
+                                <th>Total Wins</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for team in global_teams %}
+                            <tr>
+                                <td><span class="pill bg-dark">{{ forloop.counter }}</span></td>
+                                <td class="text-start">
+                                    <a href="{% url 'team_detail' team.franch_id|default:'#' %}" class="fw-bold text-white fs-5 text-decoration-none">
+                                        {{ team.name }}
+                                    </a>
+                                </td>
+                                <td><span class="pill pill-success px-4 py-2 fs-5">{{ team.wins }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="empty-state">No franchise data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALARIES TAB -->
+        <div class="tab-pane fade" id="salaries-stats" role="tabpanel" aria-labelledby="salaries-tab">
+            <div class="data-panel">
+                <h2 class="h3 mb-4"><i class="bi bi-cash-stack text-success pe-2"></i> Highest Salaries in History</h2>
+                <div class="table-responsive table-app">
+                    <table class="table align-middle text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Amount</th>
+                                <th>Year</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in salaries %}
+                            <tr>
+                                <td><strong>{{ s.name.value }}</strong></td>
+                                <td class="text-success fw-bold fs-5">${{ s.salary.value }}</td>
+                                <td><span class="pill">{{ s.year.value }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state">
+                                    <i class="bi bi-database-exclamation"></i> No salary data available.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AWARDS & LEGENDS TAB -->
+        <div class="tab-pane fade" id="legends-stats" role="tabpanel" aria-labelledby="legends-tab">
+            <div class="row g-4">
+                
+                <!-- Hall Of Fame -->
+                <div class="col-md-6">
+                    <div class="data-panel h-100">
+                        <h3 class="h4 mb-4"><i class="bi bi-bank text-warning pe-2"></i> Latest Hall of Fame</h3>
+                        <div class="table-responsive table-app" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table align-middle text-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">Inductee</th>
+                                        <th>Year</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for m in members|slice:":15" %}
+                                    <tr>
+                                        <td class="text-start">
+                                            {% if m.player_id %}
+                                            <a href="{% url 'player_detail' m.player_id %}" class="fw-bold">{{ m.name }}</a>
+                                            {% else %}
+                                            <strong>{{ m.name }}</strong>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="pill">{{ m.year }}</span></td>
+                                        <td><strong>{{ m.percent }}</strong></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <div class="p-3 text-center">
+                                <a href="{% url 'hall_of_fame' %}" class="text-white opacity-75">View all inductees &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Managers -->
+                <div class="col-md-6">
+                    <div class="data-panel h-100">
+                        <h3 class="h4 mb-4"><i class="bi bi-person-badge text-info pe-2"></i> Top Managers</h3>
+                        <div class="table-responsive table-app" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table align-middle text-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">Manager</th>
+                                        <th>Wins</th>
+                                        <th>Win %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for m in managers|slice:":15" %}
+                                    <tr>
+                                        <td class="text-start">
+                                            {% if m.player_id %}
+                                            <a href="{% url 'player_detail' m.player_id %}" class="fw-bold">{{ m.name }}</a>
+                                            {% else %}
+                                            <strong>{{ m.name }}</strong>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="pill pill-success">{{ m.wins }}</span></td>
+                                        <td><strong>{{ m.win_pct }}</strong></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <div class="p-3 text-center">
+                                <a href="{% url 'managers_list' %}" class="text-white opacity-75">View all managers &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Tab dynamic styler helper to swap button colors
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('#analytics-tabs .btn-app');
+        tabs.forEach(t => {
+            t.addEventListener('shown.bs.tab', (e) => {
+                tabs.forEach(btn => {
+                    btn.classList.remove('btn-primary-app');
+                    btn.classList.add('btn-secondary-app');
+                });
+                e.target.classList.remove('btn-secondary-app');
+                e.target.classList.add('btn-primary-app');
+            });
+        });
+    });
+</script>
 {% endblock %}
