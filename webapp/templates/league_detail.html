@@ -164,6 +164,9 @@
                     <tr>
                         <th>Team</th>
                         <th>Franchise</th>
+                        {% if registry_mode == "clubs" %}
+                            <th>Times in League</th>
+                        {% endif %}
                         <th>Seasons</th>
                         <th>First Year</th>
                         <th>Last Year</th>
@@ -175,6 +178,9 @@
                         <tr>
                             <td class="table-highlight">{{ team.name }}</td>
                             <td>{{ team.franchise|default:"-" }}</td>
+                            {% if registry_mode == "clubs" %}
+                                <td>{{ team.period_count|default:1 }}</td>
+                            {% endif %}
                             <td>{{ team.seasons }}</td>
                             <td>{{ team.first_year }}</td>
                             <td>{{ team.last_year }}</td>
@@ -184,6 +190,32 @@
                 </tbody>
             </table>
         </div>
+
+        {% if registry_total_pages > 1 %}
+            <nav class="pager-app mt-3" aria-label="League registry pagination">
+                {% if registry_has_previous %}
+                    <a class="btn-app btn-secondary-app" href="{% url 'league_detail' league.code %}?{{ registry_pagination_query }}{% if registry_pagination_query %}&{% endif %}page={{ registry_previous_page }}#league-registry">
+                        <i class="bi bi-arrow-left"></i>
+                        Previous
+                    </a>
+                {% endif %}
+
+                <div class="pager-pages">
+                    {% for page_number in registry_page_numbers %}
+                        <a class="pager-page{% if page_number == registry_page %} active{% endif %}" href="{% url 'league_detail' league.code %}?{{ registry_pagination_query }}{% if registry_pagination_query %}&{% endif %}page={{ page_number }}#league-registry">
+                            {{ page_number }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                {% if registry_has_next %}
+                    <a class="btn-app btn-secondary-app" href="{% url 'league_detail' league.code %}?{{ registry_pagination_query }}{% if registry_pagination_query %}&{% endif %}page={{ registry_next_page }}#league-registry">
+                        Next
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        {% endif %}
     {% else %}
         <div class="empty-state">
             <i class="bi bi-inbox"></i>

@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlencode
 
 from django.http import Http404
 from django.shortcuts import redirect, render
@@ -68,6 +69,34 @@ def _format_innings(value):
     whole = int(value) // 3
     remainder = int(value) % 3
     return f"{whole}.{remainder}"
+
+
+def _paginate_items(items, page, per_page=15):
+    per_page = max(int(per_page), 1)
+    total_items = len(items)
+    total_pages = max((total_items + per_page - 1) // per_page, 1)
+
+    try:
+        page = int(page)
+    except (TypeError, ValueError):
+        page = 1
+
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * per_page
+    end = start + per_page
+
+    return {
+        "items": items[start:end],
+        "page": page,
+        "per_page": per_page,
+        "total_items": total_items,
+        "total_pages": total_pages,
+        "page_numbers": list(range(max(1, page - 2), min(total_pages, page + 2) + 1)),
+        "has_previous": page > 1,
+        "has_next": page < total_pages,
+        "previous_page": page - 1,
+        "next_page": page + 1,
+    }
 
 
 def _league_display(code):
@@ -851,6 +880,8 @@ def teams_view(request):
             {"code": "seasons_desc", "name": "Most seasons"},
         ],
         "active_filters": active_filters,
+        "analytics_url": reverse("analytics"),
+        "players_url": reverse("players"),
     }
     return render(request, "teams.html", context)
 
@@ -874,6 +905,7 @@ def _merge_league_team_periods(teams):
                 "franchises": set(),
                 "park": team.get("park", ""),
                 "seasons": 0,
+                "period_count": 0,
                 "first_year": team.get("first_year", 0),
                 "last_year": team.get("last_year", 0),
             },
@@ -884,6 +916,7 @@ def _merge_league_team_periods(teams):
             bucket["franchises"].add(franchise)
 
         bucket["seasons"] += team.get("seasons", 0) or 0
+        bucket["period_count"] += 1
 
         first_year = team.get("first_year", 0) or 0
         last_year = team.get("last_year", 0) or 0
@@ -1013,6 +1046,7 @@ def league_detail_view(request, league_code):
     registry_mode = request.GET.get("registry", "clubs").strip().lower()
     if registry_mode not in {"clubs", "periods"}:
         registry_mode = "clubs"
+    registry_page = request.GET.get("page", "1")
     registry_search = request.GET.get("team", "").strip()
     registry_franchise = request.GET.get("franchise", "").strip().upper()
     registry_franchises = sorted({(team.get("franchise") or "").strip() for team in teams_raw if (team.get("franchise") or "").strip()})
@@ -1028,6 +1062,14 @@ def league_detail_view(request, league_code):
         if registry_franchise:
             registry_teams = [team for team in registry_teams if (team.get("franchise") or "").strip().upper() == registry_franchise]
 
+    pagination = _paginate_items(registry_teams, registry_page, per_page=15)
+    pagination_params = {"registry": registry_mode}
+    if registry_mode == "periods":
+        if registry_search:
+            pagination_params["team"] = registry_search
+        if registry_franchise:
+            pagination_params["franchise"] = registry_franchise
+
     all_series = get_league_series_results(league_code)
     world_series = [s for s in all_series if s["round"] == "WS"]
     playoffs = [s for s in all_series if s["round"] != "WS"]
@@ -1039,12 +1081,20 @@ def league_detail_view(request, league_code):
         "teams": teams,
         "teams_raw": teams_raw,
         "registry_mode": registry_mode,
-        "registry_teams": registry_teams,
+        "registry_teams": pagination["items"],
         "registry_club_count": len(teams),
         "registry_period_count": len(teams_raw),
         "registry_search": registry_search,
         "registry_franchise": registry_franchise,
         "registry_franchises": registry_franchises,
+        "registry_page": pagination["page"],
+        "registry_total_pages": pagination["total_pages"],
+        "registry_page_numbers": pagination["page_numbers"],
+        "registry_has_previous": pagination["has_previous"],
+        "registry_has_next": pagination["has_next"],
+        "registry_previous_page": pagination["previous_page"],
+        "registry_next_page": pagination["next_page"],
+        "registry_pagination_query": urlencode(pagination_params),
         "world_series": world_series,
         "playoffs": playoffs,
         "series_results": all_series,
