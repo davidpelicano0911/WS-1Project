@@ -718,7 +718,14 @@
         padding-bottom: 0.2rem;
     }
 
+    .player-detail-tab-bar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+    }
+
     .compare-tab-button,
+    .player-detail-tab-button,
     .team-meta-pill,
     .team-status-badge {
         flex: 0 0 auto;
