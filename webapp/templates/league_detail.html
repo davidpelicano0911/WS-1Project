@@ -271,6 +271,113 @@
     </article>
 </section>
 
+<section class="data-panel mb-4" id="statistical-leaders">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-bar-chart-fill text-primary"></i>
+                Season highlights
+            </span>
+            <h2 class="feature-title h4 mb-0">Statistical Leaders ({{ league.last_year }})</h2>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        {% if leaders.hr %}
+        <div class="col-12 col-md-6 col-lg-3">
+            <article class="feature-card h-100 border-top border-warning" style="border-top-width: 3px !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2" 
+                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                    data-bs-title="Automatic runs scored by hitting the ball out of the field.">
+                    <h3 class="feature-title h6 mb-0" style="cursor: help;">
+                        <i class="bi bi-fire me-1 text-warning"></i> Home Runs
+                    </h3>
+                    <i class="bi bi-question-circle text-muted"></i>
+                </div>
+                <div class="compare-aside-list mt-3">
+                    {% for player in leaders.hr %}
+                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            <strong class="fs-5 text-primary">{{ player.value }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+        {% endif %}
+
+        {% if leaders.rbi %}
+        <div class="col-12 col-md-6 col-lg-3">
+            <article class="feature-card h-100 border-top border-danger" style="border-top-width: 3px !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2"
+                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                    data-bs-title="Runs batted in: Points earned when a batter helps teammates score.">
+                    <h3 class="feature-title h6 mb-0" style="cursor: help;">
+                        <i class="bi bi-bullseye me-1 text-danger"></i> RBI
+                    </h3>
+                    <i class="bi bi-question-circle text-muted"></i>
+                </div>
+                <div class="compare-aside-list mt-3">
+                    {% for player in leaders.rbi %}
+                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            <strong class="fs-5 text-primary">{{ player.value }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+        {% endif %}
+
+        {% if leaders.assists %}
+        <div class="col-12 col-md-6 col-lg-3">
+            <article class="feature-card h-100 border-top border-primary" style="border-top-width: 3px !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2"
+                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                    data-bs-title="Defensive plays contributing to retiring an opposing batter.">
+                    <h3 class="feature-title h6 mb-0" style="cursor: help;">
+                        <i class="bi bi-shield-shaded me-1 text-primary"></i> Assists
+                    </h3>
+                    <i class="bi bi-question-circle text-muted"></i>
+                </div>
+                <div class="compare-aside-list mt-3">
+                    {% for player in leaders.assists %}
+                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            <strong class="fs-5 text-primary">{{ player.value }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+        {% endif %}
+
+        {% if leaders.strikeouts %}
+        <div class="col-12 col-md-6 col-lg-3">
+            <article class="feature-card h-100 border-top border-info" style="border-top-width: 3px !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2"
+                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                    data-bs-title="Batters retired by the pitcher after three called strikes.">
+                    <h3 class="feature-title h6 mb-0" style="cursor: help;">
+                        <i class="bi bi-lightning-fill me-1 text-info"></i> Strikeouts
+                    </h3>
+                    <i class="bi bi-question-circle text-muted"></i>
+                </div>
+                <div class="compare-aside-list mt-3">
+                    {% for player in leaders.strikeouts %}
+                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            <strong class="fs-5 text-primary">{{ player.value }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+
 <section class="data-panel mb-4">
     <div class="page-header">
         <div>
@@ -441,4 +548,41 @@
         {% endif %}
     </article>
 </section>
+
+
+<style>
+    .tooltip {
+        opacity: 1 !important;
+        z-index: 9999 !important;
+    }
+    
+    .tooltip-inner {
+        background-color: #0d6efd !important;
+        color: #ffffff !important;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        border: 2px solid #ffffff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        max-width: 280px;
+        text-align: center;
+    }
+
+    .bs-tooltip-top .tooltip-arrow::before {
+        border-top-color: #ffffff !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function() {
+            if (typeof bootstrap !== 'undefined') {
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl)
+                });
+            }
+        }, 500);
+    });
+</script>
 {% endblock %}

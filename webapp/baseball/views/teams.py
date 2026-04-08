@@ -8,6 +8,7 @@ from ..sparql import (
     DIVISION_LABELS,
     LEAGUE_LABELS,
     get_league_detail,
+    get_league_leaders,
     get_league_series_results,
     get_team_all_stars,
     get_team_awards,
@@ -1015,6 +1016,7 @@ def league_detail_view(request, league_code):
     registry_search = request.GET.get("team", "").strip()
     registry_franchise = request.GET.get("franchise", "").strip().upper()
     registry_franchises = sorted({(team.get("franchise") or "").strip() for team in teams_raw if (team.get("franchise") or "").strip()})
+    leaders = get_league_leaders(league_code, league['last_year'])
 
     if registry_mode == "clubs":
         registry_teams = teams
@@ -1033,6 +1035,7 @@ def league_detail_view(request, league_code):
 
     context = {
         "league": league,
+        "leaders": leaders,
         "teams": teams,
         "teams_raw": teams_raw,
         "registry_mode": registry_mode,

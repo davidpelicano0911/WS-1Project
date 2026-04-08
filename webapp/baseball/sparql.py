@@ -2067,3 +2067,60 @@ def get_league_series_results(league_code):
             "loser_league": _row_value(row, "lgLoser", ""),
         })
     return results
+
+
+@lru_cache(maxsize=128)
+def get_league_leaders(league_code, year):
+    league_code = escape_sparql_string(str(league_code).strip().upper())
+    try:
+        year_val = int(year)
+    except (ValueError, TypeError):
+        year_val = None
+    if not league_code or not year_val:
+        return {"hr": [], "rbi": [], "assists": [], "strikeouts": []}
+
+    def _get_top_3(stat_type_class, stat_property, has_relation):
+        query = f"""
+        PREFIX bb: <http://baseball.ws.pt/>
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+        SELECT ?playerID ?nameFirst ?nameLast ?nameGiven ?name ?statValue
+        WHERE {{
+            ?stat a bb:{stat_type_class} ;
+                  bb:lgID "{league_code}" ;
+                  bb:yearID {year_val} ;
+                  bb:{stat_property} ?statValue .
+            ?player bb:{has_relation} ?stat ;
+                    bb:playerID ?playerID .
+
+            OPTIONAL {{ ?player foaf:name ?name . }}
+            OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+            OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+            OPTIONAL {{ ?player bb:nameGiven ?nameGiven . }}
+        }}
+        ORDER BY DESC(?statValue)
+        LIMIT 3
+        """
+        results = []
+        for row in run_query(query):
+            first_name = _row_value(row, "nameFirst", "")
+            last_name = _row_value(row, "nameLast", "")
+            full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+            if not full_name:
+                full_name = _row_value(row, "name", "")
+            if not full_name:
+                full_name = _row_value(row, "nameGiven", _row_value(row, "playerID", ""))
+
+            results.append({
+                "name": full_name,
+                "player_id": _row_value(row, "playerID", ""),
+                "value": _row_int(row, "statValue", 0)
+            })
+        return results
+
+    return {
+        "hr": _get_top_3("BattingStat", "homeRuns", "hasBatting"),
+        "rbi": _get_top_3("BattingStat", "RBI", "hasBatting"),
+        "assists": _get_top_3("FieldingStat", "A", "hasFielding"),
+        "strikeouts": _get_top_3("PitchingStat", "SO", "hasPitching"),
+    }
