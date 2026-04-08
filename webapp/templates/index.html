@@ -6,216 +6,90 @@
 {% block body_class %}home-page{% endblock %}
 
 {% block content %}
-<section class="home-hero">
-    <div class="home-hero-media">
-        <img src="{% static 'carrousel1.png' %}" alt="Baseball training session" class="hero-background-photo">
-        <div class="hero-overlay"></div>
-        <div class="hero-strike hero-strike-a"></div>
-        <div class="hero-strike hero-strike-b"></div>
-        <div class="hero-strike hero-strike-c"></div>
+<section class="hero-panel mb-4 home-stage-panel">
+    <div class="home-stage-media">
+        <img src="{% static 'carrousel1.png' %}" alt="Baseball training session" class="home-stage-image">
+        <div class="home-stage-overlay"></div>
 
-        <div class="hero-copy-wrap">
-            <div class="hero-kicker-row">
-                <span class="headline-tag">Featured Dataset</span>
-                <span class="headline-time">RDF + GraphDB + Django</span>
-            </div>
-
-            <h1 class="home-hero-title">BaseBallX brings baseball history, records and relationships into one linked-data portal.</h1>
-
-            <p class="home-hero-copy">
-                Browse awards, salary peaks, player comparisons and graph relationships through an RDF knowledge base built from the baseball archive.
+        <div class="home-stage-copy">
+            <span class="eyebrow">
+                <i class="bi bi-house-door-fill"></i>
+                Home
+            </span>
+            <h1 class="home-hero-title">BaseBallX</h1>
+            <p class="home-hero-copy mb-0">
+                Linked-data baseball archive built on RDF, GraphDB and Django. Move from player dossiers to franchises, awards, salaries and graph views without switching language or losing context.
             </p>
 
-            <div class="hero-action-row">
-                <a href="{% url 'awards_list' %}" class="btn-app btn-primary-app">
-                    <i class="bi bi-trophy-fill"></i>
-                    Latest awards
-                </a>
-                <a href="{% url 'players' %}" class="btn-app btn-ghost-app">
-                    <i class="bi bi-person-bounding-box"></i>
-                    Explore players
-                </a>
+            <div class="directory-hero-summary home-stage-summary">
+                <span class="player-filter-chip soft">
+                    <strong>Stack</strong>
+                    <span>RDF + SPARQL + GraphDB</span>
+                </span>
+                <span class="player-filter-chip soft">
+                    <strong>Focus</strong>
+                    <span>Players, teams, awards and graphs</span>
+                </span>
             </div>
         </div>
 
-        <div class="hero-bottom-strip">
-            <article class="ticker-card ticker-card-featured">
+        <div class="home-stage-shortcuts">
+            <a href="{% url 'players' %}" class="ticker-card ticker-card-featured home-stage-shortcut">
                 <div class="ticker-thumb">
-                    <i class="bi bi-trophy"></i>
+                    <i class="bi bi-person-bounding-box"></i>
                 </div>
                 <div>
+                    <span class="ticker-chip">Players</span>
+                    <h2>Open player dossiers</h2>
                     <div class="ticker-meta">
-                        <span class="ticker-chip">Awards</span>
-                        <span>Embedded profile graph</span>
+                        <span>Bio detail</span>
+                        <span>Career context</span>
                     </div>
-                    <h2>Inspect award history by player and season</h2>
                 </div>
-            </article>
+            </a>
 
-            <article class="ticker-card">
+            <a href="{% url 'teams' %}" class="ticker-card home-stage-shortcut">
                 <div class="ticker-thumb alt">
-                    <i class="bi bi-cash-stack"></i>
+                    <i class="bi bi-shield-fill"></i>
                 </div>
                 <div>
-                    <div class="ticker-date">Graph Query</div>
-                    <h2>Find salary leaders across eras</h2>
+                    <span class="ticker-chip">Teams</span>
+                    <h2>Browse clubs and league history</h2>
+                    <div class="ticker-meta">
+                        <span>Franchises</span>
+                        <span>Historical periods</span>
+                    </div>
                 </div>
-            </article>
+            </a>
 
-            <article class="ticker-card">
+            <a href="{% url 'compare_players' %}" class="ticker-card home-stage-shortcut">
                 <div class="ticker-thumb dark">
-                    <i class="bi bi-people-fill"></i>
+                    <i class="bi bi-columns-gap"></i>
                 </div>
                 <div>
-                    <div class="ticker-date">Player Analysis</div>
-                    <h2>Compare players side by side</h2>
+                    <span class="ticker-chip">Comparator</span>
+                    <h2>Put two careers side by side</h2>
+                    <div class="ticker-meta">
+                        <span>Batting</span>
+                        <span>Awards</span>
+                    </div>
                 </div>
-            </article>
-        </div>
-    </div>
-</section>
+            </a>
 
-<section class="home-grid-section">
-    <div class="row g-4 align-items-stretch">
-        <div class="col-xl-8">
-            <div class="section-panel spotlight-panel">
-                <div class="section-panel-head">
-                    <div>
-                        <span class="eyebrow">
-                            <i class="bi bi-stars"></i>
-                            Match Center
-                        </span>
-                        <h2 class="section-title-xl">Built for exploration, not just lookup.</h2>
-                    </div>
-                    <a href="{% url 'players' %}" class="panel-link">Open player explorer</a>
+            <a href="{% url 'analytics' %}" class="ticker-card home-stage-shortcut">
+                <div class="ticker-thumb alt">
+                    <i class="bi bi-graph-up-arrow"></i>
                 </div>
-
-                <div class="spotlight-grid">
-                    <article class="spotlight-card spotlight-card-main">
-                        <span class="spotlight-tag">Graph Relationships</span>
-                        <h3>Move from player profiles to teams, franchises and awards through real RDF links.</h3>
-                        <p>
-                            Each detailed player page now includes a network view of that player’s context instead of isolating the graph on a separate screen.
-                        </p>
-                        <a href="{% url 'players' %}" class="text-link">Browse player profiles</a>
-                    </article>
-
-                    <article class="spotlight-card">
-                        <span class="spotlight-tag accent">Salary Lens</span>
-                        <h3>Highlight top salary records directly from SPARQL queries.</h3>
-                        <p>Use the salary page as a fast leaderboard for peak contracts and yearly financial extremes.</p>
-                        <a href="{% url 'salaries_list' %}" class="text-link">View salaries</a>
-                    </article>
-
-                    <article class="spotlight-card">
-                        <span class="spotlight-tag gold">Player Compare</span>
-                        <h3>Put two careers side by side without leaving the graph-backed app.</h3>
-                        <p>Compare awards, batting output, bio details and salary highlights in one screen.</p>
-                        <a href="{% url 'compare_players' %}" class="text-link">Compare players</a>
-                    </article>
+                <div>
+                    <span class="ticker-chip">Analytics</span>
+                    <h2>Inspect trends and leaderboards</h2>
+                    <div class="ticker-meta">
+                        <span>Salaries</span>
+                        <span>Summaries</span>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
-
-        <div class="col-xl-4">
-            <div class="section-panel side-score-panel">
-                <div class="mini-heading">Quick Access</div>
-
-                <a href="{% url 'awards_list' %}" class="score-link-card">
-                    <div>
-                        <div class="score-link-date">Awards</div>
-                        <strong>Player awards and distinctions</strong>
-                    </div>
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-
-                <a href="{% url 'salaries_list' %}" class="score-link-card">
-                    <div>
-                        <div class="score-link-date">Salaries</div>
-                        <strong>Highest salary records</strong>
-                    </div>
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-
-                <a href="{% url 'compare_players' %}" class="score-link-card">
-                    <div>
-                        <div class="score-link-date">Compare</div>
-                        <strong>Two-player side by side view</strong>
-                    </div>
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-
-                <a href="{% url 'players' %}" class="score-link-card">
-                    <div>
-                        <div class="score-link-date">Profiles</div>
-                        <strong>Player pages with embedded relationship graphs</strong>
-                    </div>
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="row g-4">
-    <div class="col-md-6 col-xl-3">
-        <article class="feature-card portal-feature-card">
-            <div class="feature-icon gold">
-                <i class="bi bi-trophy-fill"></i>
-            </div>
-            <h2 class="feature-title h3">Award history</h2>
-            <p class="section-copy">
-                Navigate awards by player and year with a homepage flow closer to a sports portal than a plain demo page.
-            </p>
-            <a href="{% url 'awards_list' %}" class="btn-app btn-primary-app">
-                Open awards
-            </a>
-        </article>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <article class="feature-card portal-feature-card">
-            <div class="feature-icon green">
-                <i class="bi bi-cash-coin"></i>
-            </div>
-            <h2 class="feature-title h3">Salary leaders</h2>
-            <p class="section-copy">
-                Surface the financial side of the archive with direct SPARQL-backed rankings of peak salaries.
-            </p>
-            <a href="{% url 'salaries_list' %}" class="btn-app btn-secondary-app">
-                Open salaries
-            </a>
-        </article>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <article class="feature-card portal-feature-card">
-            <div class="feature-icon green">
-                <i class="bi bi-people-fill"></i>
-            </div>
-            <h2 class="feature-title h3">Player compare</h2>
-            <p class="section-copy">
-                Use one page to compare player profiles, batting production, award volume and career context.
-            </p>
-            <a href="{% url 'compare_players' %}" class="btn-app btn-secondary-app">
-                Compare players
-            </a>
-        </article>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <article class="feature-card portal-feature-card">
-            <div class="feature-icon green">
-                <i class="bi bi-diagram-3-fill"></i>
-            </div>
-            <h2 class="feature-title h3">Player graphs</h2>
-            <p class="section-copy">
-                Open any player profile to see a connected graph of teams, franchises and award relationships in context.
-            </p>
-            <a href="{% url 'players' %}" class="btn-app btn-secondary-app">
-                Browse players
-            </a>
-        </article>
     </div>
 </section>
 {% endblock %}

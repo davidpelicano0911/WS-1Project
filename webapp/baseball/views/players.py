@@ -1220,6 +1220,10 @@ def players_view(request):
         "next_page": page + 1,
         "pagination_query": _build_player_list_querystring(base_params),
         "page_query_builder": base_params,
+        "comparator_url": reverse("compare_players"),
+        "analytics_url": reverse("analytics"),
+        "photos_only_url": f"{reverse('players')}?{_build_player_list_querystring(base_params, has_photo='1', page=None)}",
+        "reset_view_url": reverse("players"),
     }
     return render(request, "players.html", context)
 

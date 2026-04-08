@@ -1,8 +1,10 @@
+"""Compatibility surface for SPARQL helpers."""
+
 from functools import lru_cache
 
-from SPARQLWrapper import SPARQLWrapper, JSON
+from SPARQLWrapper import JSON, SPARQLWrapper
 
-# URL do teu repositório no GraphDB
+
 ENDPOINT = "http://localhost:7200/repositories/baseball"
 QUIZ_YEAR_MIN = 2000
 
