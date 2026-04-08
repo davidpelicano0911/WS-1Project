@@ -2,6 +2,8 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 
 PHOTO_CATALOG_PATH = Path(__file__).with_name("data").joinpath("player_photos.json")
@@ -69,6 +71,27 @@ def attach_player_media(player):
         "card_photo_fallback_url": _resize_mlb_photo_url(photo_fallback_url, 220),
         "photo_source": photo_entry.get("source", ""),
     }
+
+
+@lru_cache(maxsize=512)
+def fetch_player_photo_asset(url):
+    url = str(url or "").strip()
+    if not url or not url.startswith(("https://img.mlbstatic.com/", "https://content.mlb.com/")):
+        return None, None
+
+    request = Request(
+        url,
+        headers={
+            "User-Agent": "BaseBallX/1.0",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=10) as response:
+            return response.read(), response.headers.get_content_type()
+    except (HTTPError, URLError, TimeoutError, ValueError):
+        return None, None
 
 
 def enrich_players_with_media(players, max_workers=8):

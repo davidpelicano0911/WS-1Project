@@ -164,8 +164,12 @@
             {% if active_filters %}
                 {% for item in active_filters|slice:":6" %}
                     <span class="player-filter-chip{% if item.soft %} soft{% endif %}">
-                        <strong>{{ item.label }}</strong>
-                        <span>{{ item.value }}</span>
+                        {% if item.label %}
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.value }}</span>
+                        {% else %}
+                            <span>{{ item.value }}</span>
+                        {% endif %}
                     </span>
                 {% endfor %}
             {% else %}

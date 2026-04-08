@@ -19,6 +19,10 @@
         <header class="portal-header">
             <div class="top-club-bar">
                 <div class="container portal-container top-club-inner">
+                    <a class="top-club-label" href="{% url 'home' %}">
+                        Data Hub
+                        <i class="bi bi-arrow-up-right"></i>
+                    </a>
                     <div class="club-badge-strip" aria-hidden="true">
                         {% for team in header_teams %}
                             <a
@@ -47,7 +51,7 @@
                 </div>
             </div>
 
-            <div class="portal-container portal-header-container">
+            <div class="container portal-container">
                 <nav class="portal-nav">
                     <div class="portal-brand-wrap">
                         <a class="portal-brand" href="{% url 'home' %}">
@@ -103,27 +107,58 @@
                                 </div>
                             </div>
                         </div>
+
+                        {% if request.user.is_authenticated %}
+                            <span class="portal-user-chip">
+                                <strong>{{ request.user.username }}</strong>
+                                <span>{% if request.user.is_staff %}Administrator{% else %}Normal user{% endif %}</span>
+                            </span>
+                            {% if request.user.is_staff %}
+                                <a href="/admin/" class="portal-cta">Admin</a>
+                            {% endif %}
+                            <a href="{% url 'logout' %}" class="portal-cta">Logout</a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="portal-cta">Login</a>
+                            <a href="{% url 'register' %}" class="portal-cta portal-cta-accent">Register</a>
+                        {% endif %}
                     </div>
                 </nav>
             </div>
 
             <div class="subnav-bar">
                 <div class="container portal-container subnav-inner">
+                    <a href="{% url 'home' %}" class="subnav-link">Home</a>
+                    <a href="{% url 'players' %}" class="subnav-link">Players</a>
+                    <a href="{% url 'teams' %}" class="subnav-link">Teams</a>
+                    <a href="{% url 'compare_players' %}" class="subnav-link">Comparator</a>
+                    <a href="{% url 'analytics' %}" class="subnav-link">Analytics Dashboard</a>
+                    <a href="{% url 'about' %}" class="subnav-link">About</a>
                     <a href="{% url 'home' %}" class="subnav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}">Home</a>
                     <a href="{% url 'players' %}" class="subnav-link{% if request.resolver_match.url_name == 'players' or request.resolver_match.url_name == 'player_detail' or request.resolver_match.url_name == 'graph_view' %} active{% endif %}">Players</a>
                     <a href="{% url 'teams' %}" class="subnav-link{% if request.resolver_match.url_name == 'teams' or request.resolver_match.url_name == 'team_detail' or request.resolver_match.url_name == 'league_detail' %} active{% endif %}">Teams</a>
                     <a href="{% url 'compare_players' %}" class="subnav-link{% if request.resolver_match.url_name == 'compare_players' %} active{% endif %}">Comparator</a>
+                    <a href="{% url 'hall_of_fame' %}" class="subnav-link{% if request.resolver_match.url_name == 'hall_of_fame' %} active{% endif %}">Hall of Fame</a>
+                    <a href="{% url 'managers_list' %}" class="subnav-link{% if request.resolver_match.url_name == 'managers_list' %} active{% endif %}">Managers</a>
                     <a href="{% url 'analytics' %}" class="subnav-link{% if request.resolver_match.url_name == 'analytics' or request.resolver_match.url_name == 'awards_list' or request.resolver_match.url_name == 'salaries_list' %} active{% endif %}">Analytics / Stats</a>
+                    <a href="{% url 'quiz' %}" class="subnav-link{% if request.resolver_match.url_name == 'quiz' %} active{% endif %}">Quiz</a>
                     <a href="{% url 'about' %}" class="subnav-link{% if request.resolver_match.url_name == 'about' %} active{% endif %}">About</a>
                 </div>
             </div>
         </header>
 
         <div class="container portal-container">
+            {% if messages %}
+                <div class="message-stack">
+                    {% for message in messages %}
+                        <div class="message-banner {{ message.tags|default:'info' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% block content %}{% endblock %}
 
             <footer class="site-footer text-center mt-5 pt-3">
-                <small>Tomás Brás nº112665  David Pelicano nº113391  Afonso Ferreira nº113480</small><br>
                 <small>Practical Assignment 1 · BaseBallX</small>
             </footer>
         </div>

@@ -60,6 +60,16 @@ def _format_percentage(value, digits=1, default="N/A"):
     return f"{float(value) * 100:.{digits}f}%"
 
 
+def _build_team_list_querystring(params, **updates):
+    query = {key: value for key, value in params.items() if value not in (None, "", False)}
+    for key, value in updates.items():
+        if value in (None, "", False):
+            query.pop(key, None)
+        else:
+            query[key] = value
+    return urlencode(query)
+
+
 def _format_record(wins, losses):
     return f"{_format_number(wins, '0')}-{_format_number(losses, '0')}"
 
@@ -847,6 +857,10 @@ def teams_view(request):
         page = max(int(request.GET.get("page", "1")), 1)
     except ValueError:
         page = 1
+    try:
+        page = max(int(request.GET.get("page", "1")), 1)
+    except ValueError:
+        page = 1
 
     valid_status = {"all", "active", "historical"}
     if status not in valid_status:
@@ -879,9 +893,15 @@ def teams_view(request):
         {"player_id": entry["franchise_id"], "name": entry["name"]}
         for entry in _dedupe_team_directory(franchise_catalog)
     ]
+    base_params = {
+        "q": search_term,
+        "league": league_code,
+        "status": status,
+        "sort": sort_code,
+    }
     active_filters = []
     if search_term:
-        active_filters.append({"label": "Query", "value": search_term})
+        active_filters.append({"label": "", "value": search_term})
     if league_code:
         active_filters.append({"label": "League", "value": _league_display(league_code)})
     if status == "active":

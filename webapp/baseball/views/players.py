@@ -426,7 +426,9 @@ def _build_player_detail_payload(profile):
 
 def _build_player_graph_payload(player):
     graph_data = deepcopy(get_player_graph_data(player.get("player_id", "")))
-    photo_url = player.get("photo_url") or player.get("photo_fallback_url") or ""
+    photo_url = ""
+    if player.get("photo_url") or player.get("photo_fallback_url"):
+        photo_url = reverse("player_graph_photo", kwargs={"player_id": player.get("player_id", "")})
 
     if photo_url:
         for node in graph_data.get("nodes", []):
@@ -440,6 +442,25 @@ def _build_player_graph_payload(player):
         "graph_edges": graph_data.get("edges", []),
         "has_player_graph": bool(graph_data.get("nodes")),
     }
+
+
+def player_graph_photo_view(request, player_id):
+    summary = get_player_summary(player_id)
+    if not summary:
+        raise Http404("Player not found")
+
+    player = attach_player_media(summary)
+    photo_url = player.get("photo_url") or player.get("photo_fallback_url") or ""
+    if not photo_url:
+        raise Http404("Photo not found")
+
+    image_bytes, content_type = fetch_player_photo_asset(photo_url)
+    if not image_bytes:
+        raise Http404("Photo not available")
+
+    response = HttpResponse(image_bytes, content_type=content_type or "image/jpeg")
+    response["Cache-Control"] = "public, max-age=86400"
+    return response
 
 
 def _build_player_list_querystring(params, **updates):
@@ -1392,7 +1413,7 @@ def players_view(request):
 
     active_filters = []
     if search_term:
-        active_filters.append({"label": "Query", "value": search_term, "soft": True})
+        active_filters.append({"label": "", "value": search_term, "soft": True})
     if selected_letter:
         active_filters.append({"label": "Initial", "value": selected_letter})
     if birth_country:
