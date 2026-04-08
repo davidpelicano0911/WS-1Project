@@ -84,8 +84,8 @@
                 selector: 'node[type="player"]',
                 style: {
                     "background-color": "#c63845",
-                    width: 74,
-                    height: 74,
+                    width: 80,
+                    height: 80,
                     shape: "ellipse",
                     "border-width": 4,
                     "border-color": "#ffffff",
@@ -99,11 +99,10 @@
                 style: {
                     "background-image": "data(photoUrl)",
                     "background-fit": "cover",
+                    "background-repeat": "no-repeat",
                     "background-clip": "node",
                     "background-position-x": "50%",
                     "background-position-y": "50%",
-                    "background-width": "100%",
-                    "background-height": "100%",
                     "background-opacity": 1,
                     "background-color": "#ffffff",
                 },
@@ -112,8 +111,8 @@
                 selector: 'node[type="team"]',
                 style: {
                     "background-color": "#1d4f91",
-                    width: 32,
-                    height: 32,
+                    width: 38,
+                    height: 38,
                     "border-width": 2,
                     shape: "ellipse",
                 },
@@ -123,12 +122,13 @@
                 style: {
                     "background-color": "#ffffff",
                     "background-fit": "contain",
+                    "background-repeat": "no-repeat",
                     "background-clip": "node",
                     "background-image": "data(logoUrl)",
                     "background-position-x": "50%",
                     "background-position-y": "50%",
-                    "background-width": "70%",
-                    "background-height": "70%",
+                    width: 40,
+                    height: 40,
                 },
             },
             {
@@ -157,6 +157,26 @@
         userPanningEnabled: true,
         userZoomingEnabled: true,
         boxSelectionEnabled: false,
+    });
+
+    let zoomRefreshFrame = null;
+    const refreshImageNodes = () => {
+        zoomRefreshFrame = null;
+        cy.batch(() => {
+            cy.nodes('[photoUrl]').forEach((node) => {
+                node.style("background-image", node.data("photoUrl"));
+            });
+            cy.nodes('[logoUrl]').forEach((node) => {
+                node.style("background-image", node.data("logoUrl"));
+            });
+        });
+    };
+
+    cy.on("zoom", () => {
+        if (zoomRefreshFrame !== null) {
+            cancelAnimationFrame(zoomRefreshFrame);
+        }
+        zoomRefreshFrame = requestAnimationFrame(refreshImageNodes);
     });
 
     document.addEventListener("player-detail-tab:change", (event) => {

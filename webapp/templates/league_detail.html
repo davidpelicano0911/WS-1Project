@@ -328,8 +328,14 @@
                 </div>
                 <div class="compare-aside-list mt-3">
                     {% for player in leaders.hr %}
-                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
-                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                        <div class="compare-aside-item leaderboard-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <div class="leaderboard-entry">
+                                <span class="leaderboard-rank {% if forloop.counter == 1 %}leaderboard-rank--gold{% elif forloop.counter == 2 %}leaderboard-rank--silver{% else %}leaderboard-rank--bronze{% endif %}">
+                                    <i class="bi bi-award-fill" aria-hidden="true"></i>
+                                    <span>#{{ forloop.counter }}</span>
+                                </span>
+                                <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            </div>
                             <strong class="fs-5 text-primary">{{ player.value }}</strong>
                         </div>
                     {% endfor %}
@@ -351,8 +357,14 @@
                 </div>
                 <div class="compare-aside-list mt-3">
                     {% for player in leaders.rbi %}
-                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
-                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                        <div class="compare-aside-item leaderboard-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <div class="leaderboard-entry">
+                                <span class="leaderboard-rank {% if forloop.counter == 1 %}leaderboard-rank--gold{% elif forloop.counter == 2 %}leaderboard-rank--silver{% else %}leaderboard-rank--bronze{% endif %}">
+                                    <i class="bi bi-award-fill" aria-hidden="true"></i>
+                                    <span>#{{ forloop.counter }}</span>
+                                </span>
+                                <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            </div>
                             <strong class="fs-5 text-primary">{{ player.value }}</strong>
                         </div>
                     {% endfor %}
@@ -374,8 +386,14 @@
                 </div>
                 <div class="compare-aside-list mt-3">
                     {% for player in leaders.assists %}
-                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
-                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                        <div class="compare-aside-item leaderboard-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <div class="leaderboard-entry">
+                                <span class="leaderboard-rank {% if forloop.counter == 1 %}leaderboard-rank--gold{% elif forloop.counter == 2 %}leaderboard-rank--silver{% else %}leaderboard-rank--bronze{% endif %}">
+                                    <i class="bi bi-award-fill" aria-hidden="true"></i>
+                                    <span>#{{ forloop.counter }}</span>
+                                </span>
+                                <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            </div>
                             <strong class="fs-5 text-primary">{{ player.value }}</strong>
                         </div>
                     {% endfor %}
@@ -397,8 +415,14 @@
                 </div>
                 <div class="compare-aside-list mt-3">
                     {% for player in leaders.strikeouts %}
-                        <div class="compare-aside-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
-                            <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                        <div class="compare-aside-item leaderboard-item d-flex justify-content-between align-items-center border-bottom border-opacity-10 py-2">
+                            <div class="leaderboard-entry">
+                                <span class="leaderboard-rank {% if forloop.counter == 1 %}leaderboard-rank--gold{% elif forloop.counter == 2 %}leaderboard-rank--silver{% else %}leaderboard-rank--bronze{% endif %}">
+                                    <i class="bi bi-award-fill" aria-hidden="true"></i>
+                                    <span>#{{ forloop.counter }}</span>
+                                </span>
+                                <span class="text-truncate pe-2 text-light">{{ player.name }}</span>
+                            </div>
                             <strong class="fs-5 text-primary">{{ player.value }}</strong>
                         </div>
                     {% endfor %}

@@ -49,12 +49,13 @@
     bottom: 1.4rem;
     z-index: 1;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 1rem;
 }
 
 .home-stage-shortcut {
     min-height: 132px;
+    min-width: 0;
     text-decoration: none;
     color: inherit;
     align-items: flex-start;

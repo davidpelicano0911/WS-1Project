@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<section class="hero-panel auth-shell">
+    <div class="auth-panel data-panel">
+        <div class="auth-head">
+            <span class="eyebrow">
+                <i class="bi bi-person-plus-fill"></i>
+                Register
+            </span>
+            <h1 class="page-title">Create account</h1>
+            <p class="section-copy mb-0">New accounts are created as normal users.</p>
+        </div>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="auth-errors">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="auth-field">
+                <label for="{{ form.username.id_for_label }}" class="form-label-app">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="auth-field-error">{{ form.username.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+
+            <div class="auth-field">
+                <label for="{{ form.email.id_for_label }}" class="form-label-app">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="auth-field-error">{{ form.email.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+
+            <div class="auth-field">
+                <label for="{{ form.password1.id_for_label }}" class="form-label-app">Password</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <div class="auth-field-error">{{ form.password1.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+
+            <div class="auth-field">
+                <label for="{{ form.password2.id_for_label }}" class="form-label-app">Confirm password</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="auth-field-error">{{ form.password2.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+
+            <div class="auth-actions">
+                <button type="submit" class="btn-app btn-primary-app">Register</button>
+                <a href="{% url 'login' %}" class="btn-app btn-secondary-app">Login</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -72,6 +72,10 @@
     color: #edf4ff;
 }
 
+.leaderboard-rank {
+    border-color: rgba(136, 174, 232, 0.16);
+}
+
 .table-app tbody td {
     border-color: rgba(136, 174, 232, 0.08);
     background: rgba(18, 44, 84, 0.9);
@@ -86,7 +90,7 @@
     background: rgba(22, 55, 103, 0.96);
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 991.98px) {
     .home-stage-media {
         min-height: 780px;
     }
@@ -97,7 +101,7 @@
         right: auto;
         bottom: auto;
         margin-top: 2rem;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
 
     .directory-hero-actions {
@@ -106,7 +110,7 @@
     }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 575.98px) {
     .directory-hero-header {
         flex-direction: column;
     }
@@ -131,7 +135,6 @@
 
     .home-stage-shortcuts {
         margin-top: 1.4rem;
-        grid-template-columns: 1fr;
         gap: 0.85rem;
     }
 }
