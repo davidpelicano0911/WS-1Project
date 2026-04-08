@@ -23,4 +23,6 @@ urlpatterns = [
     path('salaries/', views.salaries_view, name='salaries_list'),
     path('compare/', views.compare_players_view, name='compare_players'),
     path('graph/', views.graph_view, name='graph_view'),
+    path('halloffame/', views.hall_of_fame_view, name='hall_of_fame'),
+    path('managers/', views.managers_view, name='managers_list'),
 ]

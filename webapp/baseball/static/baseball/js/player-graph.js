@@ -178,4 +178,14 @@
         }
         zoomRefreshFrame = requestAnimationFrame(refreshImageNodes);
     });
+
+    document.addEventListener("player-detail-tab:change", (event) => {
+        if (event.detail?.tab !== "overview") {
+            return;
+        }
+        window.setTimeout(() => {
+            cy.resize();
+            cy.fit(undefined, 32);
+        }, 40);
+    });
 })();
