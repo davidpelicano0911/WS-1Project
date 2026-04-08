@@ -16,6 +16,7 @@ from ..compare_selection import (
 from ..player_media import (
     attach_player_media,
     enrich_players_with_media,
+    fetch_player_photo_asset,
     get_catalog_photo_count,
     player_has_catalog_photo,
 )
@@ -450,11 +451,21 @@ def player_graph_photo_view(request, player_id):
         raise Http404("Player not found")
 
     player = attach_player_media(summary)
-    photo_url = player.get("photo_url") or player.get("photo_fallback_url") or ""
-    if not photo_url:
+    photo_candidates = [
+        str(player.get("photo_url") or "").strip(),
+        str(player.get("photo_fallback_url") or "").strip(),
+    ]
+    photo_candidates = [url for url in photo_candidates if url]
+    if not photo_candidates:
         raise Http404("Photo not found")
 
-    image_bytes, content_type = fetch_player_photo_asset(photo_url)
+    image_bytes = None
+    content_type = None
+    for photo_url in photo_candidates:
+        image_bytes, content_type = fetch_player_photo_asset(photo_url)
+        if image_bytes:
+            break
+
     if not image_bytes:
         raise Http404("Photo not available")
 
@@ -474,7 +485,13 @@ def _build_player_list_querystring(params, **updates):
 
 
 def _filter_catalog_players_with_photo(players):
-    return [player for player in players if player_has_catalog_photo(player.get("bbref_id", ""))]
+    filtered = []
+    for player in players:
+        bbref_id = player.get("bbref_id", "")
+        if not player_has_catalog_photo(bbref_id):
+            continue
+        filtered.append(player)
+    return filtered
 
 
 @lru_cache(maxsize=128)
@@ -1399,6 +1416,13 @@ def players_view(request):
     selected_players = _selected_compare_map(request, "player")
     for player in players:
         player["compare_selected"] = player["player_id"] in selected_players
+        if player.get("photo_url") or player.get("photo_fallback_url"):
+            player["card_photo_proxy_url"] = reverse(
+                "player_graph_photo",
+                kwargs={"player_id": player["player_id"]},
+            )
+        else:
+            player["card_photo_proxy_url"] = ""
     page_numbers = list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
     base_params = {
         "q": search_term,

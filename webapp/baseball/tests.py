@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 from django.urls import reverse
 
+from baseball.models import QuizAttempt
 from baseball.quiz_service import (
     QUIZ_SESSION_KEY,
     _get_cached_question_families,
@@ -155,6 +156,7 @@ class QuizViewTests(TestCase):
         response = self.client.get(reverse("quiz"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Baseball Quiz")
+        self.assertContains(response, "Top quiz scores")
 
     @patch("baseball.views.quiz.build_round_state")
     def test_start_api_creates_round_in_session(self, mock_build_round_state):
@@ -202,6 +204,55 @@ class QuizViewTests(TestCase):
         self.assertTrue(payload["is_correct"])
         self.assertEqual(payload["score"], 1)
         self.assertTrue(payload["completed"])
+
+    def test_completed_round_persists_attempt_for_authenticated_user(self):
+        user = User.objects.create_user(username="quizfan", password="StrongPass123!")
+        self.client.force_login(user)
+        session = self.client.session
+        session[QUIZ_SESSION_KEY] = {
+            "round_id": "round-1",
+            "questions": [_sample_question("q1", correct_option_id="player:a")],
+            "current_index": 0,
+            "answers": [],
+            "score": 0,
+            "completed": False,
+            "total_questions": 1,
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("quiz_answer_api"),
+            data='{"question_id":"q1","selected_option_id":"player:a"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attempt = QuizAttempt.objects.get(user=user)
+        self.assertEqual(attempt.score, 1)
+        self.assertEqual(attempt.percentage, 100)
+        self.assertIn("leaderboard", response.json())
+
+    def test_completed_round_does_not_persist_attempt_for_anonymous_user(self):
+        session = self.client.session
+        session[QUIZ_SESSION_KEY] = {
+            "round_id": "round-1",
+            "questions": [_sample_question("q1", correct_option_id="player:a")],
+            "current_index": 0,
+            "answers": [],
+            "score": 0,
+            "completed": False,
+            "total_questions": 1,
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("quiz_answer_api"),
+            data='{"question_id":"q1","selected_option_id":"player:a"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(QuizAttempt.objects.count(), 0)
 
     def test_answer_api_without_round_returns_recoverable_error(self):
         response = self.client.post(

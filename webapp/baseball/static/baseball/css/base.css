@@ -1971,12 +1971,115 @@ body.compare-modal-open {
 
 .quiz-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.85fr);
     gap: 1.25rem;
 }
 
 .quiz-main {
     min-width: 0;
+}
+
+.quiz-side {
+    min-width: 0;
+}
+
+.quiz-leaderboard-panel {
+    height: 100%;
+    padding: 1.45rem;
+    border-radius: 28px;
+    background:
+        linear-gradient(180deg, rgba(10, 31, 61, 0.96), rgba(6, 20, 42, 0.98)),
+        radial-gradient(circle at top right, rgba(244, 197, 66, 0.08), transparent 36%);
+}
+
+.quiz-leaderboard-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.quiz-leaderboard-login {
+    white-space: nowrap;
+}
+
+.quiz-personal-rank {
+    display: grid;
+    gap: 0.2rem;
+    padding: 1rem 1.05rem;
+    margin-bottom: 1rem;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(244, 197, 66, 0.14), rgba(255, 255, 255, 0.04));
+    border: 1px solid rgba(244, 197, 66, 0.18);
+}
+
+.quiz-personal-rank-label {
+    color: #9fb6d9;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.quiz-personal-rank-value {
+    color: #fff4ca;
+    font-family: "Oswald", sans-serif;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.quiz-personal-rank-copy {
+    color: #d8e6fa;
+    font-size: 0.95rem;
+}
+
+.quiz-leaderboard-table-wrap {
+    overflow: hidden;
+    border-radius: 22px;
+    border: 1px solid rgba(136, 174, 232, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.quiz-leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.quiz-leaderboard-table thead th {
+    padding: 0.9rem 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: #9fb6d9;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.quiz-leaderboard-table tbody td {
+    padding: 0.95rem 1rem;
+    border-top: 1px solid rgba(136, 174, 232, 0.08);
+    color: #edf4ff;
+    font-weight: 700;
+}
+
+.quiz-leaderboard-table tbody td span {
+    display: inline-block;
+    margin-left: 0.35rem;
+    color: #9fb6d9;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.quiz-leaderboard-table tbody tr.is-current-user td {
+    background: rgba(244, 197, 66, 0.08);
+}
+
+.quiz-leaderboard-table tbody tr.is-empty td {
+    color: #9fb6d9;
+    text-align: center;
+    font-weight: 600;
 }
 
 .quiz-card {
@@ -2336,6 +2439,10 @@ body.compare-modal-open {
     .quiz-hero-side {
         width: 100%;
         justify-items: start;
+    }
+
+    .quiz-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .quiz-hero-badge-stack {

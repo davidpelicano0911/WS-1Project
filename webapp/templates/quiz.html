@@ -148,6 +148,79 @@
 
             <div class="quiz-error" id="quiz-error" hidden></div>
         </div>
+
+        <aside class="quiz-side">
+            <div class="data-panel quiz-leaderboard-panel">
+                <div class="quiz-leaderboard-head">
+                    <div>
+                        <span class="eyebrow">
+                            <i class="bi bi-trophy-fill"></i>
+                            Leaderboard
+                        </span>
+                        <h2 class="feature-title h4 mb-1 mt-2">Top quiz scores</h2>
+                        <p class="hint-app mb-0">
+                            Best registered-user score stored in the database.
+                        </p>
+                    </div>
+                    {% if not request.user.is_authenticated %}
+                    <a href="{% url 'login' %}?next={% url 'quiz' %}" class="btn-app btn-secondary-app quiz-leaderboard-login">
+                        Login to record score
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if request.user.is_authenticated and quiz_leaderboard.current_user_entry %}
+                <div class="quiz-personal-rank" id="quiz-personal-rank">
+                    <span class="quiz-personal-rank-label">Your best</span>
+                    <strong class="quiz-personal-rank-value">#{{ quiz_leaderboard.current_user_entry.rank }}</strong>
+                    <span class="quiz-personal-rank-copy">
+                        {{ quiz_leaderboard.current_user_entry.best_score }}/10 · {{ quiz_leaderboard.current_user_entry.best_percentage }}%
+                    </span>
+                </div>
+                {% else %}
+                <div class="quiz-personal-rank" id="quiz-personal-rank">
+                    <span class="quiz-personal-rank-label">Your best</span>
+                    <strong class="quiz-personal-rank-value">{% if request.user.is_authenticated %}No score yet{% else %}Guest mode{% endif %}</strong>
+                    <span class="quiz-personal-rank-copy">
+                        {% if request.user.is_authenticated %}
+                        Complete a round to join the table.
+                        {% else %}
+                        Anonymous rounds are not stored in the leaderboard.
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                <div class="quiz-leaderboard-table-wrap">
+                    <table class="quiz-leaderboard-table" id="quiz-leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>User</th>
+                                <th>Best</th>
+                                <th>Attempts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quiz-leaderboard-body">
+                            {% if quiz_leaderboard.entries %}
+                                {% for entry in quiz_leaderboard.entries %}
+                                <tr{% if request.user.is_authenticated and quiz_leaderboard.current_user_entry and entry.user_id == quiz_leaderboard.current_user_entry.user_id %} class="is-current-user"{% endif %}>
+                                    <td>#{{ entry.rank }}</td>
+                                    <td>{{ entry.username }}</td>
+                                    <td>{{ entry.best_score }}/10 <span>{{ entry.best_percentage }}%</span></td>
+                                    <td>{{ entry.attempts }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="is-empty">
+                                    <td colspan="4">No recorded scores yet.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
     </div>
 </section>
 {% endblock %}

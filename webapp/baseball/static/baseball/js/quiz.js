@@ -35,6 +35,8 @@
         summaryPoints: document.getElementById("quiz-summary-points"),
         summaryPercent: document.getElementById("quiz-summary-percent"),
         summaryCopy: document.getElementById("quiz-summary-copy"),
+        leaderboardBody: document.getElementById("quiz-leaderboard-body"),
+        personalRank: document.getElementById("quiz-personal-rank"),
     };
 
     function getCookie(name) {
@@ -115,6 +117,43 @@
         elements.intro.hidden = name !== "intro";
         elements.live.hidden = name !== "live";
         elements.summary.hidden = name !== "summary";
+    }
+
+    function renderLeaderboard(leaderboard) {
+        if (!leaderboard || !elements.leaderboardBody) {
+            return;
+        }
+
+        if (!leaderboard.entries || leaderboard.entries.length === 0) {
+            elements.leaderboardBody.innerHTML = `
+                <tr class="is-empty">
+                    <td colspan="4">No recorded scores yet.</td>
+                </tr>
+            `;
+        } else {
+            elements.leaderboardBody.innerHTML = leaderboard.entries
+                .map((entry) => `
+                    <tr${leaderboard.current_user_entry && entry.user_id === leaderboard.current_user_entry.user_id ? ' class="is-current-user"' : ""}>
+                        <td>#${entry.rank}</td>
+                        <td>${entry.username}</td>
+                        <td>${entry.best_score}/10 <span>${entry.best_percentage}%</span></td>
+                        <td>${entry.attempts}</td>
+                    </tr>
+                `)
+                .join("");
+        }
+
+        if (!elements.personalRank) {
+            return;
+        }
+
+        if (leaderboard.current_user_entry) {
+            elements.personalRank.innerHTML = `
+                <span class="quiz-personal-rank-label">Your best</span>
+                <strong class="quiz-personal-rank-value">#${leaderboard.current_user_entry.rank}</strong>
+                <span class="quiz-personal-rank-copy">${leaderboard.current_user_entry.best_score}/10 · ${leaderboard.current_user_entry.best_percentage}%</span>
+            `;
+        }
     }
 
     function renderIntro() {
@@ -223,6 +262,9 @@
             state.score = payload.score;
             state.pendingNextQuestion = payload.next_question || null;
             state.pendingSummary = payload.summary || null;
+            if (payload.leaderboard) {
+                renderLeaderboard(payload.leaderboard);
+            }
 
             paintAnsweredState(payload);
             elements.feedback.hidden = false;
@@ -247,6 +289,9 @@
             }
             state.total = payload.total_questions || 10;
             if (payload.completed && payload.summary) {
+                if (payload.leaderboard) {
+                    renderLeaderboard(payload.leaderboard);
+                }
                 renderSummary(payload.summary);
                 return;
             }

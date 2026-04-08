@@ -7,6 +7,7 @@ from urllib.request import Request, urlopen
 
 
 PHOTO_CATALOG_PATH = Path(__file__).with_name("data").joinpath("player_photos.json")
+VALID_PHOTO_IDS_PATH = Path(__file__).with_name("data").joinpath("player_photo_valid_ids.json")
 MLB_WIDTH_RE = re.compile(r"w_(\d+)")
 
 
@@ -34,6 +35,17 @@ def _load_player_photo_catalog():
         return json.load(handle)
 
 
+@lru_cache(maxsize=1)
+def _load_valid_photo_ids():
+    if not VALID_PHOTO_IDS_PATH.exists():
+        return None
+    with VALID_PHOTO_IDS_PATH.open() as handle:
+        payload = json.load(handle)
+    if isinstance(payload, dict):
+        payload = payload.get("valid_ids", [])
+    return {str(item).strip() for item in payload if str(item).strip()}
+
+
 @lru_cache(maxsize=8192)
 def get_player_photo_entry(bbref_id):
     bbref_id = str(bbref_id or "").strip()
@@ -43,12 +55,18 @@ def get_player_photo_entry(bbref_id):
 
 
 def player_has_catalog_photo(bbref_id):
+    valid_ids = _load_valid_photo_ids()
+    if valid_ids is not None:
+        return str(bbref_id or "").strip() in valid_ids
     photo_entry = get_player_photo_entry(bbref_id)
     return bool(photo_entry.get("photo_url") or photo_entry.get("photo_fallback_url"))
 
 
 @lru_cache(maxsize=1)
 def get_catalog_photo_count():
+    valid_ids = _load_valid_photo_ids()
+    if valid_ids is not None:
+        return len(valid_ids)
     return sum(
         1
         for photo_entry in _load_player_photo_catalog().values()
@@ -71,6 +89,29 @@ def attach_player_media(player):
         "card_photo_fallback_url": _resize_mlb_photo_url(photo_fallback_url, 220),
         "photo_source": photo_entry.get("source", ""),
     }
+
+
+@lru_cache(maxsize=512)
+def photo_url_is_available(url):
+    url = str(url or "").strip()
+    if not url or not url.startswith(("https://img.mlbstatic.com/", "https://content.mlb.com/")):
+        return False
+
+    request = Request(
+        url,
+        headers={
+            "User-Agent": "BaseBallX/1.0",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        },
+        method="HEAD",
+    )
+
+    try:
+        with urlopen(request, timeout=3) as response:
+            content_type = response.headers.get_content_type()
+            return bool(content_type and content_type.startswith("image/"))
+    except (HTTPError, URLError, TimeoutError, ValueError):
+        return False
 
 
 @lru_cache(maxsize=512)
