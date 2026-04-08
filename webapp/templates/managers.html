@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Managers · Baseball Data Explorer{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-person-badge"></i>
+            Leadership
+        </span>
+        <h1 class="page-title">Top Managers in History</h1>
+        <p class="section-copy mb-0">
+            A list of all managers ranked by total career wins.
+        </p>
+    </div>
+
+    <a href="{% url 'home' %}" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back home
+    </a>
+</section>
+
+<section class="data-panel">
+    <div class="table-responsive table-app">
+        <table class="table align-middle text-center mb-0">
+            <thead>
+                <tr>
+                    <th class="text-start">Manager</th>
+                    <th>Wins</th>
+                    <th>Losses</th>
+                    <th>Win %</th>
+                    <th>Years Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in managers %}
+                <tr>
+                    <td class="text-start">
+                        {% if m.player_id %}
+                        <a href="{% url 'player_detail' m.player_id %}" class="fw-bold text-decoration-none">
+                            {{ m.name }}
+                        </a>
+                        {% else %}
+                        <strong>{{ m.name }}</strong>
+                        {% endif %}
+                    </td>
+                    <td><span class="pill pill-success">{{ m.wins }}</span></td>
+                    <td><span class="pill pill-danger">{{ m.losses }}</span></td>
+                    <td><strong>{{ m.win_pct }}</strong></td>
+                    <td>{{ m.first_year }} &ndash; {{ m.last_year }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <i class="bi bi-database-exclamation"></i>
+                        No managers data available. Check whether GraphDB is running and loaded.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

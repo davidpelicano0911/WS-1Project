@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Hall of Fame · Baseball Data Explorer{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="eyebrow">
+            <i class="bi bi-bank"></i>
+            Legendary Players
+        </span>
+        <h1 class="page-title">Hall of Fame Inductees</h1>
+        <p class="section-copy mb-0">
+            A complete log of players, managers, and umpires who have been enshrined in baseball history.
+        </p>
+    </div>
+
+    <a href="{% url 'home' %}" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back home
+    </a>
+</section>
+
+<section class="data-panel">
+    <div class="table-responsive table-app">
+        <table class="table align-middle text-center mb-0">
+            <thead>
+                <tr>
+                    <th>Inductee</th>
+                    <th>Year</th>
+                    <th>Category</th>
+                    <th>Voted By</th>
+                    <th>Votes</th>
+                    <th>Needed</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in members %}
+                <tr>
+                    <td class="text-start">
+                        {% if m.player_id %}
+                        <a href="{% url 'player_detail' m.player_id %}" class="fw-bold text-decoration-none">
+                            {{ m.name }}
+                        </a>
+                        {% else %}
+                        <strong>{{ m.name }}</strong>
+                        {% endif %}
+                    </td>
+                    <td><span class="pill">{{ m.year }}</span></td>
+                    <td>{{ m.category|title }}</td>
+                    <td>{{ m.voted_by }}</td>
+                    <td>{{ m.votes_str }}</td>
+                    <td>{{ m.needed_str }}</td>
+                    <td><strong>{{ m.percent }}</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty-state">
+                        <i class="bi bi-database-exclamation"></i>
+                        No Hall of Fame data available. Check whether GraphDB is running and loaded.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
