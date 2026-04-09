@@ -3,6 +3,7 @@ from functools import lru_cache
 from .base import _row_value, run_query
 from ..sparql import _row_int
 
+@lru_cache(maxsize=1)
 def get_top_salaries():
     query = """
     PREFIX bb: <http://baseball.ws.pt/>
@@ -20,6 +21,7 @@ def get_top_salaries():
     return run_query(query)
 
 
+@lru_cache(maxsize=1)
 def get_awards_list():
     # Usamos os links completos para garantir que ele encontra os triplos
     query = """
@@ -70,6 +72,7 @@ def get_header_teams_graph():
         if row.get("teamCode", {}).get("value")
     ]
 
+@lru_cache(maxsize=1)
 def get_hall_of_fame_members():
     query = """
     PREFIX bb: <http://baseball.ws.pt/>
@@ -146,6 +149,7 @@ def get_hall_of_fame_members():
     
     return results
 
+@lru_cache(maxsize=1)
 def get_managers_list():
     query = """
     PREFIX bb: <http://baseball.ws.pt/>
@@ -199,6 +203,7 @@ def get_managers_list():
         })
     return results
 
+@lru_cache(maxsize=1)
 def get_global_player_leaders():
     # Helper for top sum queries
     def _get_top_sum(stat_type_class, stat_property, has_relation):
@@ -245,6 +250,7 @@ def get_global_player_leaders():
         "strikeouts": _get_top_sum("PitchingStat", "SO", "hasPitching"),
     }
 
+@lru_cache(maxsize=1)
 def get_global_team_leaders():
     query = """
     PREFIX bb: <http://baseball.ws.pt/>

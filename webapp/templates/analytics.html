@@ -160,7 +160,7 @@
                         <tbody>
                             {% for team in global_teams %}
                             <tr>
-                                <td><span class="pill bg-dark">{{ forloop.counter }}</span></td>
+                                <td><span class="pill bg-secondary text-white fw-bold">{{ forloop.counter }}</span></td>
                                 <td class="text-start">
                                     <a href="{% url 'team_detail' team.franch_id|default:'#' %}" class="fw-bold text-white fs-5 text-decoration-none">
                                         {{ team.name }}

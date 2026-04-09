@@ -2,12 +2,32 @@
 
 \section{Arquitetura da Aplica\c{c}\~ao e Tecnologias Utilizadas}
 
-Descreva aqui a arquitetura da aplica\c{c}\~ao, o padr\~ao adotado e as tecnologias principais.
+O projeto BaseBallX tem como objetivo explorar dados hist\'oricos de baseball atrav\'es de uma abordagem de Web Sem\^antica. Em vez de trabalhar apenas com tabelas CSV isoladas, os dados foram convertidos para RDF e carregados num triple store, permitindo relacionar jogadores, equipas, franquias, sal\'arios, pr\'emios, participa\c{c}\~oes em All-Star Games, Hall of Fame e resultados de p\'os-temporada atrav\'es de consultas SPARQL. Sobre esta base foi constru\'ida uma aplica\c{c}\~ao Web que suporta pesquisa, navega\c{c}\~ao por entidades, compara\c{c}\~ao de jogadores, visualiza\c{c}\~ao de rela\c{c}\~oes e pain\'eis estat\'isticos.
+
+A solu\c{c}\~ao encontra-se organizada em tr\^es camadas principais. A primeira corresponde \`a prepara\c{c}\~ao dos dados, onde os ficheiros CSV s\~ao lidos e transformados para RDF. A segunda \'{e} a camada sem\^antica, assegurada pelo GraphDB, onde o grafo resultante fica armazenado e dispon\'ivel para interroga\c{c}\~ao. A terceira \'{e} a camada aplicacional, implementada em Django, respons\'avel pela interface, autentica\c{c}\~ao, l\'ogica de navega\c{c}\~ao e integra\c{c}\~ao com o endpoint SPARQL.
 
 \begin{itemize}[leftmargin=*]
-  \item Django
-  \item GraphDB
-  \item SPARQL / SPARQLWrapper
-  \item Bibliotecas frontend e visualiza\c{c}\~ao
-  \item Docker
+  \item \textbf{Python} para os scripts de convers\~ao de dados e ferramentas auxiliares do projeto.
+  \item \textbf{rdflib} para cria\c{c}\~ao das entidades RDF, defini\c{c}\~ao de literais tipados e serializa\c{c}\~ao do resultado em N-Triples.
+  \item \textbf{GraphDB} como triple store local e ponto de acesso SPARQL sobre o grafo produzido.
+  \item \textbf{SPARQL} e \textbf{SPARQLWrapper} para consulta e integra\c{c}\~ao dos dados sem\^anticos na aplica\c{c}\~ao.
+  \item \textbf{Django} como framework principal do backend Web, seguindo o padr\~ao MVT para views, templates, autentica\c{c}\~ao e rotas.
+  \item \textbf{SQLite} para persist\^encia local de utilizadores, sess\~oes e tentativas do quiz.
+  \item \textbf{HTML}, \textbf{CSS}, \textbf{JavaScript}, \textbf{Bootstrap 5}, \textbf{Bootstrap Icons} e \textbf{Cytoscape.js} na camada de interface e visualiza\c{c}\~ao de grafos.
+  \item \textbf{Bash} e \textbf{curl} em scripts auxiliares para automatizar o arranque do GraphDB e a cria\c{c}\~ao/remo\c{c}\~ao de reposit\'orios.
 \end{itemize}
+
+
+\section{Fluxo Geral da Solu\c{c}\~ao}
+
+O funcionamento global do sistema pode ser resumido nas seguintes etapas:
+
+\begin{enumerate}[leftmargin=*]
+  \item Os ficheiros CSV colocados na pasta \texttt{archive/} s\~ao usados como fonte prim\'aria de dados hist\'oricos de baseball.
+  \item O script \texttt{rdf/convert.py} l\^e esses ficheiros, normaliza identificadores, cria recursos RDF e escreve o resultado final em \texttt{rdf/baseball.nt}.
+  \item O ficheiro N-Triples gerado \'{e} carregado para um reposit\'orio \texttt{baseball} no GraphDB, onde passa a poder ser interrogado por SPARQL.
+  \item A aplica\c{c}\~ao Django consulta o endpoint local do GraphDB por SPARQL, usando a biblioteca \texttt{SPARQLWrapper} para obter os dados necess\'arios para cada p\'agina.
+  \item A interface apresenta esses resultados ao utilizador em vistas de cat\'alogo, detalhe, compara\c{c}\~ao, analytics e grafos de rela\c{c}\~oes.
+\end{enumerate}
+
+Esta organiza\c{c}\~ao permite separar claramente a transforma\c{c}\~ao dos dados, o seu armazenamento sem\^antico e a sua explora\c{c}\~ao na aplica\c{c}\~ao final, facilitando a manuten\c{c}\~ao e a extens\~ao do projeto.

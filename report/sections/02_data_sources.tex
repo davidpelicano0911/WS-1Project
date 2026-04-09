@@ -1,25 +1,43 @@
 \chapter{Dados, suas fontes e sua transforma\c{c}\~ao}
 
-Explique as fontes de dados, o processo de extra\c{c}\~ao e a transforma\c{c}\~ao para RDF.
+A base de conhecimento do projeto parte de um conjunto de ficheiros CSV com informa\c{c}\~ao hist\'orica sobre baseball, armazenados na pasta \texttt{archive/}. Estes dados cobrem entidades centrais, como jogadores, equipas e franquias, mas tamb\'em estat\'isticas sazonais, sal\'arios, pr\'emios e eventos especiais. A sua transforma\c{c}\~ao para RDF permitiu passar de um conjunto de tabelas independentes para um grafo interligado, mais adequado para explora\c{c}\~ao sem\^antica.
 
-\begin{figure}[H]
-  \centering
-  \IfFileExists{figures/modelo-dados.png}{%
-    \includegraphics[width=0.85\textwidth]{figures/modelo-dados.png}%
-  }{%
-    \fbox{\parbox{0.8\textwidth}{Figura em falta: adicionar \texttt{figures/modelo-dados.png}.}}%
-  }
-  \caption{Modelo de dados}
-  \label{fig:modelo-dados}
-\end{figure}
+\section{Fontes de Dados Principais}
 
-\begin{figure}[H]
-  \centering
-  \IfFileExists{figures/entidades-relacoes.png}{%
-    \includegraphics[width=0.85\textwidth]{figures/entidades-relacoes.png}%
-  }{%
-    \fbox{\parbox{0.8\textwidth}{Figura em falta: adicionar \texttt{figures/entidades-relacoes.png}.}}%
-  }
-  \caption{Entidades e as suas rela\c{c}\~oes}
-  \label{fig:entidades-relacoes}
-\end{figure}
+O n\'ucleo do projeto assenta num arquivo hist\'orico de baseball em formato CSV, compat\'ivel com a estrutura cl\'assica da base de dados Lahman. No trabalho foram efetivamente utilizados os seguintes grupos de ficheiros:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{Master.csv}: identifica\c{c}\~ao dos jogadores e informa\c{c}\~ao biogr\'afica, como nome, data de nascimento, pa\'is de origem, altura, peso, datas de estreia e \'{u}ltimo jogo.
+  \item \texttt{Teams.csv}, \texttt{TeamsFranchises.csv} e \texttt{TeamsHalf.csv}: informa\c{c}\~ao sobre equipas, franquias, ligas e desempenho por \'{e}poca ou meia-\'{e}poca.
+  \item \texttt{Batting.csv}, \texttt{BattingPost.csv}, \texttt{Pitching.csv}, \texttt{PitchingPost.csv}, \texttt{Fielding.csv} e \texttt{FieldingOF.csv}: estat\'isticas detalhadas de batting, pitching e fielding, tanto na fase regular como na p\'os-temporada.
+  \item \texttt{Salaries.csv}: valores salariais por jogador, equipa e ano.
+  \item \texttt{AwardsPlayers.csv} e \texttt{AwardsSharePlayers.csv}: pr\'emios individuais e vota\c{c}\~oes associadas aos jogadores.
+  \item \texttt{AwardsManagers.csv} e \texttt{AwardsShareManagers.csv}: pr\'emios e vota\c{c}\~oes associados aos managers.
+  \item \texttt{HallOfFame.csv} e \texttt{AllstarFull.csv}: vota\c{c}\~oes para o Hall of Fame e participa\c{c}\~oes em All-Star Games.
+  \item \texttt{Managers.csv}, \texttt{ManagersHalf.csv} e \texttt{SeriesPost.csv}: hist\'orico de managers e resultados de s\'eries de p\'os-temporada.
+\end{itemize}
+
+Este conjunto de fontes foi suficiente para modelar um dom\'inio rico, com rela\c{c}\~oes entre pessoas, equipas, desempenhos desportivos, distin\c{c}\~oes individuais e contexto competitivo ao longo do tempo.
+
+\section{Transforma\c{c}\~ao para RDF}
+
+O processo de transforma\c{c}\~ao foi implementado no script \texttt{rdf/convert.py}. Esse script percorre cada CSV com \texttt{csv.DictReader}, extrai os atributos relevantes e cria recursos RDF com base no namespace \texttt{http://baseball.ws.pt/}. Para cada tipo de entidade \'{e} gerada uma URI est\'avel e leg\'ivel, sendo aplicadas regras de normaliza\c{c}\~ao para evitar caracteres problem\'aticos nos identificadores.
+
+Durante a convers\~ao s\~ao declaradas classes para jogadores, franquias, equipas, estat\'isticas desportivas, sal\'arios, pr\'emios, Hall of Fame, All-Star Games e managers. Em seguida, cada linha dos CSV origina inst\^ancias dessas classes e \'{e} ligada \`as restantes entidades atrav\'es de propriedades sem\^anticas. Por exemplo, um jogador pode ficar associado a batting, pitching, fielding, sal\'arios, pr\'emios e apari\c{c}\~oes em All-Star Games, enquanto cada estat\'istica fica ligada \`a equipa e ao ano respetivos.
+
+\begin{itemize}[leftmargin=*]
+  \item Os valores num\'ericos s\~ao convertidos para literais tipados, principalmente \texttt{xsd:integer} e \texttt{xsd:decimal}.
+  \item Datas relevantes, como estreia e \'{u}ltimo jogo, s\~ao representadas com \texttt{xsd:date}.
+  \item Campos l\'ogicos, como vit\'oria de divis\~ao ou entrada no Hall of Fame, s\~ao convertidos para \texttt{xsd:boolean}.
+  \item Valores vazios, inconsistentes ou marcados como \texttt{NA}, \texttt{null} e equivalentes s\~ao ignorados para evitar ru\'ido no grafo.
+  \item O nome leg\'ivel do jogador \'{e} adicionalmente exposto com \texttt{foaf:name}, facilitando as consultas e a apresenta\c{c}\~ao na interface.
+\end{itemize}
+
+O resultado final desta transforma\c{c}\~ao \'{e} o ficheiro \texttt{rdf/baseball.nt}, em formato N-Triples. Esse ficheiro \'{e} depois importado para um reposit\'orio \texttt{baseball} no GraphDB, onde passa a estar dispon\'ivel para consulta atrav\'es de SPARQL pela aplica\c{c}\~ao Django.
+
+
+\section{Dados Complementares para a Interface}
+
+Para al\'em do grafo RDF principal, o projeto inclui uma pequena camada de enriquecimento visual para a interface. A partir do identificador \texttt{bbrefID} presente em \texttt{Master.csv}, foram usados scripts auxiliares para construir cat\'alogos JSON com fotografias de jogadores, recorrendo a URLs do Baseball-Reference e a imagens disponibilizadas pela MLB. Da mesma forma, os log\'otipos atuais das equipas s\~ao resolvidos atrav\'es de identificadores est\'aticos da MLB.
+
+Estes dados complementares n\~ao fazem parte do n\'ucleo sem\^antico armazenado no GraphDB, mas melhoram a experi\^encia de utiliza\c{c}\~ao da aplica\c{c}\~ao, sobretudo nas p\'aginas de detalhe, listagens de jogadores e visualiza\c{c}\~oes gr\'aficas.
