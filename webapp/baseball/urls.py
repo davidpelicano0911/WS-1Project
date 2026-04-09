@@ -20,6 +20,7 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
     path('suggestions/', views.suggestions_review_view, name='suggestions_review'),
+    path('suggestions/mine/', views.my_suggestions_view, name='my_suggestions'),
     path('suggestions/submit/', views.suggestion_submit_view, name='suggestion_submit'),
     path('suggestions/publish/', views.suggestion_publish_view, name='suggestion_publish'),
     path('suggestions/<int:suggestion_id>/approve/', views.suggestion_approve_view, name='suggestion_approve'),

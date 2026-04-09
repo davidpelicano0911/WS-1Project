@@ -334,6 +334,36 @@ def suggestion_approve_view(request, suggestion_id):
     return redirect("suggestions_review")
 
 
+def my_suggestions_view(request):
+    if not request.user.is_authenticated:
+        from django.shortcuts import redirect as _redirect
+        return _redirect("login")
+
+    queryset = (
+        DataSuggestion.objects
+        .filter(submitted_by=request.user)
+        .prefetch_related("changes")
+    )
+
+    suggestions = []
+    for suggestion in queryset:
+        specs = get_field_specs(suggestion.entity_type)
+        changes = []
+        for change in suggestion.changes.all():
+            spec = specs.get(change.field_key, {})
+            changes.append(
+                {
+                    "label": spec.get("label", change.field_key),
+                    "old_display": display_field_value(suggestion.entity_type, change.field_key, change.old_value),
+                    "new_display": display_field_value(suggestion.entity_type, change.field_key, change.new_value),
+                }
+            )
+        suggestion.display_changes = changes
+        suggestions.append(suggestion)
+
+    return render(request, "my_suggestions.html", {"suggestions": suggestions})
+
+
 @user_passes_test(lambda user: user.is_authenticated and user.is_staff)
 @require_POST
 def suggestion_reject_view(request, suggestion_id):

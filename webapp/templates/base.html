@@ -111,6 +111,8 @@
                             </span>
                             {% if request.user.is_staff %}
                                 <a href="{% url 'suggestions_review' %}" class="portal-cta{% if request.resolver_match.url_name == 'suggestions_review' %} portal-cta-accent{% endif %}">Suggestions</a>
+                            {% else %}
+                                <a href="{% url 'my_suggestions' %}" class="portal-cta{% if request.resolver_match.url_name == 'my_suggestions' %} portal-cta-accent{% endif %}">My Suggestions</a>
                             {% endif %}
                             <a href="{% url 'logout' %}" class="portal-cta">Logout</a>
                         {% else %}

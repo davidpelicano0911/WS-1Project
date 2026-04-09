@@ -12,6 +12,7 @@ from .players import (
     players_view,
 )
 from .suggestions import (
+    my_suggestions_view,
     suggestion_approve_view,
     suggestion_publish_view,
     suggestion_reject_view,

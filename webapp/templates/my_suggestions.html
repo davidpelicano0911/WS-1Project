@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}My Suggestions{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-pencil-square"></i>
+                My suggestions
+            </span>
+            <h1 class="page-title">Submitted suggestions</h1>
+            <p class="section-copy mb-0">
+                Track the status of your data suggestions and see admin feedback.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="entity-review-list">
+    {% for suggestion in suggestions %}
+        <article class="feature-card entity-review-card">
+            <div class="entity-review-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi {% if suggestion.entity_type == 'player' %}bi-person-fill{% else %}bi-shield-fill{% endif %}"></i>
+                        {{ suggestion.get_entity_type_display }}
+                    </span>
+                    <h2 class="feature-title h4 mb-1 mt-2">
+                        <a href="{{ suggestion.entity_url }}" class="entity-review-link">{{ suggestion.entity_id }}</a>
+                        {% if suggestion.entity_year %}&middot; {{ suggestion.entity_year }}{% endif %}
+                    </h2>
+                    <p class="muted-copy mb-0">
+                        Submitted {{ suggestion.submitted_at|date:"Y-m-d H:i" }}
+                        {% if suggestion.reviewed_at %}&middot; Reviewed {{ suggestion.reviewed_at|date:"Y-m-d H:i" }}{% endif %}
+                    </p>
+                </div>
+                <span class="compare-winner-pill{% if suggestion.status == 'approved' %} winner-1{% elif suggestion.status == 'rejected' %} tie{% endif %}">
+                    {{ suggestion.get_status_display }}
+                </span>
+            </div>
+
+            {% if suggestion.reason %}
+                <div class="entity-review-reason">
+                    <span class="stat-label">Your reason</span>
+                    <p class="mb-0">{{ suggestion.reason }}</p>
+                </div>
+            {% endif %}
+
+            <div class="entity-review-change-grid">
+                {% for change in suggestion.display_changes %}
+                    <div class="entity-review-change-card">
+                        <span class="stat-label">{{ change.label }}</span>
+                        <strong class="stat-value">{{ change.new_display }}</strong>
+                        <span class="compare-aside-detail">Was {{ change.old_display }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if suggestion.review_note %}
+                <div class="entity-review-reason mt-3">
+                    <span class="stat-label">Admin note</span>
+                    <p class="mb-0">{{ suggestion.review_note }}</p>
+                </div>
+            {% endif %}
+        </article>
+    {% empty %}
+        <section class="data-panel empty-state">
+            <i class="bi bi-inbox"></i>
+            You haven't submitted any suggestions yet.
+        </section>
+    {% endfor %}
+</section>
+{% endblock %}
