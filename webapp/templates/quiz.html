@@ -2,9 +2,10 @@
 {% load static %}
 
 {% block title %}Quiz{% endblock %}
+{% block body_class %}quiz-page{% endblock %}
 
 {% block content %}
-<section class="hero-panel mb-4">
+<section class="hero-panel mb-4" data-quiz-underlay>
     <div class="directory-hero-header quiz-hero-header">
         <div class="directory-hero-main quiz-hero-main">
             <span class="eyebrow">
@@ -60,93 +61,36 @@
     data-answer-url="{% url 'quiz_answer_api' %}"
     data-state-url="{% url 'quiz_state_api' %}"
 >
-    <div class="quiz-status-bar">
-        <div class="quiz-status-chip quiz-status-chip-progress">
-            <span class="quiz-status-label">Progress</span>
-            <strong class="quiz-status-value"><span id="quiz-progress-current">0</span>/<span id="quiz-progress-total">10</span></strong>
-        </div>
-        <div class="quiz-status-chip quiz-status-chip-score">
-            <span class="quiz-status-label">Score</span>
-            <strong class="quiz-status-value"><span id="quiz-score-value">0</span></strong>
-        </div>
-        <div class="quiz-status-chip quiz-status-chip-type">
-            <span class="quiz-status-label">Type</span>
-            <strong class="quiz-status-value" id="quiz-category-chip">Ready</strong>
-        </div>
-    </div>
-
-    <div class="quiz-grid">
+    <div class="quiz-grid quiz-grid-shell" data-quiz-underlay>
         <div class="quiz-main">
-            <div class="data-panel quiz-card" id="quiz-intro">
+            <div class="data-panel quiz-card quiz-launch-card">
                 <span class="eyebrow">
-                    <i class="bi bi-stars"></i>
-                    Ready
+                    <i class="bi bi-controller"></i>
+                    Live game
                 </span>
-                <h2 class="feature-title h3 mb-3 mt-2">Ready for a ten-question round?</h2>
+                <h2 class="feature-title h3 mb-3 mt-2">Fast. Bold. One answer each time.</h2>
                 <p class="section-copy">
-                    Fast picks. Clean score. No filler.
+                    Start a round and the quiz opens in a full-screen game view. If you already have one running, it jumps straight back in.
                 </p>
                 <div class="quiz-rule-list">
                     <div class="quiz-rule-item">
                         <strong>4 options</strong>
-                        <span>1 correct</span>
+                        <span>One correct answer each time</span>
                     </div>
                     <div class="quiz-rule-item">
                         <strong>10 questions</strong>
-                        <span>Quick round</span>
+                        <span>A short round you can finish fast</span>
                     </div>
                     <div class="quiz-rule-item">
-                        <strong>Instant reveal</strong>
-                        <span>See the winner</span>
+                        <strong>Auto resume</strong>
+                        <span>Continue your round if you come back</span>
                     </div>
                 </div>
                 <div class="quiz-intro-actions">
                     <button type="button" class="btn-app btn-primary-app" id="quiz-start-button">Start round</button>
-                    <span class="hint-app">Your round stays here if you refresh.</span>
+                    <span class="hint-app">Your round stays ready if you refresh.</span>
                 </div>
             </div>
-
-            <div class="data-panel quiz-card" id="quiz-live" hidden>
-                <div class="quiz-question-head">
-                    <div>
-                        <span class="eyebrow">
-                            <i class="bi bi-lightning-charge-fill"></i>
-                            Live round
-                        </span>
-                        <h2 class="feature-title h3 mb-1 mt-2" id="quiz-prompt">Question prompt</h2>
-                        <p class="section-copy mb-0" id="quiz-context">Context</p>
-                    </div>
-                </div>
-
-                <div class="quiz-options" id="quiz-options"></div>
-
-                <div class="quiz-feedback" id="quiz-feedback" hidden>
-                    <div class="quiz-feedback-copy">
-                        <strong id="quiz-feedback-title">Correct</strong>
-                        <p class="mb-0" id="quiz-feedback-text"></p>
-                    </div>
-                    <button type="button" class="btn-app btn-secondary-app" id="quiz-next-button">Continue</button>
-                </div>
-            </div>
-
-            <div class="data-panel quiz-card" id="quiz-summary" hidden>
-                <span class="eyebrow">
-                    <i class="bi bi-trophy-fill"></i>
-                    Round complete
-                </span>
-                <h2 class="feature-title h2 mb-2 mt-2">Final score</h2>
-                <div class="quiz-summary-score">
-                    <strong id="quiz-summary-points">0/10</strong>
-                    <span id="quiz-summary-percent">0%</span>
-                </div>
-                <p class="section-copy mb-4" id="quiz-summary-copy">Round summary.</p>
-                <div class="quiz-intro-actions">
-                    <button type="button" class="btn-app btn-primary-app" id="quiz-restart-button">Play again</button>
-                    <a href="{% url 'analytics' %}" class="btn-app btn-secondary-app">Back to analytics</a>
-                </div>
-            </div>
-
-            <div class="quiz-error" id="quiz-error" hidden></div>
         </div>
 
         <aside class="quiz-side">
@@ -163,32 +107,26 @@
                         </p>
                     </div>
                     {% if not request.user.is_authenticated %}
-                    <a href="{% url 'login' %}?next={% url 'quiz' %}" class="btn-app btn-secondary-app quiz-leaderboard-login">
+                    <a href="{% url 'login' %}?next={% url 'quiz' %}" class="btn-app btn-secondary-app quiz-leaderboard-login" data-auth-modal-open="login">
                         Login to record score
                     </a>
                     {% endif %}
                 </div>
 
-                {% if request.user.is_authenticated and quiz_leaderboard.current_user_entry %}
-                <div class="quiz-personal-rank" id="quiz-personal-rank">
-                    <span class="quiz-personal-rank-label">Your best</span>
-                    <strong class="quiz-personal-rank-value">#{{ quiz_leaderboard.current_user_entry.rank }}</strong>
-                    <span class="quiz-personal-rank-copy">
-                        {{ quiz_leaderboard.current_user_entry.best_score }}/10 · {{ quiz_leaderboard.current_user_entry.best_percentage }}%
-                    </span>
-                </div>
-                {% else %}
-                <div class="quiz-personal-rank" id="quiz-personal-rank">
-                    <span class="quiz-personal-rank-label">Your best</span>
-                    <strong class="quiz-personal-rank-value">{% if request.user.is_authenticated %}No score yet{% else %}Guest mode{% endif %}</strong>
-                    <span class="quiz-personal-rank-copy">
-                        {% if request.user.is_authenticated %}
-                        Complete a round to join the table.
+                {% if request.user.is_authenticated %}
+                    <div class="quiz-personal-rank" id="quiz-personal-rank">
+                        {% if quiz_leaderboard.current_user_entry %}
+                            <span class="quiz-personal-rank-label">Your best</span>
+                            <strong class="quiz-personal-rank-value">#{{ quiz_leaderboard.current_user_entry.rank }}</strong>
+                            <span class="quiz-personal-rank-copy">
+                                {{ quiz_leaderboard.current_user_entry.best_score }}/10 · {{ quiz_leaderboard.current_user_entry.best_percentage }}%
+                            </span>
                         {% else %}
-                        Anonymous rounds are not stored in the leaderboard.
+                            <span class="quiz-personal-rank-label">Your best</span>
+                            <strong class="quiz-personal-rank-value">No score yet</strong>
+                            <span class="quiz-personal-rank-copy">Complete a round to join the table.</span>
                         {% endif %}
-                    </span>
-                </div>
+                    </div>
                 {% endif %}
 
                 <div class="quiz-leaderboard-table-wrap">
@@ -222,7 +160,85 @@
             </div>
         </aside>
     </div>
+
 </section>
+
+<div class="quiz-modal-backdrop" id="quiz-modal" hidden aria-hidden="true">
+    <div class="quiz-modal-stage">
+        <button type="button" class="quiz-modal-close" id="quiz-close-button" aria-label="Close quiz">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <div class="quiz-status-bar quiz-modal-status-bar">
+            <div class="quiz-status-chip quiz-status-chip-progress">
+                <span class="quiz-status-label">Progress</span>
+                <strong class="quiz-status-value"><span id="quiz-progress-current">0</span>/<span id="quiz-progress-total">10</span></strong>
+            </div>
+            <div class="quiz-status-chip quiz-status-chip-score">
+                <span class="quiz-status-label">Score</span>
+                <strong class="quiz-status-value"><span id="quiz-score-value">0</span></strong>
+            </div>
+            <div class="quiz-status-chip quiz-status-chip-type">
+                <span class="quiz-status-label">Type</span>
+                <strong class="quiz-status-value" id="quiz-category-chip">Ready</strong>
+            </div>
+        </div>
+
+        <div class="quiz-loading" id="quiz-loading" hidden>
+            <div class="quiz-loading-orb"></div>
+            <div class="quiz-loading-copy">
+                <strong>Building your round</strong>
+                <span id="quiz-loading-text">Loading questions...</span>
+            </div>
+        </div>
+
+        <div class="data-panel quiz-card quiz-modal-card" id="quiz-live" hidden>
+            <div class="quiz-question-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Live round
+                    </span>
+                    <h2 class="feature-title h2 mb-2 mt-2" id="quiz-prompt">Question prompt</h2>
+                    <p class="section-copy mb-0" id="quiz-context">Context</p>
+                </div>
+            </div>
+
+            <div class="quiz-options" id="quiz-options"></div>
+
+            <div class="quiz-feedback" id="quiz-feedback" hidden>
+                <div class="quiz-feedback-copy">
+                    <strong id="quiz-feedback-title">Correct</strong>
+                    <p class="mb-0" id="quiz-feedback-text"></p>
+                </div>
+                <button type="button" class="btn-app btn-secondary-app" id="quiz-next-button">Continue</button>
+            </div>
+        </div>
+
+        <div class="data-panel quiz-card quiz-modal-card quiz-summary-card" id="quiz-summary" hidden>
+            <div class="quiz-summary-shell">
+                <div class="quiz-summary-main">
+                    <span class="eyebrow">
+                        <i class="bi bi-trophy-fill"></i>
+                        Round complete
+                    </span>
+                    <h2 class="feature-title quiz-summary-title mb-2 mt-2">Final score</h2>
+                    <p class="section-copy quiz-summary-copy mb-0" id="quiz-summary-copy">Round summary.</p>
+                    <div class="quiz-summary-actions">
+                        <button type="button" class="btn-app btn-primary-app" id="quiz-restart-button">Play again</button>
+                        <button type="button" class="btn-app btn-secondary-app" id="quiz-summary-close">Close</button>
+                    </div>
+                    <div class="quiz-summary-score">
+                        <strong id="quiz-summary-points">0/10</strong>
+                        <span id="quiz-summary-percent">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quiz-error" id="quiz-error" hidden></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

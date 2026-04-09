@@ -107,15 +107,15 @@
                         {% if request.user.is_authenticated %}
                             <span class="portal-user-chip">
                                 <strong>{{ request.user.username }}</strong>
-                                <span>{% if request.user.is_staff %}Administrator{% else %}Normal user{% endif %}</span>
+                                <span>{% if request.user.is_staff %}Administrator{% else %}Regular user{% endif %}</span>
                             </span>
                             {% if request.user.is_staff %}
-                                <a href="/admin/" class="portal-cta">Admin</a>
+                                <a href="{% url 'suggestions_review' %}" class="portal-cta{% if request.resolver_match.url_name == 'suggestions_review' %} portal-cta-accent{% endif %}">Suggestions</a>
                             {% endif %}
                             <a href="{% url 'logout' %}" class="portal-cta">Logout</a>
                         {% else %}
-                            <a href="{% url 'login' %}" class="portal-cta">Login</a>
-                            <a href="{% url 'register' %}" class="portal-cta portal-cta-accent">Register</a>
+                            <a href="{% url 'login' %}" class="portal-cta" data-auth-modal-open="login">Login</a>
+                            <a href="{% url 'register' %}" class="portal-cta portal-cta-accent" data-auth-modal-open="register">Register</a>
                         {% endif %}
                     </div>
                 </nav>
@@ -171,10 +171,103 @@
         </div>
     </div>
 
+    {% if not request.user.is_authenticated and modal_login_form and modal_register_form %}
+    <div class="auth-modal-backdrop" hidden data-auth-modal-backdrop>
+        <div class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+            <button type="button" class="auth-modal-close" aria-label="Close account modal" data-auth-modal-close>
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+            <div class="auth-modal-head">
+                <span class="eyebrow">
+                    <i class="bi bi-person-circle"></i>
+                    Account
+                </span>
+                <h2 class="feature-title h3 mb-0" id="auth-modal-title">Login or create an account</h2>
+            </div>
+
+            <div class="auth-modal-switch">
+                <button type="button" class="auth-modal-tab is-active" data-auth-tab-trigger="login">Login</button>
+                <button type="button" class="auth-modal-tab" data-auth-tab-trigger="register">Register</button>
+            </div>
+
+            <div class="auth-modal-body">
+                <form
+                    method="post"
+                    action="{% url 'login' %}"
+                    class="auth-form auth-modal-form is-active"
+                    data-auth-form="login"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ auth_modal_next_url }}">
+                    <div class="auth-errors" hidden data-auth-errors="login"></div>
+
+                    <div class="auth-field">
+                        <label for="{{ modal_login_form.username.id_for_label }}" class="form-label-app">Username</label>
+                        {{ modal_login_form.username }}
+                        <div class="auth-field-error" hidden data-auth-field-error="login-username"></div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="{{ modal_login_form.password.id_for_label }}" class="form-label-app">Password</label>
+                        {{ modal_login_form.password }}
+                        <div class="auth-field-error" hidden data-auth-field-error="login-password"></div>
+                    </div>
+
+                    <div class="auth-actions">
+                        <button type="submit" class="btn-app btn-primary-app">Login</button>
+                    </div>
+                </form>
+
+                <form
+                    method="post"
+                    action="{% url 'register' %}"
+                    class="auth-form auth-modal-form"
+                    data-auth-form="register"
+                    hidden
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ auth_modal_next_url }}">
+                    <div class="auth-errors" hidden data-auth-errors="register"></div>
+
+                    <div class="auth-field">
+                        <label for="{{ modal_register_form.username.id_for_label }}" class="form-label-app">Username</label>
+                        {{ modal_register_form.username }}
+                        <div class="auth-field-error" hidden data-auth-field-error="register-username"></div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="{{ modal_register_form.email.id_for_label }}" class="form-label-app">Email</label>
+                        {{ modal_register_form.email }}
+                        <div class="auth-field-error" hidden data-auth-field-error="register-email"></div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="{{ modal_register_form.password1.id_for_label }}" class="form-label-app">Password</label>
+                        {{ modal_register_form.password1 }}
+                        <div class="auth-field-error" hidden data-auth-field-error="register-password1"></div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="{{ modal_register_form.password2.id_for_label }}" class="form-label-app">Confirm password</label>
+                        {{ modal_register_form.password2 }}
+                        <div class="auth-field-error" hidden data-auth-field-error="register-password2"></div>
+                    </div>
+
+                    <div class="auth-actions">
+                        <button type="submit" class="btn-app btn-primary-app">Create account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% block extra_scripts %}{% endblock %}
     <script src="{% static 'baseball/js/header-search.js' %}"></script>
     <script src="{% static 'baseball/js/auto-submit-filters.js' %}"></script>
     <script src="{% static 'baseball/js/player-card-photos.js' %}"></script>
     <script src="{% static 'baseball/js/compare-selection.js' %}"></script>
+    <script src="{% static 'baseball/js/auth-modal.js' %}"></script>
 </body>
 </html>

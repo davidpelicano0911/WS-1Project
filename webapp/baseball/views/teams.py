@@ -6,6 +6,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 
 from ..compare_selection import get_compare_selection
+from ..edit_service import build_team_edit_state
 from ..sparql import (
     DIVISION_LABELS,
     LEAGUE_LABELS,
@@ -268,11 +269,11 @@ def _build_team_cards(franchise_catalog, selected_franchise):
 
 def _build_team_showcase_facts(team, catalog_entry):
     return [
-        {"label": "Franchise", "value": catalog_entry["name"]},
-        {"label": "League", "value": _league_display(team.get("league_code"))},
-        {"label": "Division", "value": _division_display(team.get("division_code"))},
-        {"label": "Ballpark", "value": team.get("park") or "Unknown park"},
-        {"label": "Attendance", "value": _format_number(team.get("attendance"))},
+        {"label": "Franchise", "value": catalog_entry["name"], "field_key": "franchise_name"},
+        {"label": "League", "value": _league_display(team.get("league_code")), "field_key": "league_code"},
+        {"label": "Division", "value": _division_display(team.get("division_code")), "field_key": "division_code"},
+        {"label": "Ballpark", "value": team.get("park") or "Unknown park", "field_key": "park"},
+        {"label": "Attendance", "value": _format_number(team.get("attendance")), "field_key": "attendance"},
         {"label": "Games", "value": _format_number(team.get("games"))},
         {"label": "Home games", "value": _format_number(team.get("home_games"))},
         {"label": "Franchise span", "value": f"{catalog_entry['first_year']} - {catalog_entry['last_year']}"},
@@ -957,6 +958,11 @@ def team_detail_view(request, franchise_id):
         raise Http404("Team not found")
     selected_teams = _selected_compare_map(request, "team")
     detail_context["compare_selected"] = requested_franchise in selected_teams
+    detail_context["edit_state"] = (
+        build_team_edit_state(detail_context["selected_team"], request.user.is_staff)
+        if request.user.is_authenticated
+        else None
+    )
     return render(request, "team_detail.html", detail_context)
 
 

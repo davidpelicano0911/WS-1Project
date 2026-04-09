@@ -13,6 +13,7 @@ from ..compare_selection import (
     get_compare_selection,
     toggle_compare_selection,
 )
+from ..edit_service import build_player_edit_state
 from ..player_media import (
     attach_player_media,
     enrich_players_with_media,
@@ -350,11 +351,15 @@ def _build_player_detail_payload(profile):
     bio_items = [
         {"label": "Player ID", "value": _format_text(profile.get("player_id"))},
         {"label": "Born", "value": _summary_date_location(birth_date, birth_place)},
+        {"label": "Birth country", "value": _format_text(profile.get("birth_country")), "field_key": "birth_country"},
+        {"label": "Birth state", "value": _format_text(profile.get("birth_state")), "field_key": "birth_state"},
+        {"label": "Birth city", "value": _format_text(profile.get("birth_city")), "field_key": "birth_city"},
         {"label": "Died", "value": _summary_date_location(death_date, death_place) if death_date != "Unknown date" or death_place != "Unknown location" else "Still active / no death data"},
-        {"label": "Bats / throws", "value": f"{_format_text(profile.get('bats'))} / {_format_text(profile.get('throws'))}"},
+        {"label": "Bats", "value": _format_text(profile.get("bats")), "field_key": "bats"},
+        {"label": "Throws", "value": _format_text(profile.get("throws")), "field_key": "throws"},
         {"label": "Height / weight", "value": f"{_format_text(profile.get('height'))} / {_format_text(profile.get('weight'))}"},
-        {"label": "Debut", "value": _format_text(profile.get("debut"))},
-        {"label": "Final game", "value": _format_text(profile.get("final_game"))},
+        {"label": "Debut", "value": _format_text(profile.get("debut")), "field_key": "debut"},
+        {"label": "Final game", "value": _format_text(profile.get("final_game")), "field_key": "final_game"},
         {"label": "First season", "value": _format_text(profile.get("first_season"))},
         {"label": "Last season", "value": _format_text(profile.get("last_season"))},
         {"label": "Latest team", "value": latest_snapshot["team"]},
@@ -1496,6 +1501,7 @@ def player_detail_view(request, player_id):
         "player": player,
         **detail_payload,
         **graph_payload,
+        "edit_state": build_player_edit_state(player, request.user.is_staff) if request.user.is_authenticated else None,
         "recent_salary_history": player["salary_history"][:10],
         "recent_team_history": sorted(
             player["team_history"],

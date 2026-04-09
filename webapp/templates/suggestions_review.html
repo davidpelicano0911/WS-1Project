@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Suggestions{% endblock %}
+
+{% block content %}
+<section class="hero-panel mb-4">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-pencil-square"></i>
+                Review queue
+            </span>
+            <h1 class="page-title">User suggestions</h1>
+            <p class="section-copy mb-0">
+                Approvals write to the live GraphDB repository only. Rebuilding the repository can erase these edits.
+            </p>
+        </div>
+        <div class="button-row compact">
+            <a href="/admin/" class="btn-app btn-secondary-app">Open admin</a>
+        </div>
+    </div>
+
+    <div class="compare-scoreboard entity-review-counts">
+        <div class="compare-score-item">
+            <span class="compare-score-label">Pending</span>
+            <strong class="compare-score-value">{{ counts.pending }}</strong>
+        </div>
+        <div class="compare-score-item">
+            <span class="compare-score-label">Approved</span>
+            <strong class="compare-score-value">{{ counts.approved }}</strong>
+        </div>
+        <div class="compare-score-item">
+            <span class="compare-score-label">Rejected</span>
+            <strong class="compare-score-value">{{ counts.rejected }}</strong>
+        </div>
+    </div>
+</section>
+
+<section class="data-panel mb-4">
+    <form method="get" class="entity-review-filter-grid">
+        <div>
+            <label class="form-label-app" for="suggestion-status">Status</label>
+            <select name="status" id="suggestion-status" class="input-app select-app">
+                {% for option in status_options %}
+                    <option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label-app" for="suggestion-entity-type">Entity type</label>
+            <select name="entity_type" id="suggestion-entity-type" class="input-app select-app">
+                {% for option in entity_type_options %}
+                    <option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="entity-review-filter-actions">
+            <button type="submit" class="btn-app btn-primary-app">Apply filters</button>
+            <a href="{% url 'suggestions_review' %}" class="btn-app btn-secondary-app">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="entity-review-list">
+    {% for suggestion in suggestions %}
+        <article class="feature-card entity-review-card">
+            <div class="entity-review-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi {% if suggestion.entity_type == 'player' %}bi-person-fill{% else %}bi-shield-fill{% endif %}"></i>
+                        {{ suggestion.get_entity_type_display }}
+                    </span>
+                    <h2 class="feature-title h4 mb-1 mt-2">
+                        <a href="{{ suggestion.entity_url }}" class="entity-review-link">{{ suggestion.entity_id }}</a>
+                        {% if suggestion.entity_year %}· {{ suggestion.entity_year }}{% endif %}
+                    </h2>
+                    <p class="muted-copy mb-0">
+                        By {{ suggestion.submitted_by.username }} · {{ suggestion.submitted_at|date:"Y-m-d H:i" }}
+                    </p>
+                </div>
+                <span class="compare-winner-pill{% if suggestion.status == 'approved' %} winner-1{% elif suggestion.status == 'rejected' %} tie{% endif %}">
+                    {{ suggestion.get_status_display }}
+                </span>
+            </div>
+
+            {% if suggestion.reason %}
+                <div class="entity-review-reason">
+                    <span class="stat-label">Reason</span>
+                    <p class="mb-0">{{ suggestion.reason }}</p>
+                </div>
+            {% endif %}
+
+            {% if suggestion.status == 'pending' %}
+                <div class="entity-review-actions">
+                    <form method="post" action="{% url 'suggestion_approve' suggestion.id %}" class="entity-review-approve-form">
+                        {% csrf_token %}
+                        <div class="entity-review-change-grid">
+                            {% for change in suggestion.editable_changes %}
+                                <div class="entity-review-change-card">
+                                    <div class="entity-review-change-meta">
+                                        <span class="stat-label">{{ change.label }}</span>
+                                        <span class="entity-review-old">Current: {{ change.old_display }}</span>
+                                    </div>
+                                    {% if change.type == "choice" %}
+                                        <select name="change_{{ change.id }}" class="input-app select-app">
+                                            {% for choice in change.choices %}
+                                                <option value="{{ choice.value }}"{% if choice.value == change.value %} selected{% endif %}>{{ choice.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% elif change.type == "date" %}
+                                        <input type="date" name="change_{{ change.id }}" value="{{ change.value }}" class="input-app">
+                                    {% elif change.type == "integer" %}
+                                        <input type="number" min="0" step="1" name="change_{{ change.id }}" value="{{ change.value }}" class="input-app">
+                                    {% else %}
+                                        <input type="text" name="change_{{ change.id }}" value="{{ change.value }}" class="input-app">
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <label class="form-label-app mb-2" for="review-note-{{ suggestion.id }}">Review note</label>
+                        <textarea id="review-note-{{ suggestion.id }}" name="review_note" class="input-app entity-review-note" rows="3" placeholder="Optional internal note"></textarea>
+                        <button type="submit" class="btn-app entity-review-action-button entity-review-approve-button">Approve and publish</button>
+                    </form>
+
+                    <form method="post" action="{% url 'suggestion_reject' suggestion.id %}" class="entity-review-reject-form">
+                        {% csrf_token %}
+                        <label class="form-label-app mb-2" for="reject-note-{{ suggestion.id }}">Reject note</label>
+                        <textarea id="reject-note-{{ suggestion.id }}" name="review_note" class="input-app entity-review-note" rows="3" placeholder="Optional rejection note"></textarea>
+                        <button type="submit" class="btn-app entity-review-action-button entity-review-reject-button">Reject</button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="entity-review-change-grid">
+                    {% for change in suggestion.editable_changes %}
+                        <div class="entity-review-change-card">
+                            <span class="stat-label">{{ change.label }}</span>
+                            <strong class="stat-value">{{ change.new_display }}</strong>
+                            <span class="compare-aside-detail">Was {{ change.old_display }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if suggestion.review_note %}
+                    <div class="entity-review-reason mt-3">
+                        <span class="stat-label">Review note</span>
+                        <p class="mb-0">{{ suggestion.review_note }}</p>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </article>
+    {% empty %}
+        <section class="data-panel empty-state">
+            <i class="bi bi-inbox"></i>
+            No suggestions match the current filters.
+        </section>
+    {% endfor %}
+</section>
+{% endblock %}

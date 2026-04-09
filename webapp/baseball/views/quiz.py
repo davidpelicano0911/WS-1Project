@@ -3,6 +3,7 @@ import json
 from django.db.models import Count, Max
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from ..models import QuizAttempt
@@ -70,6 +71,7 @@ def _persist_completed_quiz_attempt(request, summary):
     )
 
 
+@ensure_csrf_cookie
 def quiz_view(request):
     return render(
         request,
@@ -80,12 +82,19 @@ def quiz_view(request):
     )
 
 
+@ensure_csrf_cookie
+def quiz_play_view(request):
+    return render(request, "quiz_play.html")
+
+
 @require_POST
 def quiz_start_api_view(request):
     try:
         round_state = build_round_state()
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=503)
+    except Exception:
+        return JsonResponse({"error": "Could not start the quiz right now."}, status=500)
 
     request.session[QUIZ_SESSION_KEY] = round_state
     request.session.modified = True
@@ -132,6 +141,14 @@ def quiz_answer_api_view(request):
             },
             status=409,
         )
+    except Exception:
+        return JsonResponse(
+            {
+                "error": "Could not submit that answer right now.",
+                "requires_restart": False,
+            },
+            status=500,
+        )
 
     request.session[QUIZ_SESSION_KEY] = round_state
     request.session.modified = True
@@ -145,12 +162,15 @@ def quiz_answer_api_view(request):
 
 @require_GET
 def quiz_state_api_view(request):
-    round_state = request.session.get(QUIZ_SESSION_KEY)
-    if round_state and not round_state_is_valid(round_state):
-        request.session.pop(QUIZ_SESSION_KEY, None)
-        request.session.modified = True
-        round_state = None
-    payload = get_round_state_payload(round_state)
-    if payload.get("completed"):
-        payload["leaderboard"] = _get_quiz_leaderboard_payload(request.user)
-    return JsonResponse(payload)
+    try:
+        round_state = request.session.get(QUIZ_SESSION_KEY)
+        if round_state and not round_state_is_valid(round_state):
+            request.session.pop(QUIZ_SESSION_KEY, None)
+            request.session.modified = True
+            round_state = None
+        payload = get_round_state_payload(round_state)
+        if payload.get("completed"):
+            payload["leaderboard"] = _get_quiz_leaderboard_payload(request.user)
+        return JsonResponse(payload)
+    except Exception:
+        return JsonResponse({"error": "Could not restore the quiz state."}, status=500)

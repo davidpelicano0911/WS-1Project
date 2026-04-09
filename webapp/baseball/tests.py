@@ -5,7 +5,7 @@ from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 from django.urls import reverse
 
-from baseball.models import QuizAttempt
+from baseball.models import DataSuggestion, QuizAttempt
 from baseball.quiz_service import (
     QUIZ_SESSION_KEY,
     _get_cached_question_families,
@@ -157,6 +157,13 @@ class QuizViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Baseball Quiz")
         self.assertContains(response, "Top quiz scores")
+        self.assertNotContains(response, "Guest mode")
+
+    def test_quiz_play_page_renders(self):
+        response = self.client.get(reverse("quiz_play"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Live round")
+        self.assertContains(response, "Baseball Quiz")
 
     @patch("baseball.views.quiz.build_round_state")
     def test_start_api_creates_round_in_session(self, mock_build_round_state):
@@ -381,3 +388,191 @@ class AuthViewTests(TestCase):
 
         self.assertContains(response, "Login")
         self.assertContains(response, "Register")
+
+
+class SuggestionWorkflowTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="fan", password="StrongPass123!")
+        self.admin = User.objects.create_user(
+            username="staffer",
+            password="StrongPass123!",
+            is_staff=True,
+            is_superuser=True,
+        )
+
+    def _player_edit_state(self):
+        return {
+            "entity_type": DataSuggestion.ENTITY_PLAYER,
+            "entity_id": "alpha01",
+            "entity_year": None,
+            "is_admin": False,
+            "fields": [],
+            "current_values": {
+                "display_name": "Alpha Player",
+                "birth_country": "USA",
+                "birth_state": "CA",
+                "birth_city": "Los Angeles",
+                "bats": "R",
+                "throws": "R",
+                "debut": "2001-04-05",
+                "final_game": "",
+            },
+        }
+
+    def _team_edit_state(self):
+        return {
+            "entity_type": DataSuggestion.ENTITY_TEAM,
+            "entity_id": "BOS",
+            "entity_year": 2004,
+            "is_admin": False,
+            "fields": [],
+            "current_values": {
+                "team_name": "Boston Red Sox",
+                "franchise_name": "Boston Red Sox",
+                "park": "Fenway Park",
+                "league_code": "AL",
+                "division_code": "E",
+                "attendance": "3200000",
+            },
+        }
+
+    @patch("baseball.views.suggestions._load_edit_state")
+    def test_normal_user_can_submit_player_suggestion(self, mock_load_edit_state):
+        self.client.force_login(self.user)
+        mock_load_edit_state.return_value = self._player_edit_state()
+
+        response = self.client.post(
+            reverse("suggestion_submit"),
+            data='{"entity_type":"player","entity_id":"alpha01","changes":{"birth_city":"San Diego","throws":"L"},"reason":"Official profile lists a different city and throwing hand."}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        suggestion = DataSuggestion.objects.get()
+        self.assertEqual(suggestion.status, DataSuggestion.STATUS_PENDING)
+        self.assertEqual(suggestion.entity_type, DataSuggestion.ENTITY_PLAYER)
+        self.assertEqual(suggestion.reason, "Official profile lists a different city and throwing hand.")
+        self.assertEqual(suggestion.changes.count(), 2)
+
+    @patch("baseball.views.suggestions._load_edit_state")
+    def test_normal_user_can_submit_team_suggestion(self, mock_load_edit_state):
+        self.client.force_login(self.user)
+        mock_load_edit_state.return_value = self._team_edit_state()
+
+        response = self.client.post(
+            reverse("suggestion_submit"),
+            data='{"entity_type":"team","entity_id":"BOS","entity_year":2004,"changes":{"park":"New Fenway"},"reason":"Park label is outdated."}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        suggestion = DataSuggestion.objects.get()
+        self.assertEqual(suggestion.entity_type, DataSuggestion.ENTITY_TEAM)
+        self.assertEqual(suggestion.entity_year, 2004)
+        self.assertEqual(suggestion.changes.first().field_key, "park")
+
+    @patch("baseball.views.suggestions._load_edit_state")
+    def test_invalid_non_editable_field_is_rejected(self, mock_load_edit_state):
+        self.client.force_login(self.user)
+        mock_load_edit_state.return_value = self._player_edit_state()
+
+        response = self.client.post(
+            reverse("suggestion_submit"),
+            data='{"entity_type":"player","entity_id":"alpha01","changes":{"height":"72"},"reason":"Bad field."}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(DataSuggestion.objects.count(), 0)
+
+    @patch("baseball.views.suggestions._load_edit_state")
+    def test_explanation_is_required_for_normal_user_submission(self, mock_load_edit_state):
+        self.client.force_login(self.user)
+        mock_load_edit_state.return_value = self._player_edit_state()
+
+        response = self.client.post(
+            reverse("suggestion_submit"),
+            data='{"entity_type":"player","entity_id":"alpha01","changes":{"birth_city":"San Diego"}}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(DataSuggestion.objects.count(), 0)
+
+    def test_staff_can_access_review_queue_and_normal_user_cannot(self):
+        user_response = self.client.get(reverse("suggestions_review"))
+        self.assertEqual(user_response.status_code, 302)
+
+        self.client.force_login(self.user)
+        normal_response = self.client.get(reverse("suggestions_review"))
+        self.assertEqual(normal_response.status_code, 302)
+
+        self.client.force_login(self.admin)
+        admin_response = self.client.get(reverse("suggestions_review"))
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertContains(admin_response, "User suggestions")
+
+    @patch("baseball.views.suggestions.apply_suggestion_updates")
+    def test_staff_can_approve_suggestion(self, mock_apply_updates):
+        suggestion = DataSuggestion.objects.create(
+            entity_type=DataSuggestion.ENTITY_PLAYER,
+            entity_id="alpha01",
+            submitted_by=self.user,
+            reason="Fix it",
+        )
+        change = suggestion.changes.create(field_key="birth_city", old_value="Los Angeles", new_value="San Diego")
+
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("suggestion_approve", args=[suggestion.id]),
+            {f"change_{change.id}": "San Francisco", "review_note": "Confirmed against source."},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        suggestion.refresh_from_db()
+        change.refresh_from_db()
+        self.assertEqual(suggestion.status, DataSuggestion.STATUS_APPROVED)
+        self.assertEqual(suggestion.reviewed_by, self.admin)
+        self.assertEqual(change.new_value, "San Francisco")
+        mock_apply_updates.assert_called_once()
+
+    def test_staff_can_reject_suggestion(self):
+        suggestion = DataSuggestion.objects.create(
+            entity_type=DataSuggestion.ENTITY_TEAM,
+            entity_id="BOS",
+            entity_year=2004,
+            submitted_by=self.user,
+            reason="Reject me",
+        )
+        suggestion.changes.create(field_key="park", old_value="Fenway Park", new_value="Wrong Park")
+
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("suggestion_reject", args=[suggestion.id]),
+            {"review_note": "Does not match source."},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        suggestion.refresh_from_db()
+        self.assertEqual(suggestion.status, DataSuggestion.STATUS_REJECTED)
+        self.assertEqual(suggestion.reviewed_by, self.admin)
+
+    @patch("baseball.views.suggestions.apply_suggestion_updates")
+    @patch("baseball.views.suggestions._load_edit_state")
+    def test_staff_direct_publish_creates_approved_audit_record(self, mock_load_edit_state, mock_apply_updates):
+        self.client.force_login(self.admin)
+        admin_state = self._player_edit_state()
+        admin_state["is_admin"] = True
+        mock_load_edit_state.return_value = admin_state
+
+        response = self.client.post(
+            reverse("suggestion_publish"),
+            data='{"entity_type":"player","entity_id":"alpha01","changes":{"display_name":"Alpha Prime"}}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        suggestion = DataSuggestion.objects.get()
+        self.assertEqual(suggestion.status, DataSuggestion.STATUS_APPROVED)
+        self.assertEqual(suggestion.reviewed_by, self.admin)
+        mock_apply_updates.assert_called_once()

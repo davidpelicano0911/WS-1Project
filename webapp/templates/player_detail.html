@@ -4,6 +4,15 @@
 {% block title %}{{ player.name }}{% endblock %}
 
 {% block content %}
+<div
+    class="entity-edit-page"
+    data-entity-edit-app
+    data-submit-url="{% url 'suggestion_submit' %}"
+    data-publish-url="{% url 'suggestion_publish' %}"
+>
+{% if edit_state %}
+    {{ edit_state|json_script:"entity-edit-state" }}
+{% endif %}
 <section class="hero-panel player-detail-hero mb-4">
     <div class="page-header">
         <div>
@@ -11,7 +20,9 @@
                 <i class="bi bi-person-vcard-fill"></i>
                 Player dossier
             </span>
-            <h1 class="page-title">{{ player.name }}</h1>
+            <h1 class="page-title{% if edit_state %} entity-edit-heading{% endif %}"{% if edit_state %} data-edit-field="display_name"{% endif %}>
+                <span data-edit-value>{{ player.name }}</span>
+            </h1>
             <p class="section-copy mb-0">
                 {{ player.player_id }} · {{ latest_snapshot.team }} · {{ latest_snapshot.league }} · {{ player.career_seasons }} documented seasons.
             </p>
@@ -30,9 +41,21 @@
                 <i class="bi {% if player.compare_selected %}bi-check2-circle{% else %}bi-plus-circle{% endif %}"></i>
                 <span data-compare-select-label>{% if player.compare_selected %}Selected{% else %}Compare{% endif %}</span>
             </button>
+            {% if edit_state %}
+                <button type="button" class="btn-app btn-secondary-app" data-entity-edit-toggle>
+                    {% if edit_state.is_admin %}Edit live data{% else %}Suggest edit{% endif %}
+                </button>
+                <button type="button" class="btn-app btn-secondary-app" data-entity-edit-cancel hidden>Cancel</button>
+                <button type="button" class="btn-app btn-primary-app" data-entity-edit-submit hidden>
+                    {% if edit_state.is_admin %}Save changes{% else %}Submit changes{% endif %}
+                </button>
+            {% endif %}
             <a href="#relationship-graph" class="btn-app btn-primary-app">Jump to graph</a>
         </div>
     </div>
+    {% if edit_state %}
+        <div class="message-banner info entity-edit-feedback" data-entity-edit-feedback hidden></div>
+    {% endif %}
 
     <div class="player-detail-top">
         <article class="feature-card player-detail-identity">
@@ -42,7 +65,9 @@
                         <i class="bi bi-stars"></i>
                         Profile
                     </span>
-                    <h2 class="compare-player-name mb-0 mt-2">{{ player.name }}</h2>
+                    <h2 class="compare-player-name mb-0 mt-2">
+                        <span data-edit-display-for="display_name">{{ player.name }}</span>
+                    </h2>
                 </div>
                 <span class="compare-meta">{{ player.player_id }}</span>
             </div>
@@ -52,7 +77,7 @@
                     <div class="player-detail-photo-fallback">
                         <span class="player-detail-avatar">{{ player.name|slice:":1" }}</span>
                         <div class="player-detail-photo-copy">
-                            <strong>{{ player.name }}</strong>
+                            <strong data-edit-display-for="display_name">{{ player.name }}</strong>
                             <span>No external headshot available</span>
                         </div>
                     </div>
@@ -77,9 +102,9 @@
 
                     <div class="player-detail-bio-list">
                         {% for item in bio_items %}
-                            <div class="player-detail-bio-item">
+                            <div class="player-detail-bio-item{% if item.field_key %} entity-editable-item{% endif %}"{% if item.field_key %} data-edit-field="{{ item.field_key }}"{% endif %}>
                                 <span class="stat-label">{{ item.label }}</span>
-                                <span class="stat-value">{{ item.value }}</span>
+                                <span class="stat-value" data-edit-value{% if item.field_key %} data-edit-display-for="{{ item.field_key }}"{% endif %}>{{ item.value }}</span>
                             </div>
                         {% endfor %}
                     </div>
@@ -484,10 +509,15 @@
         </section>
     </div>
 </section>
+{% if edit_state %}
+    {% include "includes/entity_edit_modal.html" %}
+{% endif %}
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
 <script src="{% static 'baseball/js/player-graph.js' %}"></script>
 <script src="{% static 'baseball/js/player-detail-tabs.js' %}"></script>
+<script src="{% static 'baseball/js/entity-edit.js' %}"></script>
 {% endblock %}

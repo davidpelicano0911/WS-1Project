@@ -66,6 +66,7 @@ TEMPLATES = [
                 'baseball.context_processors.header_teams',
                 'baseball.context_processors.header_leagues',
                 'baseball.context_processors.compare_selection',
+                'baseball.context_processors.auth_forms',
             ],
         },
     },

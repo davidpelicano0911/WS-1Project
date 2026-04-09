@@ -4,23 +4,42 @@
         return;
     }
 
+    const pageMode = app.dataset.pageMode || "landing";
+    const isPlayPage = pageMode === "play";
+
+    const OPTION_MARKS = ["◆", "●", "▲", "■"];
+    const HERO_BUTTON_COPY = {
+        start: "Start round",
+        resume: "Resume round",
+        results: "View results",
+        loading: "Loading...",
+    };
+
     const state = {
         currentQuestion: null,
         pendingNextQuestion: null,
         pendingSummary: null,
+        lastSummary: null,
         score: 0,
         total: 10,
         busy: false,
+        hasStoredRound: false,
+        completed: false,
     };
 
     const elements = {
-        intro: document.getElementById("quiz-intro"),
+        modal: document.getElementById("quiz-modal"),
+        modalStage: document.querySelector(".quiz-modal-stage"),
+        loading: document.getElementById("quiz-loading"),
+        loadingText: document.getElementById("quiz-loading-text"),
         live: document.getElementById("quiz-live"),
         summary: document.getElementById("quiz-summary"),
         error: document.getElementById("quiz-error"),
         startButton: document.getElementById("quiz-start-button"),
         startHero: document.getElementById("quiz-start-hero"),
         restartButton: document.getElementById("quiz-restart-button"),
+        closeButton: document.getElementById("quiz-close-button"),
+        summaryClose: document.getElementById("quiz-summary-close"),
         progressCurrent: document.getElementById("quiz-progress-current"),
         progressTotal: document.getElementById("quiz-progress-total"),
         scoreValue: document.getElementById("quiz-score-value"),
@@ -39,6 +58,35 @@
         personalRank: document.getElementById("quiz-personal-rank"),
     };
 
+    function animateStageResize(mutator) {
+        if (!elements.modalStage) {
+            mutator();
+            return;
+        }
+
+        const stage = elements.modalStage;
+        const startHeight = stage.getBoundingClientRect().height;
+        mutator();
+        const endHeight = stage.scrollHeight;
+
+        if (Math.abs(startHeight - endHeight) < 2) {
+            return;
+        }
+
+        stage.style.height = `${startHeight}px`;
+        stage.classList.add("is-resizing");
+        stage.getBoundingClientRect();
+        stage.style.height = `${endHeight}px`;
+
+        const cleanup = () => {
+            stage.style.height = "";
+            stage.classList.remove("is-resizing");
+            stage.removeEventListener("transitionend", cleanup);
+        };
+
+        stage.addEventListener("transitionend", cleanup);
+    }
+
     function getCookie(name) {
         const cookies = document.cookie ? document.cookie.split(";") : [];
         for (const cookie of cookies) {
@@ -48,6 +96,48 @@
             }
         }
         return "";
+    }
+
+    function openModal() {
+        if (isPlayPage) {
+            if (elements.modal) {
+                document.body.classList.add("quiz-modal-open");
+                elements.modal.hidden = false;
+                elements.modal.setAttribute("aria-hidden", "false");
+            }
+            return;
+        }
+        if (!elements.modal) {
+            return;
+        }
+        document.body.classList.add("quiz-modal-open");
+        elements.modal.hidden = false;
+        elements.modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+        if (isPlayPage) {
+            if (!state.busy) {
+                window.location.assign("/quiz/");
+            }
+            return;
+        }
+        if (!elements.modal || state.busy) {
+            return;
+        }
+        document.body.classList.remove("quiz-modal-open");
+        elements.modal.hidden = true;
+        elements.modal.setAttribute("aria-hidden", "true");
+    }
+
+    function setHeroButtons(mode) {
+        const heroText = HERO_BUTTON_COPY[mode] || HERO_BUTTON_COPY.start;
+        if (elements.startHero) {
+            elements.startHero.innerHTML = `<i class="bi bi-play-fill"></i>${heroText}`;
+        }
+        if (elements.startButton) {
+            elements.startButton.textContent = heroText;
+        }
     }
 
     function setBusy(busy) {
@@ -65,9 +155,45 @@
         if (elements.nextButton) {
             elements.nextButton.disabled = busy;
         }
+        if (elements.closeButton) {
+            elements.closeButton.disabled = busy;
+        }
+        if (elements.summaryClose) {
+            elements.summaryClose.disabled = busy;
+        }
+        if (busy) {
+            setHeroButtons("loading");
+        } else if (state.completed) {
+            setHeroButtons("results");
+        } else if (state.hasStoredRound) {
+            setHeroButtons("resume");
+        } else {
+            setHeroButtons("start");
+        }
+    }
+
+    function setHud(progressCurrent, progressTotal, score, category) {
+        elements.progressCurrent.textContent = progressCurrent;
+        elements.progressTotal.textContent = progressTotal;
+        elements.scoreValue.textContent = score;
+        elements.categoryChip.textContent = category || "Ready";
+    }
+
+    function showLoading(text) {
+        openModal();
+        if (elements.modalStage) {
+            elements.modalStage.classList.remove("is-summary-mode");
+        }
+        hideError();
+        elements.loading.hidden = false;
+        elements.live.hidden = true;
+        elements.summary.hidden = true;
+        elements.feedback.hidden = true;
+        elements.loadingText.textContent = text || "Loading questions...";
     }
 
     function showError(message) {
+        openModal();
         elements.error.hidden = false;
         elements.error.textContent = message;
     }
@@ -83,10 +209,14 @@
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCookie("csrftoken"),
+                Accept: "application/json",
             },
             body: JSON.stringify(payload || {}),
         });
-        const data = await response.json();
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+            ? await response.json()
+            : { error: "The server returned an invalid response." };
         if (!response.ok) {
             const error = new Error(data.error || "Request failed.");
             error.payload = data;
@@ -99,24 +229,14 @@
         const response = await fetch(url, {
             headers: { Accept: "application/json" },
         });
-        const data = await response.json();
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+            ? await response.json()
+            : { error: "The server returned an invalid response." };
         if (!response.ok) {
             throw new Error(data.error || "Request failed.");
         }
         return data;
-    }
-
-    function setHud(progressCurrent, progressTotal, score, category) {
-        elements.progressCurrent.textContent = progressCurrent;
-        elements.progressTotal.textContent = progressTotal;
-        elements.scoreValue.textContent = score;
-        elements.categoryChip.textContent = category || "Ready";
-    }
-
-    function showPanel(name) {
-        elements.intro.hidden = name !== "intro";
-        elements.live.hidden = name !== "live";
-        elements.summary.hidden = name !== "summary";
     }
 
     function renderLeaderboard(leaderboard) {
@@ -153,26 +273,36 @@
                 <strong class="quiz-personal-rank-value">#${leaderboard.current_user_entry.rank}</strong>
                 <span class="quiz-personal-rank-copy">${leaderboard.current_user_entry.best_score}/10 · ${leaderboard.current_user_entry.best_percentage}%</span>
             `;
+        } else {
+            elements.personalRank.remove();
+            elements.personalRank = null;
         }
     }
 
-    function renderIntro() {
+    function resetStoredRoundState() {
         state.currentQuestion = null;
         state.pendingNextQuestion = null;
         state.pendingSummary = null;
+        state.lastSummary = null;
+        state.score = 0;
+        state.total = 10;
+        state.hasStoredRound = false;
+        state.completed = false;
         setHud(0, state.total, 0, "Ready");
-        hideError();
-        showPanel("intro");
+        setHeroButtons("start");
     }
 
-    function createOptionButton(option) {
+    function createOptionButton(option, index) {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "quiz-option";
+        button.className = `quiz-option quiz-option-theme-${index}`;
         button.dataset.optionId = option.id;
         button.innerHTML = `
-            <span class="quiz-option-label">${option.label}</span>
-            <span class="quiz-option-detail${option.detail ? "" : " is-empty"}">${option.detail || ""}</span>
+            <span class="quiz-option-mark">${OPTION_MARKS[index] || OPTION_MARKS[0]}</span>
+            <span class="quiz-option-content">
+                <span class="quiz-option-label">${option.label}</span>
+                <span class="quiz-option-detail${option.detail ? "" : " is-empty"}">${option.detail || ""}</span>
+            </span>
         `;
         button.addEventListener("click", () => submitAnswer(option.id));
         return button;
@@ -182,36 +312,58 @@
         state.currentQuestion = question;
         state.pendingNextQuestion = null;
         state.pendingSummary = null;
+        state.lastSummary = null;
         state.score = score;
+        state.total = question.total_questions || state.total;
+        state.hasStoredRound = true;
+        state.completed = false;
 
-        hideError();
-        showPanel("live");
-        elements.feedback.hidden = true;
-        elements.prompt.textContent = question.prompt;
-        elements.context.textContent = question.context;
-        elements.options.innerHTML = "";
-        question.options.forEach((option) => {
-            elements.options.appendChild(createOptionButton(option));
+        openModal();
+        if (elements.modalStage) {
+            elements.modalStage.classList.remove("is-summary-mode");
+        }
+        animateStageResize(() => {
+            hideError();
+            elements.loading.hidden = true;
+            elements.summary.hidden = true;
+            elements.live.hidden = false;
+            elements.feedback.hidden = true;
+            elements.prompt.textContent = question.prompt;
+            elements.context.textContent = question.context;
+            elements.options.innerHTML = "";
+            question.options.forEach((option, index) => {
+                elements.options.appendChild(createOptionButton(option, index));
+            });
         });
-        setHud(
-            question.question_number,
-            question.total_questions,
-            score,
-            question.category
-        );
+        setHud(question.question_number, question.total_questions, score, question.category);
+        setHeroButtons("resume");
     }
 
     function renderSummary(summary) {
         state.currentQuestion = null;
         state.pendingNextQuestion = null;
         state.pendingSummary = null;
+        state.lastSummary = summary;
+        state.score = summary.score;
+        state.total = summary.total_questions;
+        state.hasStoredRound = true;
+        state.completed = true;
 
-        hideError();
-        showPanel("summary");
-        elements.summaryPoints.textContent = `${summary.score}/${summary.total_questions}`;
-        elements.summaryPercent.textContent = `${summary.percentage}%`;
-        elements.summaryCopy.textContent = summary.copy;
+        openModal();
+        if (elements.modalStage) {
+            elements.modalStage.classList.add("is-summary-mode");
+        }
+        animateStageResize(() => {
+            hideError();
+            elements.loading.hidden = true;
+            elements.live.hidden = true;
+            elements.summary.hidden = false;
+            elements.summaryPoints.textContent = `${summary.score}/${summary.total_questions}`;
+            elements.summaryPercent.textContent = `${summary.percentage}%`;
+            elements.summaryCopy.textContent = summary.copy;
+        });
         setHud(summary.total_questions, summary.total_questions, summary.score, "Complete");
+        setHeroButtons("results");
     }
 
     function paintAnsweredState(responsePayload) {
@@ -233,9 +385,29 @@
         });
     }
 
-    async function startRound() {
+    function resumeExistingRound() {
+        if (state.completed && state.lastSummary) {
+            renderSummary(state.lastSummary);
+            return true;
+        }
+        if (state.currentQuestion) {
+            renderQuestion(state.currentQuestion, state.score);
+            return true;
+        }
+        return false;
+    }
+
+    async function startRound(forceNewRound) {
+        if (state.busy) {
+            return;
+        }
+
+        if (!forceNewRound && state.hasStoredRound && resumeExistingRound()) {
+            return;
+        }
+
         setBusy(true);
-        hideError();
+        showLoading("Loading questions...");
         try {
             const payload = await postJson(app.dataset.startUrl, {});
             state.total = payload.total_questions || 10;
@@ -266,11 +438,15 @@
                 renderLeaderboard(payload.leaderboard);
             }
 
-            paintAnsweredState(payload);
-            elements.feedback.hidden = false;
-            elements.feedbackTitle.textContent = payload.is_correct ? "Correct" : "Not quite";
-            elements.feedbackText.textContent = payload.explanation;
-            elements.nextButton.textContent = payload.completed ? "See results" : "Continue";
+            animateStageResize(() => {
+                paintAnsweredState(payload);
+                elements.feedback.hidden = false;
+                elements.feedback.classList.toggle("is-correct", !!payload.is_correct);
+                elements.feedback.classList.toggle("is-wrong", !payload.is_correct);
+                elements.feedbackTitle.textContent = payload.is_correct ? "Correct" : "Not quite";
+                elements.feedbackText.textContent = payload.explanation;
+                elements.nextButton.textContent = payload.completed ? "See results" : "Continue";
+            });
         } catch (error) {
             showError(error.message);
         } finally {
@@ -284,7 +460,12 @@
         try {
             const payload = await getJson(app.dataset.stateUrl);
             if (!payload.active) {
-                renderIntro();
+                resetStoredRoundState();
+                if (isPlayPage) {
+                    await startRound(true);
+                    return;
+                }
+                closeModal();
                 return;
             }
             state.total = payload.total_questions || 10;
@@ -297,21 +478,24 @@
             }
             renderQuestion(payload.current_question, payload.score || 0);
         } catch (error) {
+            resetStoredRoundState();
+            if (!isPlayPage) {
+                closeModal();
+            }
             showError(error.message);
-            renderIntro();
         } finally {
             setBusy(false);
         }
     }
 
-    if (elements.startButton) {
-        elements.startButton.addEventListener("click", startRound);
+    if (!isPlayPage && elements.startButton) {
+        elements.startButton.addEventListener("click", () => startRound(false));
     }
-    if (elements.startHero) {
-        elements.startHero.addEventListener("click", startRound);
+    if (!isPlayPage && elements.startHero) {
+        elements.startHero.addEventListener("click", () => startRound(false));
     }
     if (elements.restartButton) {
-        elements.restartButton.addEventListener("click", startRound);
+        elements.restartButton.addEventListener("click", () => startRound(true));
     }
     if (elements.nextButton) {
         elements.nextButton.addEventListener("click", () => {
@@ -324,6 +508,28 @@
             }
         });
     }
+    if (elements.closeButton) {
+        elements.closeButton.addEventListener("click", closeModal);
+    }
+    if (elements.summaryClose && elements.summaryClose.tagName === "BUTTON") {
+        elements.summaryClose.addEventListener("click", closeModal);
+    }
+    if (!isPlayPage && elements.modal) {
+        elements.modal.addEventListener("click", (event) => {
+            if (event.target === elements.modal) {
+                closeModal();
+            }
+        });
+    }
+    document.addEventListener("keydown", (event) => {
+        if (!isPlayPage && event.key === "Escape" && elements.modal && !elements.modal.hidden) {
+            closeModal();
+        }
+    });
 
+    resetStoredRoundState();
+    if (isPlayPage) {
+        openModal();
+    }
     restoreState();
 }());

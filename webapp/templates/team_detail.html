@@ -4,6 +4,15 @@
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
+<div
+    class="entity-edit-page"
+    data-entity-edit-app
+    data-submit-url="{% url 'suggestion_submit' %}"
+    data-publish-url="{% url 'suggestion_publish' %}"
+>
+{% if edit_state %}
+    {{ edit_state|json_script:"entity-edit-state" }}
+{% endif %}
 <section class="hero-panel mb-4">
     <div class="page-header">
         <div>
@@ -11,9 +20,11 @@
                 <i class="bi bi-shield-fill"></i>
                 Team page
             </span>
-            <h1 class="page-title">{{ selected_team.team_name }}</h1>
+            <h1 class="page-title{% if edit_state %} entity-edit-heading{% endif %}"{% if edit_state %} data-edit-field="team_name"{% endif %}>
+                <span data-edit-value>{{ selected_team.team_name }}</span>
+            </h1>
             <p class="section-copy mb-0">
-                Dedicated club page for the {{ selected_team.franchise_name }} franchise, with season context, roster leaders, history, and postseason detail.
+                Dedicated club page for the <span data-edit-display-for="franchise_name">{{ selected_team.franchise_name }}</span> franchise, with season context, roster leaders, history, and postseason detail.
             </p>
         </div>
         <div class="button-row compact">
@@ -31,9 +42,21 @@
                 <i class="bi {% if compare_selected %}bi-check2-circle{% else %}bi-plus-circle{% endif %}"></i>
                 <span data-compare-select-label>{% if compare_selected %}Selected{% else %}Compare{% endif %}</span>
             </button>
+            {% if edit_state %}
+                <button type="button" class="btn-app btn-secondary-app" data-entity-edit-toggle>
+                    {% if edit_state.is_admin %}Edit live data{% else %}Suggest edit{% endif %}
+                </button>
+                <button type="button" class="btn-app btn-secondary-app" data-entity-edit-cancel hidden>Cancel</button>
+                <button type="button" class="btn-app btn-primary-app" data-entity-edit-submit hidden>
+                    {% if edit_state.is_admin %}Save changes{% else %}Submit changes{% endif %}
+                </button>
+            {% endif %}
             <a href="{% url 'analytics' %}" class="btn-app btn-primary-app">Open analytics</a>
         </div>
     </div>
+    {% if edit_state %}
+        <div class="message-banner info entity-edit-feedback" data-entity-edit-feedback hidden></div>
+    {% endif %}
 </section>
 
 <section class="team-showcase-panel mb-4" id="team-detail">
@@ -73,9 +96,9 @@
             <div class="team-showcase-sidebar-copy">
                 <span class="eyebrow">
                     <i class="bi bi-shield-fill"></i>
-                    {{ selected_team.franchise_name }}
+                    <span data-edit-display-for="franchise_name">{{ selected_team.franchise_name }}</span>
                 </span>
-                <h2 class="team-showcase-title">{{ selected_team.team_name }}</h2>
+                <h2 class="team-showcase-title"><span data-edit-display-for="team_name">{{ selected_team.team_name }}</span></h2>
                 <p class="team-showcase-subtitle">
                     {{ selected_team.year }} club snapshot with league position, park context, roster leaders, and franchise history.
                 </p>
@@ -97,9 +120,9 @@
 
             <div class="team-showcase-facts">
                 {% for item in team_showcase_facts %}
-                <div class="team-showcase-fact">
+                <div class="team-showcase-fact{% if item.field_key %} entity-editable-item{% endif %}"{% if item.field_key %} data-edit-field="{{ item.field_key }}"{% endif %}>
                     <span class="stat-label">{{ item.label }}</span>
-                    <strong class="team-fact-value">{{ item.value }}</strong>
+                    <strong class="team-fact-value" data-edit-value{% if item.field_key %} data-edit-display-for="{{ item.field_key }}"{% endif %}>{{ item.value }}</strong>
                 </div>
                 {% endfor %}
             </div>
@@ -128,28 +151,28 @@
                         <i class="bi bi-calendar-event-fill"></i>
                         {{ selected_team.year }} season
                     </span>
-                    <h3 class="team-showcase-stage-title">{{ selected_team.team_name }}</h3>
+                    <h3 class="team-showcase-stage-title"><span data-edit-display-for="team_name">{{ selected_team.team_name }}</span></h3>
                     <p class="team-showcase-stage-copy">
-                        <strong>{{ selected_team.franchise_name }}</strong> in the {{ selected_team.league_name }} ·
-                        {{ selected_team.division_name }} · Rank {{ selected_team.rank|default:"-" }}.
+                        <strong data-edit-display-for="franchise_name">{{ selected_team.franchise_name }}</strong> in the <span data-edit-display-for="league_code">{{ selected_team.league_name }}</span> ·
+                        <span data-edit-display-for="division_code">{{ selected_team.division_name }}</span> · Rank {{ selected_team.rank|default:"-" }}.
                     </p>
 
                     <div class="team-meta-strip">
                         <span class="team-meta-pill">
                             <i class="bi bi-trophy-fill"></i>
-                            <a href="{% url 'league_detail' selected_team.league_code %}">{{ selected_team.league_name }}</a>
+                            <a href="{% url 'league_detail' selected_team.league_code %}" data-edit-display-for="league_code">{{ selected_team.league_name }}</a>
                         </span>
                         <span class="team-meta-pill">
                             <i class="bi bi-signpost-split-fill"></i>
-                            {{ selected_team.division_name }}
+                            <span data-edit-display-for="division_code">{{ selected_team.division_name }}</span>
                         </span>
                         <span class="team-meta-pill">
                             <i class="bi bi-pin-map-fill"></i>
-                            {{ selected_team.park|default:"Unknown park" }}
+                            <span data-edit-display-for="park">{{ selected_team.park|default:"Unknown park" }}</span>
                         </span>
                         <span class="team-meta-pill">
                             <i class="bi bi-people-fill"></i>
-                            {{ selected_team.attendance_display }} attendance
+                            <span data-edit-display-for="attendance">{{ selected_team.attendance_display }}</span> attendance
                         </span>
                     </div>
                 </div>
@@ -682,6 +705,10 @@
     </section>
     {% endif %}
 </section>
+{% if edit_state %}
+    {% include "includes/entity_edit_modal.html" %}
+{% endif %}
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -742,4 +769,5 @@
         });
     });
 </script>
+<script src="{% static 'baseball/js/entity-edit.js' %}"></script>
 {% endblock %}

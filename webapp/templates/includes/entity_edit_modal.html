@@ -1,0 +1,30 @@
+<div class="entity-edit-modal-backdrop" hidden data-entity-edit-modal>
+    <div class="entity-edit-modal-card" role="dialog" aria-modal="true" aria-labelledby="entity-edit-modal-title">
+        <div class="entity-edit-modal-head">
+            <div>
+                <span class="eyebrow">
+                    <i class="bi bi-pencil-square"></i>
+                    Suggest changes
+                </span>
+                <h2 class="feature-title h4 mb-0" id="entity-edit-modal-title">Explain these edits</h2>
+            </div>
+            <button type="button" class="compare-modal-close" aria-label="Close suggestion form" data-entity-edit-modal-close>
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <p class="muted-copy mb-3">Tell the admin why these fields should be updated.</p>
+        <div class="entity-edit-summary" data-entity-edit-summary></div>
+        <label class="form-label-app mt-3" for="entity-edit-reason">Why should this change be accepted?</label>
+        <textarea
+            id="entity-edit-reason"
+            class="input-app entity-edit-reason"
+            rows="5"
+            placeholder="Example: this birth city is wrong in the archive and the official MLB profile shows the correct value."
+            data-entity-edit-reason
+        ></textarea>
+        <div class="entity-edit-modal-actions">
+            <button type="button" class="btn-app btn-secondary-app" data-entity-edit-modal-close>Cancel</button>
+            <button type="button" class="btn-app btn-primary-app" data-entity-edit-confirm>Submit changes</button>
+        </div>
+    </div>
+</div>

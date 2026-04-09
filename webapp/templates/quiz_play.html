@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Play Quiz{% endblock %}
+{% block body_class %}quiz-page quiz-play-page{% endblock %}
+
+{% block content %}
+<section class="hero-panel quiz-play-underlay mb-4" data-quiz-play-underlay>
+    <div class="directory-hero-header quiz-hero-header">
+        <div class="directory-hero-main quiz-hero-main">
+            <span class="eyebrow">
+                <i class="bi bi-patch-question-fill"></i>
+                Quiz
+            </span>
+            <h1 class="page-title">Baseball Quiz</h1>
+            <p class="section-copy mb-0">
+                Fast round. Four choices. Ten questions.
+            </p>
+            <div class="directory-hero-summary">
+                <span class="player-filter-chip soft">
+                    <strong>10</strong>
+                    <span>Questions</span>
+                </span>
+                <span class="player-filter-chip soft">
+                    <strong>4</strong>
+                    <span>Choices</span>
+                </span>
+                <span class="player-filter-chip soft">
+                    <strong>1</strong>
+                    <span>Winner</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="quiz-hero-side">
+            <div class="quiz-hero-badge-stack">
+                <div class="quiz-hero-badge quiz-hero-badge-gold">
+                    <span>HR</span>
+                </div>
+                <div class="quiz-hero-badge quiz-hero-badge-blue">
+                    <span>$</span>
+                </div>
+                <div class="quiz-hero-badge quiz-hero-badge-red">
+                    <span>MVP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section
+    class="hero-panel quiz-shell quiz-play-shell mb-4"
+    id="quiz-app"
+    data-start-url="{% url 'quiz_start_api' %}"
+    data-answer-url="{% url 'quiz_answer_api' %}"
+    data-state-url="{% url 'quiz_state_api' %}"
+    data-page-mode="play"
+>
+    <div class="page-header quiz-play-underlay" data-quiz-play-underlay>
+        <div>
+            <span class="eyebrow">
+                <i class="bi bi-lightning-charge-fill"></i>
+                Live round
+            </span>
+            <h1 class="page-title">Baseball Quiz</h1>
+            <p class="section-copy mb-0">The round starts here and resumes here.</p>
+        </div>
+        <div class="button-row compact">
+            <a href="{% url 'quiz' %}" class="btn-app btn-secondary-app">Back to quiz</a>
+        </div>
+    </div>
+
+    <div class="quiz-play-underlay quiz-play-placeholder-grid" data-quiz-play-underlay>
+        <div class="quiz-status-bar">
+            <div class="quiz-status-chip quiz-status-chip-progress">
+                <span class="quiz-status-label">Progress</span>
+                <strong class="quiz-status-value">0/10</strong>
+            </div>
+            <div class="quiz-status-chip quiz-status-chip-score">
+                <span class="quiz-status-label">Score</span>
+                <strong class="quiz-status-value">0</strong>
+            </div>
+            <div class="quiz-status-chip quiz-status-chip-type">
+                <span class="quiz-status-label">Type</span>
+                <strong class="quiz-status-value">Ready</strong>
+            </div>
+        </div>
+        <div class="data-panel quiz-card">
+            <span class="eyebrow">
+                <i class="bi bi-controller"></i>
+                Ready
+            </span>
+            <h2 class="feature-title h3 mb-2 mt-2">The round opens above this page.</h2>
+            <p class="section-copy mb-0">
+                Keep the nav visible, blur the site, and focus everything on the live question.
+            </p>
+        </div>
+    </div>
+
+</section>
+
+<div class="quiz-modal-backdrop quiz-play-overlay" id="quiz-modal" aria-hidden="false">
+    <div class="quiz-modal-stage quiz-play-stage">
+        <button type="button" class="quiz-modal-close" id="quiz-close-button" aria-label="Close quiz">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <div class="quiz-status-bar quiz-modal-status-bar">
+            <div class="quiz-status-chip quiz-status-chip-progress">
+                <span class="quiz-status-label">Progress</span>
+                <strong class="quiz-status-value"><span id="quiz-progress-current">0</span>/<span id="quiz-progress-total">10</span></strong>
+            </div>
+            <div class="quiz-status-chip quiz-status-chip-score">
+                <span class="quiz-status-label">Score</span>
+                <strong class="quiz-status-value"><span id="quiz-score-value">0</span></strong>
+            </div>
+            <div class="quiz-status-chip quiz-status-chip-type">
+                <span class="quiz-status-label">Type</span>
+                <strong class="quiz-status-value" id="quiz-category-chip">Ready</strong>
+            </div>
+        </div>
+
+        <div class="quiz-loading" id="quiz-loading" hidden>
+            <div class="quiz-loading-orb"></div>
+            <div class="quiz-loading-copy">
+                <strong>Building your round</strong>
+                <span id="quiz-loading-text">Loading questions...</span>
+            </div>
+        </div>
+
+        <div class="data-panel quiz-card quiz-modal-card" id="quiz-live" hidden>
+            <div class="quiz-question-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Live round
+                    </span>
+                    <h2 class="feature-title h2 mb-2 mt-2" id="quiz-prompt">Question prompt</h2>
+                    <p class="section-copy mb-0" id="quiz-context">Context</p>
+                </div>
+            </div>
+
+            <div class="quiz-options" id="quiz-options"></div>
+
+            <div class="quiz-feedback" id="quiz-feedback" hidden>
+                <div class="quiz-feedback-copy">
+                    <strong id="quiz-feedback-title">Correct</strong>
+                    <p class="mb-0" id="quiz-feedback-text"></p>
+                </div>
+                <button type="button" class="btn-app btn-secondary-app" id="quiz-next-button">Continue</button>
+            </div>
+        </div>
+
+        <div class="data-panel quiz-card quiz-modal-card quiz-summary-card" id="quiz-summary" hidden>
+            <div class="quiz-summary-shell">
+                <div class="quiz-summary-main">
+                    <span class="eyebrow">
+                        <i class="bi bi-trophy-fill"></i>
+                        Round complete
+                    </span>
+                    <h2 class="feature-title quiz-summary-title mb-2 mt-2">Final score</h2>
+                    <p class="section-copy quiz-summary-copy mb-0" id="quiz-summary-copy">Round summary.</p>
+                    <div class="quiz-summary-actions">
+                        <button type="button" class="btn-app btn-primary-app" id="quiz-restart-button">Play again</button>
+                        <a href="{% url 'quiz' %}" class="btn-app btn-secondary-app" id="quiz-summary-close">Back to quiz</a>
+                    </div>
+                    <div class="quiz-summary-score">
+                        <strong id="quiz-summary-points">0/10</strong>
+                        <span id="quiz-summary-percent">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quiz-error" id="quiz-error" hidden></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'baseball/js/quiz.js' %}"></script>
+{% endblock %}
