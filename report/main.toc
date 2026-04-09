@@ -1,16 +1,20 @@
 \babel@toc {portuguese}{}\relax 
 \contentsline {chapter}{\numberline {1}Introdu\c {c}\~ao ao Tema}{3}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Arquitetura da Aplica\c {c}\~ao e Tecnologias Utilizadas}{3}{section.1.1}%
-\contentsline {chapter}{\numberline {2}Dados, suas fontes e sua transforma\c {c}\~ao}{4}{chapter.2}%
-\contentsline {chapter}{\numberline {3}Opera\c {c}\~oes sobre os dados (SPARQL)}{5}{chapter.3}%
-\contentsline {chapter}{\numberline {4}Funcionalidades da Aplica\c {c}\~ao (UI)}{6}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Funcionalidades de Administrador (Autentica\c {c}\~ao e Opera\c {c}\~oes CRUD)}{7}{chapter.5}%
-\contentsline {chapter}{\numberline {6}Conclus\~oes}{8}{chapter.6}%
-\contentsline {chapter}{\numberline {7}Configura\c {c}\~oes para executar a app}{9}{chapter.7}%
-\contentsline {chapter}{\numberline {8}Configura\c {c}\~oes para executar a app}{10}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Ficheiros Importantes}{10}{section.8.1}%
-\contentsline {section}{\numberline {8.2}Execu\c {c}\~ao com Docker}{10}{section.8.2}%
-\contentsline {section}{\numberline {8.3}Execu\c {c}\~ao Manual}{10}{section.8.3}%
-\contentsline {section}{\numberline {8.4}Execu\c {c}\~ao Manual}{10}{section.8.4}%
-\contentsline {section}{\numberline {8.5}Execu\c {c}\~ao com Docker}{10}{section.8.5}%
-\contentsline {section}{\numberline {8.6}Ficheiros Importantes}{10}{section.8.6}%
+\contentsline {section}{\numberline {1.2}Fluxo Geral da Solu\c {c}\~ao}{4}{section.1.2}%
+\contentsline {chapter}{\numberline {2}Dados, suas fontes e sua transforma\c {c}\~ao}{5}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Fontes de Dados Principais}{5}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Transforma\c {c}\~ao para RDF}{6}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Dados Complementares para a Interface}{6}{section.2.3}%
+\contentsline {chapter}{\numberline {3}Opera\c {c}\~oes sobre os dados (SPARQL)}{8}{chapter.3}%
+\contentsline {chapter}{\numberline {4}Funcionalidades da Aplica\c {c}\~ao (UI)}{9}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Funcionalidades de Administrador (Autentica\c {c}\~ao e Opera\c {c}\~oes CRUD)}{10}{chapter.5}%
+\contentsline {chapter}{\numberline {6}Conclus\~oes}{11}{chapter.6}%
+\contentsline {chapter}{\numberline {7}Configura\c {c}\~oes para executar a app}{12}{chapter.7}%
+\contentsline {chapter}{\numberline {8}Configura\c {c}\~oes para executar a app}{13}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Ficheiros Importantes}{13}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Execu\c {c}\~ao com Docker}{13}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Execu\c {c}\~ao Manual}{13}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Execu\c {c}\~ao Manual}{13}{section.8.4}%
+\contentsline {section}{\numberline {8.5}Execu\c {c}\~ao com Docker}{13}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Ficheiros Importantes}{13}{section.8.6}%

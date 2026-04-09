@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.4.8)  8 APR 2026 01:12
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.4.8)  9 APR 2026 18:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -269,7 +269,7 @@ File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count282
 \l__pdf_internal_box=\box55
 )
-No file main.aux.
+(./main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 30.
@@ -290,6 +290,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 30.
 LaTeX Font Info:    ... okay on input line 30.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 30.
 LaTeX Font Info:    ... okay on input line 30.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -356,6 +357,8 @@ Package color Info: Driver file: pdftex.def on input line 149.
 
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 Package hyperref Info: Link coloring ON on input line 30.
+ (./main.out)
+(./main.out)
 \@outlinefile=\write3
 \openout3 = `main.out'.
 
@@ -365,8 +368,14 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 33.
  [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-No file main.toc.
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] (./main.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 3.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 3.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 3.
+)
 \tf@toc=\write4
 \openout4 = `main.toc'.
 
@@ -378,96 +387,80 @@ been already used, duplicate ignored
 l.34 \listoffigures
                     [1
 
-]
-No file main.lof.
+] (./main.lof)
 \tf@lof=\write5
 \openout5 = `main.lof'.
 
-[2
+ [2
 
 ] (./sections/01_intro.tex
 Cap\'{\i }tulo 1.
-) (./sections/02_data_sources.tex [3
+[3
 
 
 ]
-Cap\'{\i }tulo 2.
-LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 1
-1.
-(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
+LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 2
+6.
+ (/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
-)
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 11.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 11.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 11.
-)
-(./sections/03_sparql_ops.tex [4
+))
+(./sections/02_data_sources.tex [4]
+Cap\'{\i }tulo 2.
+[5
 
-]
+] [6]) (./sections/03_sparql_ops.tex [7]
 Cap\'{\i }tulo 3.
-) (./sections/04_ui_features.tex [5
+) (./sections/04_ui_features.tex [8
 
 ]
 Cap\'{\i }tulo 4.
-) (./sections/05_admin_features.tex [6
+) (./sections/05_admin_features.tex [9
 
 ]
 Cap\'{\i }tulo 5.
-) (./sections/06_conclusions.tex [7
+) (./sections/06_conclusions.tex [10
 
 ]
 Cap\'{\i }tulo 6.
-) (./sections/07_run_configs.tex [8
+) (./sections/07_run_configs.tex [11
 
 ]
 Cap\'{\i }tulo 7.
-[9
+[12
 
 ]
 Cap\'{\i }tulo 8.
-) [10
+) [13
 
 ] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `main.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  7023DC8988B6E24D67DA955390230658;3055.
+Package rerunfilecheck Info: File `main.out' has not changed.
+(rerunfilecheck)             Checksum: 330E57A3BD573DE61C119F4374B46DB6;3858.
  ) 
 Here is how much of TeX's memory you used:
- 11025 strings out of 476162
- 174164 string characters out of 5794815
- 1926975 words of memory out of 5000000
- 32857 multiletter control sequences out of 15000+600000
- 567763 words of font info for 57 fonts, out of 8000000 for 9000
+ 11065 strings out of 476162
+ 174523 string characters out of 5794815
+ 1930975 words of memory out of 5000000
+ 32876 multiletter control sequences out of 15000+600000
+ 568539 words of font info for 58 fonts, out of 8000000 for 9000
  16 hyphenation exceptions out of 8191
- 75i,7n,79p,443b,472s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,6n,79p,697b,581s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </home/davidpelicano/.texlive2023/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt
 1200.600pk> </home/davidpelicano/.texlive2023/texmf-var/fonts/pk/ljfour/jknappe
 n/ec/tcrm1200.600pk> </home/davidpelicano/.texlive2023/texmf-var/fonts/pk/ljfou
 r/jknappen/ec/ecbx1728.600pk> </home/davidpelicano/.texlive2023/texmf-var/fonts
-/pk/ljfour/jknappen/ec/ecrm1200.600pk> </home/davidpelicano/.texlive2023/texmf-
-var/fonts/pk/ljfour/jknappen/ec/ecbx2488.600pk> </home/davidpelicano/.texlive20
-23/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1440.600pk> </home/davidpelicano/.
-texlive2023/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm2074.600pk>
-Output written on main.pdf (11 pages, 89376 bytes).
+/pk/ljfour/jknappen/ec/ecrm1200.600pk> </tmp/texfonts/pk/ljfour/jknappen/ec/ecb
+x1200.600pk> </home/davidpelicano/.texlive2023/texmf-var/fonts/pk/ljfour/jknapp
+en/ec/ecbx2488.600pk> </home/davidpelicano/.texlive2023/texmf-var/fonts/pk/ljfo
+ur/jknappen/ec/ecrm1440.600pk> </home/davidpelicano/.texlive2023/texmf-var/font
+s/pk/ljfour/jknappen/ec/ecrm2074.600pk>
+Output written on main.pdf (14 pages, 130489 bytes).
 PDF statistics:
- 341 PDF objects out of 1000 (max. 8388607)
- 92 compressed objects within 1 object stream
- 30 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 545 PDF objects out of 1000 (max. 8388607)
+ 194 compressed objects within 2 object streams
+ 40 named destinations out of 1000 (max. 500000)
+ 153 words of extra memory for PDF output out of 10000 (max. 10000000)
 
