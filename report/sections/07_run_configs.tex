@@ -15,7 +15,7 @@ O fluxo de execu\c{c}\~ao pode ser resumido da seguinte forma:
 \begin{enumerate}[leftmargin=*]
   \item criar e ativar o ambiente virtual Python;
   \item instalar depend\^encias;
-  \item gerar o ficheiro RDF \texttt{rdf/baseball.nt};
+  \item gerar o ficheiro RDF \texttt{rdf/baseball.n3};
   \item iniciar o GraphDB e carregar o reposit\'orio \texttt{baseball};
   \item aplicar as migrations do Django;
   \item iniciar o servidor web.
@@ -59,7 +59,7 @@ python3 rdf/convert.py
 Este comando gera o ficheiro:
 
 \begin{center}
-\texttt{rdf/baseball.nt}
+\texttt{rdf/baseball.n3}
 \end{center}
 
 \subsection{3. Iniciar o GraphDB e criar o reposit\'orio}
@@ -78,7 +78,7 @@ Este script:
   \item verifica se o GraphDB est\'a acess\'ivel;
   \item tenta abrir o GraphDB Desktop se o servi\c{c}o ainda n\~ao estiver ativo;
   \item cria o reposit\'orio \texttt{baseball} se este ainda n\~ao existir;
-  \item importa automaticamente o ficheiro \texttt{rdf/baseball.nt}.
+  \item importa automaticamente o ficheiro \texttt{rdf/baseball.n3}.
 \end{itemize}
 
 Por omiss\~ao, o script usa:
@@ -86,7 +86,7 @@ Por omiss\~ao, o script usa:
 \begin{itemize}[leftmargin=*]
   \item \texttt{GRAPHDB\_URL=http://localhost:7200}
   \item \texttt{REPOSITORY\_ID=baseball}
-  \item \texttt{RDF\_FILE=\$ROOT\_DIR/rdf/baseball.nt}
+  \item \texttt{RDF\_FILE=\$ROOT\_DIR/rdf/baseball.n3}
   \item \texttt{GRAPHDB\_DESKTOP\_BIN=/opt/graphdb-desktop/bin/graphdb-desktop}
 \end{itemize}
 
@@ -96,7 +96,7 @@ Por omiss\~ao, o script usa:
 %   \item abrir o GraphDB Desktop;
 %   \item iniciar o servi\c{c}o local;
 %   \item criar um reposit\'orio com o nome \texttt{baseball};
-%   \item importar o ficheiro \texttt{rdf/baseball.nt} para esse reposit\'orio.
+%   \item importar o ficheiro \texttt{rdf/baseball.n3} para esse reposit\'orio.
 % \end{enumerate}
 % 
 % \subsection{4. Preparar a base de dados Django}
@@ -173,7 +173,7 @@ Durante a execu\c{c}\~ao, os problemas mais prov\'aveis s\~ao:
 \begin{itemize}[leftmargin=*]
   \item o GraphDB n\~ao estar ativo em \texttt{http://localhost:7200};
   \item o reposit\'orio \texttt{baseball} n\~ao existir ou estar vazio;
-  \item o ficheiro \texttt{rdf/baseball.nt} ainda n\~ao ter sido gerado;
+  \item o ficheiro \texttt{rdf/baseball.n3} ainda n\~ao ter sido gerado;
   \item as migrations do Django n\~ao terem sido aplicadas;
   \item o ambiente virtual n\~ao estar ativado.
 \end{itemize}

@@ -15,6 +15,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const setLoading = (loading) => {
     shell.classList.toggle("is-loading", loading);
     shell.setAttribute("aria-busy", loading ? "true" : "false");
+    if (window.BaseBallXLoading) {
+      if (loading) {
+        window.BaseBallXLoading.show();
+      } else {
+        window.BaseBallXLoading.hide();
+      }
+    }
   };
 
   const updateSummary = (fragment) => {

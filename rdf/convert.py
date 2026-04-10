@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 try:
-    from rdflib import Literal, Namespace, RDF, RDFS, OWL, URIRef, XSD
+    from rdflib import Graph, Literal, Namespace, RDF, RDFS, OWL, URIRef, XSD
 except ModuleNotFoundError as exc:
     if exc.name == "rdflib":
         raise SystemExit(
@@ -24,7 +24,7 @@ BB = Namespace(BASE)
 FOAF = Namespace("http://xmlns.com/foaf/0.1/")
 
 ARCHIVE = Path(__file__).resolve().parent.parent / "archive"
-OUT = Path(__file__).resolve().parent / "baseball.nt"
+OUT = Path(__file__).resolve().parent / "baseball.n3"
 
 
 # --- Conversion Helpers ---
@@ -101,12 +101,31 @@ def add_fields(subject, row, specs):
 
 
 # --- Streaming Writer Engine ---
+namespace_graph = Graph()
+namespace_graph.bind("bb", BB)
+namespace_graph.bind("foaf", FOAF)
+namespace_graph.bind("rdf", RDF)
+namespace_graph.bind("rdfs", RDFS)
+namespace_graph.bind("owl", OWL)
+namespace_graph.bind("xsd", XSD)
+namespace_manager = namespace_graph.namespace_manager
+
 out_file = open(OUT, "w", encoding="utf-8")
+out_file.write("@prefix bb: <http://baseball.ws.pt/> .\n")
+out_file.write("@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n")
+out_file.write("@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n")
+out_file.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
+out_file.write("@prefix owl: <http://www.w3.org/2002/07/owl#> .\n")
+out_file.write("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n")
+
+
+def term_n3(term):
+    return term.n3(namespace_manager)
 
 
 def add(s, p, o):
     if s and p and o is not None:
-        out_file.write(f"<{s}> <{p}> {o.n3()} .\n")
+        out_file.write(f"{term_n3(s)} {term_n3(p)} {term_n3(o)} .\n")
 
 
 def read_csv(filename: str):

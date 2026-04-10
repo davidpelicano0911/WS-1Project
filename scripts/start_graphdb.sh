@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GRAPHDB_URL="${GRAPHDB_URL:-http://localhost:7200}"
 REPOSITORY_ID="${REPOSITORY_ID:-baseball}"
-RDF_FILE="${RDF_FILE:-$ROOT_DIR/rdf/baseball.nt}"
+RDF_FILE="${RDF_FILE:-$ROOT_DIR/rdf/baseball.n3}"
 GRAPHDB_DESKTOP_BIN="${GRAPHDB_DESKTOP_BIN:-/opt/graphdb-desktop/bin/graphdb-desktop}"
 WAIT_SECONDS="${WAIT_SECONDS:-120}"
 LOG_FILE="${LOG_FILE:-$ROOT_DIR/.graphdb-desktop.log}"
@@ -113,10 +113,26 @@ create_repository() {
 import_rdf() {
   [[ -f "$RDF_FILE" ]] || fail "RDF file not found at $RDF_FILE"
 
+  local content_type
+  case "${RDF_FILE##*.}" in
+    n3)
+      content_type="text/rdf+n3"
+      ;;
+    nt)
+      content_type="application/n-triples"
+      ;;
+    ttl)
+      content_type="text/turtle"
+      ;;
+    *)
+      fail "Unsupported RDF file extension for import: $RDF_FILE"
+      ;;
+  esac
+
   print_step "Importing $(basename "$RDF_FILE") into '$REPOSITORY_ID'"
   
   curl -X POST "$GRAPHDB_URL/repositories/$REPOSITORY_ID/statements" \
-       -H "Content-Type:application/n-triples" \
+       -H "Content-Type:$content_type" \
        -T "$RDF_FILE"
 }
 

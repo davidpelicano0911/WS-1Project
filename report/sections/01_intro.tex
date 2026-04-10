@@ -8,7 +8,7 @@ A solu\c{c}\~ao encontra-se organizada em tr\^es camadas principais. A primeira 
 
 \begin{itemize}[leftmargin=*]
   \item \textbf{Python} para os scripts de convers\~ao de dados e ferramentas auxiliares do projeto.
-  \item \textbf{rdflib} para cria\c{c}\~ao das entidades RDF, defini\c{c}\~ao de literais tipados e serializa\c{c}\~ao do resultado em N-Triples.
+  \item \textbf{rdflib} para cria\c{c}\~ao das entidades RDF, defini\c{c}\~ao de literais tipados e serializa\c{c}\~ao do resultado em N3.
   \item \textbf{GraphDB} como triple store local e ponto de acesso SPARQL sobre o grafo produzido.
   \item \textbf{SPARQL} e \textbf{SPARQLWrapper} para consulta e integra\c{c}\~ao dos dados sem\^anticos na aplica\c{c}\~ao.
   \item \textbf{Django} como framework principal do backend Web, seguindo o padr\~ao MVT para views, templates, autentica\c{c}\~ao e rotas.
@@ -24,8 +24,8 @@ O funcionamento global do sistema pode ser resumido nas seguintes etapas:
 
 \begin{enumerate}[leftmargin=*]
   \item Os ficheiros CSV colocados na pasta \texttt{archive/} s\~ao usados como fonte prim\'aria de dados hist\'oricos de baseball.
-  \item O script \texttt{rdf/convert.py} l\^e esses ficheiros, normaliza identificadores, cria recursos RDF e escreve o resultado final em \texttt{rdf/baseball.nt}.
-  \item O ficheiro N-Triples gerado \'{e} carregado para um reposit\'orio \texttt{baseball} no GraphDB, onde passa a poder ser interrogado por SPARQL.
+  \item O script \texttt{rdf/convert.py} l\^e esses ficheiros, normaliza identificadores, cria recursos RDF e escreve o resultado final em \texttt{rdf/baseball.n3}.
+  \item O ficheiro N3 gerado \'{e} carregado para um reposit\'orio \texttt{baseball} no GraphDB, onde passa a poder ser interrogado por SPARQL.
   \item A aplica\c{c}\~ao Django consulta o endpoint local do GraphDB por SPARQL, usando a biblioteca \texttt{SPARQLWrapper} para obter os dados necess\'arios para cada p\'agina.
   \item A interface apresenta esses resultados ao utilizador em vistas de cat\'alogo, detalhe, compara\c{c}\~ao, analytics e grafos de rela\c{c}\~oes.
 \end{enumerate}
