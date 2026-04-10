@@ -65,20 +65,7 @@
         }
     });
 
-    const initializeGraph = async () => {
-        await Promise.all(nodes.map(async (node) => {
-            if ((node.data.type === "player" || node.data.type === "manager") && (node.data.photoUrl || node.data.photoFallbackUrl)) {
-                node.data.resolvedPhotoUrl = await resolveFirstWorkingImage([
-                    node.data.photoUrl,
-                    node.data.photoFallbackUrl,
-                ]);
-            }
-
-            if ((node.data.type === "focus-team" || node.data.type === "team") && node.data.logoUrl) {
-                node.data.resolvedLogoUrl = await resolveFirstWorkingImage([node.data.logoUrl]);
-            }
-        }));
-
+    const initializeGraph = () => {
         const cy = cytoscape({
             container: graphContainer,
             elements: [...nodes, ...edges],
@@ -233,7 +220,6 @@
             boxSelectionEnabled: false,
             minZoom: 0.6,
             maxZoom: 2.4,
-            wheelSensitivity: 0.18,
             textureOnViewport: false,
         });
 
@@ -248,6 +234,38 @@
                     node.style("background-image", node.data("resolvedLogoUrl"));
                 });
             });
+        };
+
+        const loadGraphImages = async () => {
+            await Promise.all(nodes.map(async (rawNode) => {
+                const nodeId = rawNode.data.id;
+                const cyNode = cy.getElementById(nodeId);
+                if (!cyNode || cyNode.empty()) {
+                    return;
+                }
+
+                if (
+                    (rawNode.data.type === "player" || rawNode.data.type === "manager")
+                    && (rawNode.data.photoProxyUrl || rawNode.data.photoUrl || rawNode.data.photoFallbackUrl)
+                ) {
+                    const resolvedPhotoUrl = await resolveFirstWorkingImage([
+                        rawNode.data.photoProxyUrl,
+                        rawNode.data.photoUrl,
+                        rawNode.data.photoFallbackUrl,
+                    ]);
+                    if (resolvedPhotoUrl) {
+                        cyNode.data("resolvedPhotoUrl", resolvedPhotoUrl);
+                    }
+                }
+
+                if ((rawNode.data.type === "focus-team" || rawNode.data.type === "team") && rawNode.data.logoUrl) {
+                    const resolvedLogoUrl = await resolveFirstWorkingImage([rawNode.data.logoUrl]);
+                    if (resolvedLogoUrl) {
+                        cyNode.data("resolvedLogoUrl", resolvedLogoUrl);
+                    }
+                }
+            }));
+            refreshImageNodes();
         };
 
         cy.on("zoom", () => {
@@ -266,6 +284,7 @@
 
         refreshImageNodes();
         cy.fit(undefined, 72);
+        loadGraphImages();
 
         document.addEventListener("team-detail-tab:change", (event) => {
             if (event.detail?.tab !== "overview") {

@@ -65,21 +65,7 @@
         }
     });
 
-    const initializeGraph = async () => {
-        await Promise.all(nodes.map(async (node) => {
-            if (node.data.type === "player") {
-                node.data.resolvedPhotoUrl = await resolveFirstWorkingImage([
-                    node.data.photoUrl,
-                    node.data.photoFallbackUrl,
-                    node.data.photoProxyUrl,
-                ]);
-            }
-
-            if (node.data.type === "team" && node.data.logoUrl) {
-                node.data.resolvedLogoUrl = await resolveFirstWorkingImage([node.data.logoUrl]);
-            }
-        }));
-
+    const initializeGraph = () => {
         const cy = cytoscape({
             container: graphContainer,
             elements: [...nodes, ...edges],
@@ -198,8 +184,27 @@
                     selector: 'node[type="teammate"]',
                     style: {
                         "background-color": "#1f8c7a",
-                        width: 32,
-                        height: 32,
+                        width: 42,
+                        height: 42,
+                        "border-width": 3,
+                    },
+                },
+                {
+                    selector: 'node[type="teammate"][resolvedPhotoUrl]',
+                    style: {
+                        "background-image": "data(resolvedPhotoUrl)",
+                        "background-fit": "cover",
+                        "background-repeat": "no-repeat",
+                        "background-clip": "node",
+                        "background-position-x": "50%",
+                        "background-position-y": "34%",
+                        "background-width": "112%",
+                        "background-height": "112%",
+                        "background-opacity": 1,
+                        "background-color": "#ffffff",
+                        width: 50,
+                        height: 50,
+                        "border-width": 3,
                     },
                 },
                 {
@@ -227,7 +232,6 @@
             boxSelectionEnabled: false,
             minZoom: 0.6,
             maxZoom: 2.4,
-            wheelSensitivity: 0.18,
             textureOnViewport: false,
         });
 
@@ -242,6 +246,38 @@
                     node.style("background-image", node.data("resolvedLogoUrl"));
                 });
             });
+        };
+
+        const loadGraphImages = async () => {
+            await Promise.all(nodes.map(async (rawNode) => {
+                const nodeId = rawNode.data.id;
+                const cyNode = cy.getElementById(nodeId);
+                if (!cyNode || cyNode.empty()) {
+                    return;
+                }
+
+                if (
+                    (rawNode.data.type === "player" || rawNode.data.type === "teammate")
+                    && (rawNode.data.photoProxyUrl || rawNode.data.photoUrl || rawNode.data.photoFallbackUrl)
+                ) {
+                    const resolvedPhotoUrl = await resolveFirstWorkingImage([
+                        rawNode.data.photoProxyUrl,
+                        rawNode.data.photoUrl,
+                        rawNode.data.photoFallbackUrl,
+                    ]);
+                    if (resolvedPhotoUrl) {
+                        cyNode.data("resolvedPhotoUrl", resolvedPhotoUrl);
+                    }
+                }
+
+                if (rawNode.data.type === "team" && rawNode.data.logoUrl) {
+                    const resolvedLogoUrl = await resolveFirstWorkingImage([rawNode.data.logoUrl]);
+                    if (resolvedLogoUrl) {
+                        cyNode.data("resolvedLogoUrl", resolvedLogoUrl);
+                    }
+                }
+            }));
+            refreshImageNodes();
         };
 
         cy.on("zoom", () => {
@@ -260,6 +296,7 @@
 
         refreshImageNodes();
         cy.fit(undefined, 72);
+        loadGraphImages();
 
         document.addEventListener("player-detail-tab:change", (event) => {
             if (event.detail?.tab !== "overview") {

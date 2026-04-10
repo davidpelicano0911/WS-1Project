@@ -3,7 +3,7 @@ from copy import deepcopy
 from functools import lru_cache
 from urllib.parse import urlencode
 
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -446,17 +446,23 @@ def _build_player_graph_payload(player):
     if player.get("photo_url") or player.get("photo_fallback_url"):
         proxy_photo_url = reverse("player_graph_photo", kwargs={"player_id": player.get("player_id", "")})
 
-    if direct_photo_url or fallback_photo_url or proxy_photo_url:
-        for node in graph_data.get("nodes", []):
-            node_data = node.get("data", {})
-            if node_data.get("type") == "player":
-                if direct_photo_url:
-                    node_data["photoUrl"] = direct_photo_url
-                if fallback_photo_url:
-                    node_data["photoFallbackUrl"] = fallback_photo_url
-                if proxy_photo_url:
-                    node_data["photoProxyUrl"] = proxy_photo_url
-                break
+    for node in graph_data.get("nodes", []):
+        node_data = node.get("data", {})
+        node_type = node_data.get("type")
+
+        if node_type == "player":
+            if proxy_photo_url:
+                node_data["photoProxyUrl"] = proxy_photo_url
+            if direct_photo_url:
+                node_data["photoUrl"] = direct_photo_url
+            if fallback_photo_url:
+                node_data["photoFallbackUrl"] = fallback_photo_url
+            continue
+
+        if node_type == "teammate":
+            teammate_id = node_data.get("playerID")
+            if teammate_id:
+                node_data["photoProxyUrl"] = reverse("player_graph_photo", kwargs={"player_id": teammate_id})
 
     return {
         "graph_nodes": graph_data.get("nodes", []),
@@ -466,9 +472,23 @@ def _build_player_graph_payload(player):
 
 
 def player_graph_photo_view(request, player_id):
+    placeholder_svg = """
+    <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+      <defs>
+        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#dbe7ff"/>
+          <stop offset="100%" stop-color="#8fb0e8"/>
+        </linearGradient>
+      </defs>
+      <rect width="220" height="220" rx="110" fill="url(#g)"/>
+      <circle cx="110" cy="82" r="42" fill="#f8fbff"/>
+      <path d="M52 188c10-34 34-54 58-54s48 20 58 54" fill="#f8fbff"/>
+    </svg>
+    """.strip()
+
     summary = get_player_summary(player_id)
     if not summary:
-        raise Http404("Player not found")
+        return HttpResponse(placeholder_svg, content_type="image/svg+xml")
 
     player = attach_player_media(summary)
     photo_candidates = [
@@ -477,7 +497,7 @@ def player_graph_photo_view(request, player_id):
     ]
     photo_candidates = [url for url in photo_candidates if url]
     if not photo_candidates:
-        raise Http404("Photo not found")
+        return HttpResponse(placeholder_svg, content_type="image/svg+xml")
 
     image_bytes = None
     content_type = None
@@ -487,7 +507,7 @@ def player_graph_photo_view(request, player_id):
             break
 
     if not image_bytes:
-        raise Http404("Photo not available")
+        return HttpResponse(placeholder_svg, content_type="image/svg+xml")
 
     response = HttpResponse(image_bytes, content_type=content_type or "image/jpeg")
     response["Cache-Control"] = "public, max-age=86400"

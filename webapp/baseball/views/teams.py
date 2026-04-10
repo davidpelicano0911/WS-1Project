@@ -152,6 +152,10 @@ def _build_team_graph_payload(team):
         if node_data.get("type") not in {"player", "manager"}:
             continue
 
+        player_id = node_data.get("playerID")
+        if player_id:
+            node_data["photoProxyUrl"] = reverse("player_graph_photo", kwargs={"player_id": player_id})
+
         bbref_id = node_data.get("bbrefID")
         if not bbref_id:
             continue
