@@ -1,6 +1,399 @@
 \chapter{Funcionalidades da Aplica\c{c}\~ao (UI)}
 
-Descreva as funcionalidades de interface e a navega\c{c}\~ao do utilizador.
+Neste cap\'itulo s\~ao detalhadas as funcionalidades de interface e a experi\^encia de navega\c{c}\~ao do utilizador no portal \textbf{BaseballX}. A aplica\c{c}\~ao foi desenhada com um foco em visualiza\c{c}\~ao de dados sem\^anticos, oferecendo uma interface moderna baseada em \textit{dark mode} e componentes responsivos constru\'idos com Bootstrap 5.
 
-\section*{Sugest\~ao}
-Insira as capturas de ecr\~a numeradas para reproduzir a lista de figuras (4.1 a 4.24).
+% ============================================================
+\section{Navega\c{c}\~ao e Interface Geral}
+% ============================================================
+
+A interface principal (Figura~\ref{fig:ui_home}) foi concebida como um centro de comando para a explora\c{c}\~ao de dados. No topo, destaca-se o \textit{Data Hub}, uma barra din\^amica que exibe os log\'otipos das franquias, proporcionando um ponto de entrada visual imediato. O corpo central da p\'agina utiliza um sistema de cart\~oes de acesso r\'apido (\textit{Quick Access Cards}) que segmentam as quatro funcionalidades core: pesquisa de jogadores, navega\c{c}\~ao por equipas, ferramenta de compara\c{c}\~ao e o painel de Analytics. Esta organiza\c{c}\~ao minimiza o n\'umero de cliques necess\'arios para chegar \`a informa\c{c}\~ao pretendida, mantendo o contexto sem\^antico do projeto sempre vis\'ivel.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/ui_home.png}
+    \caption{P\'agina inicial do portal BaseballX com \textit{Data Hub} e cart\~oes de acesso r\'apido.}
+    \label{fig:ui_home}
+\end{figure}
+
+% ============================================================
+\section{Explora\c{c}\~ao de Dados (\textit{Browsing})}
+% ============================================================
+
+O utilizador pode explorar o grafo de conhecimento atrav\'es de listagens din\^amicas. As p\'aginas de listagem de jogadores e equipas incluem filtros multicrit\'erio (nome, pa\'is, m\'etricas f\'isicas) e um sistema de pagina\c{c}\~ao controlada no servidor. Isto garante que a aplica\c{c}\~ao permanece flu\'ida, solicitando via SPARQL apenas os recursos necess\'arios para a visualiza\c{c}\~ao atual, em vez de processar todo o universo de dados simultaneamente.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/ui_pagination.png}
+    \caption{Interface de listagem de jogadores com filtros multicrit\'erio e pagina\c{c}\~ao controlada pelo servidor.}
+    \label{fig:ui_list}
+\end{figure}
+
+% ============================================================
+\section{Visualiza\c{c}\~ao de Detalhes de Entidades}
+% ============================================================
+
+As p\'aginas de detalhe constituem o n\'ucleo informativo da aplica\c{c}\~ao e apresentam dados agregados de forma contextualizada.
+
+\subsection{Perfil de Jogador --- \textit{Career Pulse}}
+
+A p\'agina de detalhe de um jogador (Figura~\ref{fig:player_detail}) inclui o componente \textbf{Career Pulse}, que consolida m\'etricas complexas num painel visual intuitivo: picos salariais ao longo da carreira, estat\'isticas acumuladas de batismo (\textit{batting}) e lan\c{c}amento (\textit{pitching}), e o hist\'orial de prem\'ios e indu\c{c}\~ao no \textit{Hall of Fame}. Todos os dados s\~ao extra\'idos em tempo real via SPARQL a partir do grafo RDF.
+
+Para al\'em do painel estat\'istico, o detalhe do jogador inclui um grafo relacional centrado no atleta. Essa visualiza\c{c}\~ao permite perceber rapidamente por que equipas passou, que franquias representou, que liga\c{c}\~oes manteve com teammates e managers, e que pr\'emios marcaram o seu percurso. Desta forma, a p\'agina combina leitura tabular com explora\c{c}\~ao visual da carreira.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth]{figures/player_detail.png}
+    \caption{Perfil de jogador com componente \textit{Career Pulse}, apresentando m\'etricas agregadas de carreira.}
+    \label{fig:player_detail}
+\end{figure}
+
+\subsection{Painel de Equipa}
+
+A p\'agina de detalhe de uma equipa (Figura~\ref{fig:team_detail}) adapta-se dinamicamente \`as cores e log\'otipos da franquia selecionada. Apresenta indicadores de desempenho sazonais, como \textbf{Win Percentage} e \textbf{Run Differential}, que permitem uma an\'alise r\'apida do sucesso desportivo em cada per\'iodo hist\'orico. A \textit{Win Percentage} \'e calculada pela express\~ao:
+
+\[
+\text{Win\%} = \frac{W}{W + L}
+\]
+
+\noindent onde $W$ representa o n\'umero de vit\'orias e $L$ o n\'umero de derrotas na temporada. O resultado \'e apresentado como valor decimal com tr\^es casas decimais (e.g., \texttt{0.623}), seguindo a conven\c{c}\~ao hist\'orica do beisebol profissional norte-americano.
+
+Para al\'em do resumo estat\'istico, a vista de equipa inclui um grafo relacional pr\'oprio, centrado na \'{e}poca selecionada. Este grafo liga a equipa \`a sua franquia, \`a liga em que competiu, aos jogadores do plantel, aos managers e \`as distin\c{c}\~oes relevantes desse contexto. Assim, o utilizador consegue interpretar a temporada tanto do ponto de vista num\'erico como do ponto de vista relacional, sem sair da mesma p\'agina.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/team_graph.png}
+    \caption{Grafo relacional do detalhe de equipa, evidenciando as liga\c{c}\~oes entre a \'{e}poca selecionada, a franquia, a liga, o plantel e os managers associados.}
+    \label{fig:team_graph}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/team_detail.png}
+    \caption{Painel de equipa com m\'etricas de performance por \'epoca, incluindo \textit{Win Percentage} e \textit{Run Differential}.}
+    \label{fig:team_detail}
+\end{figure}
+
+% ============================================================
+\section{Advanced Analytics Dashboard}
+% ============================================================
+
+Esta funcionalidade \'e o ponto central da aplica\c{c}\~ao para an\'alise macro do ecossistema do beisebol. Agrupa consultas SPARQL agregadas num \textit{dashboard} organizado por separadores (abas), permitindo navegar entre diferentes perspetivas anal\'iticas sem recarregar a p\'agina. Cada separador executa, no back-end, uma ou mais consultas SPARQL ao \textit{triple store} e devolve os resultados j\'a processados ao \textit{template} Django.
+
+% -----------------------------------------------------------
+\subsection{Global Leaders}
+% -----------------------------------------------------------
+
+O separador \textbf{Global Leaders} (Figura~\ref{fig:analytics_global}) apresenta os cinco melhores jogadores de toda a hist\'oria em tr\^es categorias fundamentais:
+
+\begin{itemize}
+    \item \textbf{Home Runs (HR):} N\'umero total de \textit{home runs} acumulados ao longo de toda a carreira. S\~ao obtidos via agrega\c{c}\~ao SPARQL \texttt{SUM(?homeRuns)} sobre todos os registos de \texttt{bb:BattingStat} associados a cada jogador.
+    \item \textbf{RBI (\textit{Runs Batted In}):} Total de corridas produzidas (jogadores enviados \`a base que marcaram ponto). Calculado com \texttt{SUM(?RBI)} sobre \texttt{bb:BattingStat}.
+    \item \textbf{Strikeouts (SO):} Total de \textit{strikeouts} lan\c{c}ados ao longo da carreira como \textit{pitcher}. Obtido com \texttt{SUM(?SO)} sobre \texttt{bb:PitchingStat}.
+\end{itemize}
+
+Em todos os casos, a query SPARQL agrupa por jogador (\texttt{GROUP BY ?playerID}), ordena de forma descendente (\texttt{ORDER BY DESC(?totalStat)}) e limita os resultados a cinco (\texttt{LIMIT 5}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/analytics_global.png}
+    \caption{Separador \textit{Global Leaders}: l\'ideres hist\'oricos em Home Runs, RBI e Strikeouts, calculados por agrega\c{c}\~ao SPARQL.}
+    \label{fig:analytics_global}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Franchise History Leaders}
+% -----------------------------------------------------------
+
+O separador \textbf{Franchises} (Figura~\ref{fig:analytics_franchises}) apresenta um ranking das dez franquias com mais vit\'orias acumuladas em toda a hist\'oria da \textit{Major League Baseball}. Para tal, a query SPARQL agrega o campo \texttt{bb:W} (vit\'orias por temporada) de todos os registos \texttt{bb:Team} associados a cada \texttt{bb:Franchise}, usando \texttt{SUM(?w) AS ?totalWins} com agrupamento por \texttt{?franchID} e \texttt{?franchName}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/analytics_franchises.png}
+    \caption{Separador \textit{Franchises}: ranking das franquias com maior n\'umero hist\'orico de vit\'orias acumuladas.}
+    \label{fig:analytics_franchises}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Top Salaries}
+% -----------------------------------------------------------
+
+O separador \textbf{Top Salaries} (Figura~\ref{fig:analytics_salaries}) apresenta os maiores contratos individuais registados na hist\'oria da liga. Os dados s\~ao extra\'idos via SPARQL do grafo de sal\'arios e ordenados pelo valor bruto do contrato em ordem descendente. A listagem inclui o nome do jogador, o ano do contrato e o montante em d\'olares americanos. Esta perspetiva permite analisar a evolu\c{c}\~ao salarial ao longo das d\'ecadas e identificar marcos hist\'oricos na valoriza\c{c}\~ao dos atletas.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/analytics_salaries.png}
+    \caption{Separador \textit{Top Salaries}: maiores contratos individuais na hist\'oria da liga, ordenados por valor.}
+    \label{fig:analytics_salaries}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Awards Timeline}
+% -----------------------------------------------------------
+
+O separador \textbf{Awards} (Figura~\ref{fig:analytics_awards}) apresenta uma linha cronol\'ogica dos pr\'emios individuais atribu\'idos na liga. Para cada distin\c{c}\~ao s\~ao exibidos: o nome do jogador (com \textit{hyperlink} para o seu perfil), o nome do pr\'emio, o ano e a liga a que pertencia. A listagem limita-se aos 25 registos mais recentes de forma a manter o desempenho da p\'agina. Os pr\'emios incluem galard\~oes como o \textit{Cy Young Award}, o \textit{Most Valuable Player (MVP)} e o \textit{Rookie of the Year}, entre outros.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/analytics_awards.png}
+    \caption{Separador \textit{Awards}: linha cronol\'ogica de distin\c{c}\~oes individuais atribu\'idas na liga.}
+    \label{fig:analytics_awards}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Hall of Fame}
+% -----------------------------------------------------------
+
+O separador \textbf{Hall of Fame} (Figura~\ref{fig:analytics_hall}) apresenta os membros induzidos no \textit{Baseball Hall of Fame}, ordenados pela sua percentagem de votos. Esta \'e uma das m\'etricas mais relevantes para avaliar o reconhecimento hist\'orico de um jogador.
+
+\subsubsection*{C\'alculo da Percentagem de Vota\c{c}\~ao}
+
+O \textit{Hall of Fame} do beisebol funciona por escr\'utinio: cada ano, jornalistas e especialistas credenciados submetem os seus boletins de voto. A percentagem de vota\c{c}\~ao de cada candidato \'e calculada como:
+
+\[
+\text{Vote\%} = \frac{\text{votes}}{\text{ballots}} \times 100
+\]
+
+\noindent em que \texttt{votes} \'e o n\'umero de boletins que incluem o candidato e \texttt{ballots} \'e o total de boletins submetidos nesse ano de vota\c{c}\~ao. Para ser induzido, um candidato precisa de obter pelo menos 75\% dos votos. Na aplica\c{c}\~ao, apenas s\~ao exibidos registos com \texttt{ballots > 0} (para evitar divis\~ao por zero), e o resultado \'e apresentado com uma casa decimal (e.g., \texttt{98.4\%}). A lista \'e ordenada de forma decrescente pela percentagem de votos e, em caso de empate, pelo ano de indu\c{c}\~ao mais recente. Os dados s\~ao extra\'idos do grafo RDF atrav\'es de uma consulta SPARQL sobre os n\'os do tipo \texttt{bb:HallOfFameVote} com a propriedade \texttt{bb:inducted true}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/analytics_hall.png}
+    \caption{Separador \textit{Hall of Fame}: membros induzidos ordenados por percentagem de vota\c{c}\~ao hist\'orica.}
+    \label{fig:analytics_hall}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Managers}
+% -----------------------------------------------------------
+
+O separador \textbf{Managers} (Figura~\ref{fig:analytics_managers}) lista os treinadores com maior n\'umero de vit\'orias acumuladas ao longo das suas carreiras. Para cada treinador s\~ao apresentadas tr\^es m\'etricas fundamentais: o n\'umero total de vit\'orias, o n\'umero total de derrotas e a respetiva \textbf{Win Percentage}.
+
+\subsubsection*{C\'alculo da Win Percentage de Treinadores}
+
+A \textit{Win Percentage} de um treinador \'e calculada agregando todos os anos da sua carreira atrav\'es da seguinte express\~ao:
+
+\[
+\text{Win\%} = \frac{\sum W}{\sum W + \sum L}
+\]
+
+\noindent em que $\sum W$ e $\sum L$ representam o total de vit\'orias e derrotas acumuladas. A query SPARQL utiliza as fun\c{c}\~oes de agrega\c{c}\~ao \texttt{SUM(?w)} e \texttt{SUM(?l)}, agrupando os resultados por \texttt{?playerID}. Para garantir a relev\^ancia dos dados, a lista \'e filtrada para exibir apenas treinadores com pelo menos uma vit\'oria (\texttt{HAVING (SUM(?w) > 0)}). O resultado \'e formatado com tr\^es casas decimais (e.g., \texttt{0.574}), respeitando a conven\c{c}\~ao oficial da liga.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/analytics_managers.png}
+    \caption{Separador \textit{Managers}: ranking de treinadores por vit\'orias acumuladas e aproveitamento estat\'istico.}
+    \label{fig:analytics_managers}
+\end{figure}
+
+% ============================================================
+\section{Ferramenta de Compara\c{c}\~ao \textit{Side-by-Side}}
+% ============================================================
+
+A ferramenta de compara\c{c}\~ao permite realizar uma an\'alise dicot\'omica entre dois jogadores ou equipas, facilitando a identifica\c{c}\~ao de discrepâncias de desempenho e percursos profissionais. O processo inicia-se com uma interface de sele\c{c}\~ao (Figura~\ref{fig:compare_selection}) baseada em filtros alfab\'eticos, que permite carregar dinamicamente subconjuntos de atletas a partir do grafo RDF para as respetivas listas de escolha.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/compare_selection.png}
+    \caption{Interface de sele\c{c}\~ao para compara\c{c}\~ao: utiliza\c{c}\~ao de filtros alfab\'eticos e menus din\^amicos para carregar inst\^ancias do grafo.}
+    \label{fig:compare_selection}
+\end{figure}
+
+Ap\'os a sele\c{c}\~ao, a aplica\c{c}\~ao gera um painel de resultados detalhado (Figura~\ref{fig:compare_results}). Esta interface utiliza uma l\'ogica de \textit{Head-to-Head}, apresentando um resum\'e estat\'istico no topo com o c\'omputo de vit\'orias, derrotas e empates em m\'etricas individuais.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/compare_results.png}
+    \caption{Painel de resultados comparativos: visualiza\c{c}\~ao \textit{Head-to-Head} com destaques autom\'aticos para o l\'ider de cada m\'etrica.}
+    \label{fig:compare_results}
+\end{figure}
+
+A tabela comparativa destaca automaticamente o melhor valor em cada categoria (e.g., \textit{Peak Salary}, \textit{Seasons Played}) atrav\'es de indicadores visuais e c\'alculos de delta (diferen\c{c}a). Abaixo da tabela principal, a sec\c{c}\~ao \textbf{Peak-year highlights} compara lado a lado as melhores \'epocas de cada jogador em categorias espec\'ificas como \textit{Home Runs} ou \textit{RBI}. Toda a l\'ogica de compara\c{c}\~ao \'e processada no servidor, que consome m\'ultiplas consultas SPARQL para reconstruir os perfis estat\'isticos completos antes de realizar a computa\c{c}\~ao diferencial apresentada na interface.
+
+% ============================================================
+\section{Visualiza\c{c}\~ao Interativa do Grafo RDF}
+% ============================================================
+
+As visualiza\c{c}\~oes de grafo embutidas nas p\'aginas de detalhe partilham a mesma l\'ogica de intera\c{c}\~ao. O utilizador pode explorar visualmente n\'os e liga\c{c}\~oes, selecionar entidades para obter contexto adicional e perceber rela\c{c}\~oes sem\^anticas que seriam menos evidentes numa tabela tradicional.
+
+O grafo \'e renderizado dinamicamente no cliente com recurso \`a biblioteca \texttt{Cytoscape.js}. Os dados s\~ao obtidos em tempo real via SPARQL a partir do \textit{triple store}, e a representa\c{c}\~ao visual distingue diferentes tipos de entidades atrav\'es de estilos pr\'oprios, tornando a leitura mais imediata.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/graph_view.png}
+    \caption{Visualiza\c{c}\~ao interativa do grafo RDF embutida nas p\'aginas de detalhe, permitindo explorar rela\c{c}\~oes entre jogadores, equipas, franquias, ligas e pr\'emios.}
+    \label{fig:graph_view}
+\end{figure}
+
+% ============================================================
+\section{Vis\~ao Detalhada de Ligas (\textit{League Detail})}
+% ============================================================
+
+O portal disponibiliza p\'aginas de detalhe dedicadas a cada liga hist\'orica da MLB (ex.: American League, \texttt{AL}; National League, \texttt{NL}). Cada p\'agina agrega, numa \'unica vista, m\'ultiplas perspetivas sobre a liga selecionada, sendo todos os dados extra\'idos em tempo real via SPARQL a partir do grafo de conhecimento.
+
+% -----------------------------------------------------------
+\subsection{Cabe\c{c}alho e Metadados da Liga}
+% -----------------------------------------------------------
+
+A p\'agina inicia-se com um cabe\c{c}alho visual de elevado impacto (Figura~\ref{fig:league_hero}) que condensa os dados fundamentais da liga:
+
+\begin{itemize}
+    \item \textbf{C\'odigo e nome da liga} (ex.: \texttt{AL}, American League);
+    \item \textbf{Intervalo temporal:} primeiro e \'ultimo ano com dados registados no grafo;
+    \item \textbf{Team-seasons:} n\'umero total de temporadas-equipa documentadas (uma equipa numa temporada = um registo);
+    \item \textbf{Franchises:} n\'umero de franquias distintas que participaram na liga;
+    \item \textbf{Documented seasons:} n\'umero de \'epocas (anos) com dados.
+\end{itemize}
+
+Estes valores s\~ao calculados via SPARQL com agrega\c{c}\~oes \texttt{COUNT DISTINCT} sobre os recursos \texttt{bb:Team}, \texttt{bb:Franchise} e \texttt{bb:yearID}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/league_hero.png}
+    \caption{Cabe\c{c}alho da p\'agina de Liga: metadados agregados e identificadores da liga, extra\'idos via SPARQL.}
+    \label{fig:league_hero}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Registo de Clubes (\textit{Full Registry})}
+% -----------------------------------------------------------
+
+A tabela de registo completo (Figura~\ref{fig:league_registry}) lista todas as equipas que competiram na liga. O utilizador pode alternar entre dois modos de visualiza\c{c}\~ao:
+
+\begin{itemize}
+    \item \textbf{\textit{Unique Clubs}:} Consolida as apari\c{c}\~oes de cada clube num \'unico registo, mostrando o n\'umero de per\'iodos distintos em que participou na liga, o total de temporadas e a amplitude temporal (primeiro e \'ultimo ano).
+    \item \textbf{\textit{Historical Periods}:} Separa cada per\'iodo cont\'iguo de presen\c{c}a de uma equipa como uma entrada independente, permitindo identificar interrup\c{c}\~oes de participa\c{c}\~ao ou mudan\c{c}as de franquia. Inclui filtros por nome de equipa e por franquia, bem como pagina\c{c}\~ao controlada no servidor.
+\end{itemize}
+
+A filtragem por franquia, por exemplo, revela a evolu\c{c}\~ao nominal e geogr\'afica de um clube ao longo das d\'ecadas, consolidando diferentes nomes de equipa sob o mesmo identificador sem\^antico. Cada registo exibe ainda o nome do parque (est\'adio) representativo da equipa nesse per\'iodo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/league_registry.png}
+    \caption{Registo de clubes em modo \textit{Historical Periods}: filtros por equipa e franquia com pagina\c{c}\~ao.}
+    \label{fig:league_registry}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{\textit{League Snapshot} e Distribui\c{c}\~ao de Recintos}
+% -----------------------------------------------------------
+
+A sec\c{c}\~ao \textit{League Snapshot} (Figura~\ref{fig:league_snapshot}) apresenta indicadores agregados que sintetizam o percurso hist\'orico e competitivo da liga:
+
+\begin{itemize}
+    \item \textbf{Year range:} Amplitude temporal que delimita o alcance dos dados no grafo.
+    \item \textbf{Distinct parks:} Contagem de est\'adios distintos onde equipas da liga disputaram jogos oficialmente.
+    \item \textbf{World Series:} Balan\c{c}o de t\'itulos conquistados (\textit{titles}) e presen\c{c}as em finais (\textit{runner-up}) na competi\c{c}\~ao m\'axima.
+    \item \textbf{Playoff record:} Resultados agregados de vit\'orias e derrotas em s\'eries de eliminat\'orias internas da liga.
+\end{itemize}
+
+Complementarmente, o painel \textbf{\textit{Venue footprint}} (Figura~\ref{fig:league_snapshot}, \`a direita) lista os est\'adios representativos das equipas, oferecendo uma perspetiva sobre a infraestrutura desportiva e a evolu\c{c}\~ao geogr\'afica da competi\c{c}\~ao ao longo do tempo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/league_snapshot.png}
+    \caption{\textit{League Snapshot}: indicadores de sucesso competitivo e listagem de recintos hist\'oricos associados \`a liga.}
+    \label{fig:league_snapshot}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{\textit{Statistical Leaders} da Temporada}
+% -----------------------------------------------------------
+
+O painel de l\'ideres estat\'isticos (Figura~\ref{fig:league_leaders}) exibe os melhores jogadores da \'ultima temporada documentada da liga em quatro categorias:
+
+\begin{itemize}
+    \item \textbf{Home Runs:} Corridas autom\'aticas marcadas por bola sa\'ida do campo. Os valores por temporada s\~ao obtidos via SPARQL filtrando por liga e ano.
+    \item \textbf{RBI (\textit{Runs Batted In}):} Corridas produzidas pelo batedor que levaram outros jogadores a marcar ponto.
+    \item \textbf{Assists:} Jogadas defensivas em que um jogador contribui para eliminar um advers\'ario, medindo efic\'acia defensiva.
+    \item \textbf{Strikeouts:} N\'umero de elimina\c{c}\~oes realizadas por um \textit{pitcher} com tr\^es \textit{strikes}, principal m\'etrica de efic\'acia de lan\c{c}amento.
+\end{itemize}
+
+Cada categoria apresenta os tr\^es melhores jogadores com medal\~oes visuais de ouro (\#1), prata (\#2) e bronze (\#3). A query SPARQL filtra por \texttt{?leagueID} e utiliza \texttt{ORDER BY DESC} com \texttt{LIMIT 3}. Quando n\~ao existem dados para o ano mais recente, o sistema recorre automaticamente ao ano imediatamente anterior (\textit{fallback}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/league_leaders.png}
+    \caption{\textit{Statistical Leaders} da liga: top 3 jogadores em Home Runs, RBI, Assists e Strikeouts na \'ultima temporada documentada.}
+    \label{fig:league_leaders}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Equipas Mais Persistentes}
+% -----------------------------------------------------------
+
+Esta sec\c{c}\~ao (Figura~\ref{fig:league_persistent}) destaca os clubes com maior longevidade hist\'orica na liga atrav\'es de cart\~oes visuais. Para cada clube s\~ao apresentados:
+
+\begin{itemize}
+    \item N\'umero total de temporadas na liga e amplitude temporal (e.g., \textit{1901--2023});
+    \item \textbf{\textit{League share}}: percentagem de temporadas da liga em que o clube participou, calculada como $\frac{\text{seasons}}{\text{total league seasons}} \times 100$;
+    \item \textbf{\textit{Historical run}}: n\'umero de anos do calend\'ario cobertos pelo per\'iodo de atividade do clube;
+    \item Parque representativo do clube.
+\end{itemize}
+
+Os clubes s\~ao ordenados de forma descendente pelo n\'umero de temporadas, revelando as franquias mais constantes ao longo da hist\'oria da liga.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/league_persistent.png}
+    \caption{Equipas mais persistentes da liga: cart\~oes com \textit{league share}, dura\c{c}\~ao hist\'orica e parque representativo.}
+    \label{fig:league_persistent}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{P\'os-temporada (\textit{Playoffs} e World Series)}
+% -----------------------------------------------------------
+
+A sec\c{c}\~ao de p\'os-temporada (Figura~\ref{fig:league_postseason}) divide-se em duas partes complementares:
+
+\begin{itemize}
+    \item \textbf{\textit{Playoff round breakdown}:} Desagrega o hist\'orial de cada ronda de \textit{playoffs} (ex.: World Series, ALCS, NLCS, ALDS). Para cada ronda s\~ao indicados: n\'umero total de s\'eries, amplitude temporal coberta, total de jogos disputados, n\'umero de confrontos internos \`a liga e confrontos entre ligas (\textit{cross-league}), e o \'ultimo vencedor registado.
+    \item \textbf{\textit{Latest postseason timeline}:} Linha cronol\'ogica das s\'eries mais recentes, apresentando para cada uma: ano, ronda, equipas participantes (vencedor e derrotado) e pontua\c{c}\~ao da s\'erie (ex.: \texttt{4--2}).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/league_postseason.png}
+    \caption{Sec\c{c}\~ao de p\'os-temporada: \textit{breakdown} por ronda de \textit{playoffs} e linha cronol\'ogica das s\'eries mais recentes.}
+    \label{fig:league_postseason}
+\end{figure}
+
+% ============================================================
+\section{Gamifica\c{c}\~ao e Colabora\c{c}\~ao}
+% ============================================================
+
+\subsection{Motor de Quiz}
+
+O portal inclui um sistema de \textbf{Quiz} interativo concebido como uma forma l\'udica de explorar os dados do grafo. A p\'agina inicial do Quiz (Figura~\ref{fig:ui_quiz}) apresenta as regras do jogo (10 perguntas, 4 op\c{c}\~oes, 1 resposta correta por quest\~ao) e um \textbf{\textit{leaderboard}} com os melhores resultados de utilizadores registados. Cada linha do ranking exibe: posi\c{c}\~ao (\#1, \#2, \ldots), nome de utilizador, melhor pontua\c{c}\~ao (e.g., \texttt{9/10}) e n\'umero de tentativas. Os utilizadores autenticados v\^eem automaticamente destacada a sua entrada pessoal no ranking.
+
+Ao iniciar uma ronda, abre-se uma \textit{overlay} de jogo em modo de ecr\~a completo. Cada ronda consiste em \textbf{10 perguntas} de escolha m\'ultipla geradas dinamicamente via SPARQL, cobrindo categorias como Home Runs, sal\'arios hist\'oricos e pr\'emios (MVP, Cy Young, etc.). Uma barra de estado mostra em tempo real a progress\~ao (ex.: \texttt{3/10}) e a pontua\c{c}\~ao acumulada. Ap\'os cada resposta, o sistema fornece \textit{feedback} imediato e o utilizador avan\c{c}a para a quest\~ao seguinte. No final, \'e apresentado o resultado total (e.g., \texttt{7/10 $\cdot$ 70\%}) com op\c{c}\~ao de jogar novamente. O sistema suporta \textbf{auto-resume}: se o utilizador fechar a p\'agina a meio de uma ronda, o estado \'e preservado e retomado na pr\'oxima visita.
+
+\begin{figure}[H]
+     \centering
+     \begin{subfigure}[b]{0.48\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{figures/quiz_lobby.png}
+         \caption{Lobby do Quiz com \textit{Leaderboard} e estat\'isticas do utilizador.}
+         \label{fig:quiz_lobby}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.48\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{figures/quiz_game.png}
+         \caption{Ronda ativa com pergunta gerada dinamicamente via SPARQL.}
+         \label{fig:quiz_game}
+     \end{subfigure}
+     \caption{Interface do motor de Quiz: do sistema de \textit{ranking} ao ambiente de jogo.}
+     \label{fig:ui_quiz}
+\end{figure}
+
+\subsection{Sistema de Sugest\~oes (\textit{Crowdsourcing})}
+
+Para promover a qualidade e corre\c{c}\~ao dos dados sem\^anticos, a aplica\c{c}\~ao implementa um sistema de \textbf{sugest\~oes colaborativas} com dois pap\'eis distintos:
+
+\begin{itemize}
+    \item \textbf{Utilizador registado, submiss\~ao (Figura~\ref{fig:suggest_edit}):} Nas p\'aginas de detalhe de jogadores e equipas, o bot\~ao \textit{``Suggest edit''} ativa um modo de edi\c{c}\~ao \textit{inline} onde os campos edit\'aveis ficam mut\'aveis diretamente na p\'agina. O utilizador altera os valores pretendidos (ex.: nome, data de nascimento) e submete as altera\c{c}\~oes juntamente com um motivo justificativo. A sugest\~ao \'e guardada na base de dados local com estado \texttt{pending}, sem alterar o grafo RDF imediatamente, garantindo que qualquer modifica\c{c}\~ao passa por revis\~ao humana antes de ser publicada.
+
+    \item \textbf{Utilizador registado, acompanhamento (Figura~\ref{fig:suggest_mine}):} Na p\'agina \textit{``My Suggestions''}, o utilizador acompanha todas as suas contribui\c{c}\~oes submetidas, com indica\c{c}\~ao do estado atual (\texttt{pending}, \texttt{approved} ou \texttt{rejected}), a data de submiss\~ao e data de revis\~ao, e eventuais notas do administrador. Cada cart\~ao exibe tamb\'em o detalhe das altera\c{c}\~oes propostas (campo, valor antigo, valor novo).
+
+    \item \textbf{Administrador, revis\~ao (Figura~\ref{fig:suggest_review}):} A \textit{dashboard} \textit{``Review Queue''} lista todas as sugest\~oes, filtr\'aveis por estado (pendente, aprovada, rejeitada) e tipo de entidade (jogador ou equipa). Para sugest\~oes pendentes, o administrador pode editar os valores propostos antes de aprovar, acrescentar uma nota de revis\~ao, e depois \textbf{aprovar e publicar} diretamente no GraphDB, ou \textbf{rejeitar} com justificativa. A aprova\c{c}\~ao escreve a modifica\c{c}\~ao diretamente no reposit\'orio RDF ativo.
+\end{itemize}

@@ -31,8 +31,20 @@
 
   window.BaseBallXLoading = { show, hide, forceHide };
 
+  const scheduleInitialHide = () => {
+    window.requestAnimationFrame(() => {
+      window.setTimeout(forceHide, 60);
+    });
+  };
+
+  if (document.readyState === "interactive" || document.readyState === "complete") {
+    scheduleInitialHide();
+  } else {
+    document.addEventListener("DOMContentLoaded", scheduleInitialHide, { once: true });
+  }
+
   window.addEventListener("load", () => {
-    window.setTimeout(forceHide, 120);
+    window.setTimeout(forceHide, 0);
   });
 
   document.addEventListener("click", (event) => {

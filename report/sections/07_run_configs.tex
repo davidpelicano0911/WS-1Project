@@ -33,6 +33,7 @@ Antes da execu\c{c}\~ao, o sistema deve ter instalado:
 \end{itemize}
 
 Garantir que a porta \texttt{7200} est\'a livre para o GraphDB 
+\begin{center}
 \texttt{http://localhost:7200}
 \end{center}
 
@@ -152,30 +153,3 @@ Depois da remo\c{c}\~ao, basta correr novamente:
 \end{verbatim}
 
 Isto volta a criar o reposit\'orio \texttt{baseball} e a importar o ficheiro RDF.
-
-\section{Execu\c{c}\~ao com Docker}
-
-Nesta vers\~ao do projeto n\~ao foi inclu\'ida uma configura\c{c}\~ao Docker operacional, isto \'{e}, n\~ao existem \texttt{Dockerfile} nem \texttt{docker-compose.yml} prontos a usar no reposit\'orio. Assim, a forma suportada de execu\c{c}\~ao \'{e} a execu\c{c}\~ao manual descrita acima.
-
-Se no futuro for pretendida uma distribui\c{c}\~ao por contentores, a configura\c{c}\~ao natural seria separar:
-
-\begin{itemize}[leftmargin=*]
-  \item um contentor para a aplica\c{c}\~ao Django;
-  \item um contentor ou servi\c{c}o externo para o GraphDB;
-  \item um volume persistente para o reposit\'orio RDF;
-  \item um volume persistente para a base de dados SQLite, ou a sua substitui\c{c}\~ao por uma base de dados mais adequada a ambientes conteinerizados.
-\end{itemize}
-
-\section{Notas finais de execu\c{c}\~ao}
-
-Durante a execu\c{c}\~ao, os problemas mais prov\'aveis s\~ao:
-
-\begin{itemize}[leftmargin=*]
-  \item o GraphDB n\~ao estar ativo em \texttt{http://localhost:7200};
-  \item o reposit\'orio \texttt{baseball} n\~ao existir ou estar vazio;
-  \item o ficheiro \texttt{rdf/baseball.n3} ainda n\~ao ter sido gerado;
-  \item as migrations do Django n\~ao terem sido aplicadas;
-  \item o ambiente virtual n\~ao estar ativado.
-\end{itemize}
-
-Se estes pontos estiverem corretamente configurados, a aplica\c{c}\~ao arranca sem depend\^encias adicionais.

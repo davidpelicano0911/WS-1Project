@@ -49,11 +49,6 @@
                 <i class="bi bi-person-badge"></i> Managers
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="btn-app btn-secondary-app d-flex align-items-center gap-2" id="legends-tab" data-bs-toggle="pill" data-bs-target="#legends-stats" type="button" role="tab" aria-controls="legends-stats" aria-selected="false" style="padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                <i class="bi bi-trophy-fill"></i> Combined view
-            </button>
-        </li>
     </ul>
 
     <!-- Tab Contents -->
@@ -317,84 +312,7 @@
             </div>
         </div>
 
-        <!-- AWARDS & LEGENDS TAB -->
-        <div class="tab-pane fade" id="legends-stats" role="tabpanel" aria-labelledby="legends-tab">
-            <div class="row g-4">
-                
-                <!-- Hall Of Fame -->
-                <div class="col-md-6">
-                    <div class="data-panel h-100">
-                        <h3 class="h4 mb-4"><i class="bi bi-bank text-warning pe-2"></i> Latest Hall of Fame</h3>
-                        <div class="table-responsive table-app" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table align-middle text-center mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="text-start">Inductee</th>
-                                        <th>Year</th>
-                                        <th>%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for m in members|slice:":15" %}
-                                    <tr>
-                                        <td class="text-start">
-                                            {% if m.player_id %}
-                                            <a href="{% url 'player_detail' m.player_id %}" class="fw-bold">{{ m.name }}</a>
-                                            {% else %}
-                                            <strong>{{ m.name }}</strong>
-                                            {% endif %}
-                                        </td>
-                                        <td><span class="pill">{{ m.year }}</span></td>
-                                        <td><strong>{{ m.percent }}</strong></td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            <div class="p-3 text-center">
-                                <a href="{% url 'hall_of_fame' %}" class="text-white opacity-75">View all inductees &rarr;</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Managers -->
-                <div class="col-md-6">
-                    <div class="data-panel h-100">
-                        <h3 class="h4 mb-4"><i class="bi bi-person-badge text-info pe-2"></i> Top Managers</h3>
-                        <div class="table-responsive table-app" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table align-middle text-center mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="text-start">Manager</th>
-                                        <th>Wins</th>
-                                        <th>Win Percentage</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for m in managers|slice:":15" %}
-                                    <tr>
-                                        <td class="text-start">
-                                            {% if m.player_id %}
-                                            <a href="{% url 'player_detail' m.player_id %}" class="fw-bold">{{ m.name }}</a>
-                                            {% else %}
-                                            <strong>{{ m.name }}</strong>
-                                            {% endif %}
-                                        </td>
-                                        <td><span class="pill pill-success">{{ m.wins }}</span></td>
-                                        <td><strong>{{ m.win_pct }}</strong></td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            <div class="p-3 text-center">
-                                <a href="{% url 'managers_list' %}" class="text-white opacity-75">View all managers &rarr;</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
     </div>
 </div>
 
