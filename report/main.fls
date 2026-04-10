@@ -357,6 +357,11 @@ INPUT ./figures/auth_logged_state.png
 INPUT ./figures/auth_logged_state.png
 INPUT ./figures/auth_logged_state.png
 INPUT ./figures/auth_logged_state.png
+INPUT ./figures/suggest_edit.png
+INPUT ./figures/suggest_edit.png
+INPUT ./figures/suggest_edit.png
+INPUT ./figures/suggest_edit.png
+INPUT ./figures/suggest_edit.png
 INPUT ./figures/suggest_mine.png
 INPUT ./figures/suggest_mine.png
 INPUT ./figures/suggest_mine.png
@@ -367,6 +372,11 @@ INPUT ./figures/suggest_review.png
 INPUT ./figures/suggest_review.png
 INPUT ./figures/suggest_review.png
 INPUT ./figures/suggest_review.png
+INPUT ./figures/admin_direct_edit.png
+INPUT ./figures/admin_direct_edit.png
+INPUT ./figures/admin_direct_edit.png
+INPUT ./figures/admin_direct_edit.png
+INPUT ./figures/admin_direct_edit.png
 INPUT ./sections/06_conclusions.tex
 INPUT ./sections/06_conclusions.tex
 INPUT ./sections/06_conclusions.tex
