@@ -3,6 +3,26 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces P\'agina inicial do portal BaseballX com \textit {Data Hub} e cart\~oes de acesso r\'apido.}}{89}{figure.caption.3}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Interface de listagem de jogadores com filtros multicrit\'erio e pagina\c {c}\~ao controlada pelo servidor.}}{89}{figure.caption.4}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Perfil de jogador com componente \textit {Career Pulse}, apresentando m\'etricas agregadas de carreira.}}{90}{figure.caption.5}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Painel de equipa com m\'etricas de performance por \'epoca, incluindo \textit {Win Percentage} e \textit {Run Differential}.}}{91}{figure.caption.6}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Separador \textit {Global Leaders}: l\'ideres hist\'oricos em Home Runs, RBI e Strikeouts, calculados por agrega\c {c}\~ao SPARQL.}}{92}{figure.caption.7}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Separador \textit {Franchises}: ranking das franquias com maior n\'umero hist\'orico de vit\'orias acumuladas.}}{92}{figure.caption.8}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Separador \textit {Top Salaries}: maiores contratos individuais na hist\'oria da liga, ordenados por valor.}}{93}{figure.caption.9}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Separador \textit {Awards}: linha cronol\'ogica de distin\c {c}\~oes individuais atribu\'idas na liga.}}{94}{figure.caption.10}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Separador \textit {Hall of Fame}: membros induzidos ordenados por percentagem de vota\c {c}\~ao hist\'orica.}}{95}{figure.caption.11}%
+\contentsline {figure}{\numberline {4.10}{\ignorespaces Separador \textit {Managers}: ranking de treinadores por vitórias acumuladas e aproveitamento estatístico.}}{96}{figure.caption.12}%
+\contentsline {figure}{\numberline {4.11}{\ignorespaces Interface de seleção para comparação: utilização de filtros alfabéticos e menus dinâmicos para carregar instâncias do grafo.}}{96}{figure.caption.13}%
+\contentsline {figure}{\numberline {4.12}{\ignorespaces Painel de resultados comparativos: visualização \textit {Head-to-Head} com destaques automáticos para o líder de cada métrica.}}{97}{figure.caption.14}%
+\contentsline {figure}{\numberline {4.13}{\ignorespaces Visualiza\c {c}\~ao interativa do grafo RDF: n\'os codificados por cor representando jogadores, equipas e eventos, ligados pelas propriedades do modelo de conhecimento.}}{98}{figure.caption.15}%
+\contentsline {figure}{\numberline {4.14}{\ignorespaces Cabe\c {c}alho da p\'agina de Liga: metadados agregados e identificadores da liga, extra\'idos via SPARQL.}}{99}{figure.caption.16}%
+\contentsline {figure}{\numberline {4.15}{\ignorespaces Registo de clubes em modo \textit {Historical Periods}: filtros por equipa e franquia com pagina\c {c}\~ao.}}{100}{figure.caption.17}%
+\contentsline {figure}{\numberline {4.16}{\ignorespaces \textit {League Snapshot}: indicadores de sucesso competitivo e listagem de recintos históricos associados à liga.}}{101}{figure.caption.18}%
+\contentsline {figure}{\numberline {4.17}{\ignorespaces \textit {Statistical Leaders} da liga: top 3 jogadores em Home Runs, RBI, Assists e Strikeouts na \'ultima temporada documentada.}}{102}{figure.caption.19}%
+\contentsline {figure}{\numberline {4.18}{\ignorespaces Equipas mais persistentes da liga: cart\~oes com \textit {league share}, dura\c {c}\~ao hist\'orica e parque representativo.}}{102}{figure.caption.20}%
+\contentsline {figure}{\numberline {4.19}{\ignorespaces Sec\c {c}\~ao de p\'os-temporada: \textit {breakdown} por ronda de \textit {playoffs} e linha cronol\'ogica das s\'eries mais recentes.}}{103}{figure.caption.21}%
+\contentsline {figure}{\numberline {4.20}{\ignorespaces Interface do motor de Quiz: do sistema de \textit {ranking} ao ambiente de jogo.}}{104}{figure.caption.22}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
