@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from urllib.parse import urlencode
 
 from django.http import Http404
@@ -7,12 +8,14 @@ from django.urls import reverse
 
 from ..compare_selection import get_compare_selection
 from ..edit_service import build_team_edit_state
+from ..player_media import attach_player_media
 from ..sparql import (
     DIVISION_LABELS,
     LEAGUE_LABELS,
     get_league_detail,
     get_league_leaders,
     get_league_series_results,
+    get_team_graph_data,
     get_team_all_stars,
     get_team_awards,
     get_team_batting_roster,
@@ -133,6 +136,41 @@ def _normalized_team_code(*codes):
 def _team_logo_id(*codes):
     normalized = _normalized_team_code(*codes)
     return MLB_LOGO_IDS.get(normalized)
+
+
+def _build_team_graph_payload(team):
+    graph_data = deepcopy(get_team_graph_data(team.get("team_id", ""), team.get("year")))
+    logo_id = team.get("logo_id")
+    logo_url = f"https://www.mlbstatic.com/team-logos/{logo_id}.svg" if logo_id else ""
+
+    for node in graph_data.get("nodes", []):
+        node_data = node.get("data", {})
+
+        if logo_url and node_data.get("type") == "focus-team":
+            node_data["logoUrl"] = logo_url
+
+        if node_data.get("type") not in {"player", "manager"}:
+            continue
+
+        player_id = node_data.get("playerID")
+        if player_id:
+            node_data["photoProxyUrl"] = reverse("player_graph_photo", kwargs={"player_id": player_id})
+
+        bbref_id = node_data.get("bbrefID")
+        if not bbref_id:
+            continue
+
+        media = attach_player_media({"bbref_id": bbref_id})
+        if media.get("card_photo_url"):
+            node_data["photoUrl"] = media["card_photo_url"]
+        if media.get("card_photo_fallback_url"):
+            node_data["photoFallbackUrl"] = media["card_photo_fallback_url"]
+
+    return {
+        "team_graph_nodes": graph_data.get("nodes", []),
+        "team_graph_edges": graph_data.get("edges", []),
+        "has_team_graph": bool(graph_data.get("nodes")),
+    }
 
 
 def _season_badges(team):
@@ -731,6 +769,11 @@ def _build_team_detail_context(requested_franchise, requested_year=""):
         "selected_season_postseason": selected_season_postseason,
         "season_outcome": _season_outcome(selected_team, selected_season_postseason) if selected_team else "",
         "team_tabs": team_tabs,
+        **(_build_team_graph_payload(selected_team) if selected_team else {
+            "team_graph_nodes": [],
+            "team_graph_edges": [],
+            "has_team_graph": False,
+        }),
     }
 
 

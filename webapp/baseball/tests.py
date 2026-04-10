@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 from django.urls import reverse
+from rdflib import Graph, Literal, Namespace
+from rdflib.namespace import FOAF, RDF
 
 from baseball.models import DataSuggestion, QuizAttempt
 from baseball.quiz_service import (
@@ -14,6 +16,7 @@ from baseball.quiz_service import (
     build_leaderboard_questions,
     build_round_state,
 )
+from baseball.sparql_queries.graphs import get_player_graph_data, get_team_graph_data
 
 
 def _sample_question(question_id, family="leaderboard", correct_option_id="player:a"):
@@ -32,6 +35,9 @@ def _sample_question(question_id, family="leaderboard", correct_option_id="playe
         "correct_option_id": correct_option_id,
         "explanation": f"Explanation for {question_id}",
     }
+
+
+BB = Namespace("http://baseball.ws.pt/")
 
 
 class QuizServiceTests(TestCase):
@@ -177,6 +183,136 @@ class QuizServiceTests(TestCase):
 
         self.assertTrue(payload["is_correct"])
         mock_ask.assert_called_once_with("home_runs", "AL", 2005, "b")
+
+
+class PlayerGraphQueryTests(TestCase):
+    def tearDown(self):
+        get_player_graph_data.cache_clear()
+
+    @patch("baseball.sparql_queries.graphs.run_construct")
+    def test_player_graph_uses_constructed_semantic_neighborhood(self, mock_run_construct):
+        graph = Graph()
+
+        player = BB["player/aaronha01"]
+        team = BB["team/ATL/1974"]
+        franchise = BB["franchise/ATL"]
+        award = BB["award/mvp/1957"]
+        league = BB["graph/league/NL"]
+        teammate = BB["player/mayswi01"]
+        manager = BB["player/coxbo01"]
+
+        graph.add((player, RDF.type, BB.GraphPlayer))
+        graph.add((player, BB.playerID, Literal("aaronha01")))
+        graph.add((player, FOAF.name, Literal("Hank Aaron")))
+
+        graph.add((team, RDF.type, BB.GraphTeam))
+        graph.add((team, BB.teamName, Literal("Atlanta Braves")))
+        graph.add((team, BB.teamID, Literal("ATL")))
+        graph.add((team, BB.yearID, Literal("1974")))
+
+        graph.add((franchise, RDF.type, BB.GraphFranchise))
+        graph.add((franchise, BB.franchiseName, Literal("Atlanta Braves")))
+
+        graph.add((award, RDF.type, BB.GraphAward))
+        graph.add((award, BB.awardName, Literal("MVP Award")))
+        graph.add((award, BB.yearID, Literal("1957")))
+
+        graph.add((league, RDF.type, BB.GraphLeague))
+        graph.add((league, BB.lgID, Literal("NL")))
+
+        graph.add((teammate, RDF.type, BB.GraphTeammate))
+        graph.add((teammate, FOAF.name, Literal("Willie Mays")))
+        graph.add((teammate, BB.sharedSeasons, Literal("2")))
+
+        graph.add((manager, RDF.type, BB.GraphManager))
+        graph.add((manager, FOAF.name, Literal("Bobby Cox")))
+
+        graph.add((player, BB.playedFor, team))
+        graph.add((team, BB.franchiseLink, franchise))
+        graph.add((team, BB.leagueLink, league))
+        graph.add((player, BB.playedInLeague, league))
+        graph.add((player, BB.wonGraphAward, award))
+        graph.add((player, BB.sharedClubhouseWith, teammate))
+        graph.add((team, BB.managedByPerson, manager))
+
+        mock_run_construct.return_value = graph
+
+        graph_data = get_player_graph_data("aaronha01")
+
+        node_types = {node["data"]["type"] for node in graph_data["nodes"]}
+        edge_labels = {edge["data"]["label"] for edge in graph_data["edges"]}
+
+        self.assertSetEqual(
+            node_types,
+            {"player", "team", "franchise", "award", "league", "teammate", "manager"},
+        )
+        self.assertIn("played for", edge_labels)
+        self.assertIn("franchise", edge_labels)
+        self.assertIn("league", edge_labels)
+        self.assertIn("won", edge_labels)
+        self.assertIn("teammate", edge_labels)
+        self.assertIn("managed by", edge_labels)
+
+
+class TeamGraphQueryTests(TestCase):
+    def tearDown(self):
+        get_team_graph_data.cache_clear()
+
+    @patch("baseball.sparql_queries.graphs.run_construct")
+    def test_team_graph_uses_constructed_team_neighborhood(self, mock_run_construct):
+        graph = Graph()
+
+        team = BB["team/ATL/1974"]
+        franchise = BB["franchise/ATL"]
+        league = BB["graph/league/NL"]
+        player = BB["player/aaronha01"]
+        manager = BB["player/coxbo01"]
+        award = BB["award/mvp/1974"]
+
+        graph.add((team, RDF.type, BB.GraphFocusTeam))
+        graph.add((team, BB.teamName, Literal("Atlanta Braves")))
+        graph.add((team, BB.teamID, Literal("ATL")))
+        graph.add((team, BB.teamIDBR, Literal("ATL")))
+        graph.add((team, BB.yearID, Literal("1974")))
+
+        graph.add((franchise, RDF.type, BB.GraphFranchise))
+        graph.add((franchise, BB.franchiseName, Literal("Atlanta Braves")))
+
+        graph.add((league, RDF.type, BB.GraphLeague))
+        graph.add((league, BB.lgID, Literal("NL")))
+
+        graph.add((player, RDF.type, BB.GraphRosterPlayer))
+        graph.add((player, FOAF.name, Literal("Hank Aaron")))
+
+        graph.add((manager, RDF.type, BB.GraphManager))
+        graph.add((manager, FOAF.name, Literal("Bobby Cox")))
+
+        graph.add((award, RDF.type, BB.GraphAward))
+        graph.add((award, BB.awardName, Literal("MVP Award")))
+        graph.add((award, BB.yearID, Literal("1974")))
+
+        graph.add((team, BB.franchiseLink, franchise))
+        graph.add((team, BB.leagueLink, league))
+        graph.add((team, BB.rosterLink, player))
+        graph.add((team, BB.managedByPerson, manager))
+        graph.add((player, BB.wonGraphAward, award))
+
+        mock_run_construct.return_value = graph
+
+        graph_data = get_team_graph_data("ATL", 1974)
+
+        node_types = {node["data"]["type"] for node in graph_data["nodes"]}
+        edge_labels = {edge["data"]["label"] for edge in graph_data["edges"]}
+
+        self.assertSetEqual(
+            node_types,
+            {"focus-team", "franchise", "league", "player", "manager", "award"},
+        )
+        self.assertIn("franchise", edge_labels)
+        self.assertIn("league", edge_labels)
+        self.assertIn("roster", edge_labels)
+        self.assertIn("managed by", edge_labels)
+        self.assertIn("won", edge_labels)
 
 
 class QuizViewTests(TestCase):
