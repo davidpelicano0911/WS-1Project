@@ -4,19 +4,6 @@
     data-active-filters-count="{{ active_filters|length }}"
     data-has-active-filters="{% if active_filters %}1{% else %}0{% endif %}"
 >
-    <section class="page-header player-directory-head">
-        <div>
-            <span class="eyebrow">
-                <i class="bi bi-grid-1x2-fill"></i>
-                Catalog
-            </span>
-            <h2 class="feature-title h3 mb-2">Modern Player Cards</h2>
-            <p class="muted-copy mb-0">
-                {{ total_players }} players{% if active_filters %} matching the current filter stack{% else %} in the current catalog view{% endif %}.
-            </p>
-        </div>
-    </section>
-
     {% if players %}
     <section class="player-card-grid">
         {% for player in players %}
