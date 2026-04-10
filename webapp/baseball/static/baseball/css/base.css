@@ -128,6 +128,7 @@ a {
     height: 14rem;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(29, 79, 145, 0.18), transparent 68%);
+    pointer-events: none;
 }
 
 .eyebrow {
@@ -2116,6 +2117,53 @@ body.quiz-modal-open.quiz-page [data-quiz-underlay] {
     color: #9fb6d9;
     text-align: center;
     font-weight: 600;
+}
+
+.players-catalog-shell {
+    position: relative;
+    min-height: 16rem;
+}
+
+.players-catalog-shell.is-loading {
+    opacity: 0.98;
+}
+
+.players-catalog-loading {
+    display: grid;
+    gap: 0.9rem;
+    justify-items: center;
+    align-content: center;
+    min-height: 16rem;
+    padding: 1.5rem;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 40%),
+        linear-gradient(180deg, rgba(10, 23, 43, 0.78), rgba(6, 16, 32, 0.92));
+    border: 1px solid rgba(136, 174, 232, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.players-catalog-loading p {
+    margin: 0;
+    color: #9fb6d9;
+    font-weight: 700;
+    text-align: center;
+}
+
+.players-catalog-spinner {
+    width: 5.5rem;
+    height: 5.5rem;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 28px rgba(4, 12, 24, 0.34));
+}
+
+@keyframes playersCatalogLoading {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 200% 50%;
+    }
 }
 
 .quiz-card {

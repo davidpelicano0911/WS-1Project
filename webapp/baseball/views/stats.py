@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.views.decorators.cache import cache_page
 
 from ..sparql import (
     get_awards_list,
@@ -10,7 +9,6 @@ from ..sparql import (
 
 from ..sparql_queries.misc import get_global_player_leaders, get_global_team_leaders
 
-@cache_page(60 * 60 * 24)  # Cache do HTML inteiro por 24 horas
 def analytics_view(request):
     context = {
         "global_batting": get_global_player_leaders(),

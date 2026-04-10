@@ -20,21 +20,36 @@ def get_player_options_by_initial(initial):
     PREFIX bb: <http://baseball.ws.pt/>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?playerID ?name
+    SELECT ?playerID ?name ?nameFirst ?nameLast
     WHERE {{
         ?player a bb:Player ;
                 bb:playerID ?playerID ;
                 foaf:name ?name .
-        FILTER(STRSTARTS(UCASE(STR(?name)), "{initial}"))
+        OPTIONAL {{ ?player bb:nameFirst ?nameFirst . }}
+        OPTIONAL {{ ?player bb:nameLast ?nameLast . }}
+        FILTER(
+            STRSTARTS(
+                UCASE(STR(COALESCE(?nameFirst, ?name))),
+                "{initial}"
+            )
+        )
     }}
-    ORDER BY ?name ?playerID
+    ORDER BY ?nameFirst ?nameLast ?name ?playerID
     """
 
     results = run_query(query)
     return [
         {
             "player_id": row["playerID"]["value"],
-            "name": row["name"]["value"],
+            "name": " ".join(
+                part
+                for part in [
+                    _row_value(row, "nameFirst", ""),
+                    _row_value(row, "nameLast", ""),
+                ]
+                if part
+            ).strip()
+            or row["name"]["value"],
         }
         for row in results
     ]
@@ -62,7 +77,11 @@ def _player_catalog_filters(
     if letter:
         safe_letter = escape_sparql_string(str(letter).strip().upper())
         if len(safe_letter) == 1 and safe_letter.isalpha():
-            filters.append(f'FILTER(STRSTARTS(UCASE(STR(?name)), "{safe_letter}"))')
+            filters.append(
+                'FILTER('
+                f'STRSTARTS(UCASE(STR(COALESCE(?nameFirst, ?name))), "{safe_letter}")'
+                ')'
+            )
 
     if search_term:
         safe_search = escape_sparql_string(str(search_term).strip().lower())

@@ -34,9 +34,15 @@
             <tbody>
                 {% for a in awards %}
                 <tr>
-                    <td><strong>{{ a.name.value }}</strong></td>
-                    <td>{{ a.award.value }}</td>
-                    <td><span class="pill">{{ a.year.value }}</span></td>
+                    <td>
+                        {% if a.player_id %}
+                        <a href="{% url 'player_detail' a.player_id %}" class="text-white text-decoration-none fw-bold">{{ a.name }}</a>
+                        {% else %}
+                        <strong>{{ a.name }}</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ a.award_name }}</td>
+                    <td><span class="pill">{{ a.year }}</span></td>
                 </tr>
                 {% empty %}
                 <tr>

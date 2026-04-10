@@ -85,8 +85,8 @@ def attach_player_media(player):
         "bbref_url": build_bbref_player_url(bbref_id),
         "photo_url": photo_url,
         "photo_fallback_url": photo_fallback_url,
-        "card_photo_url": _resize_mlb_photo_url(photo_url, 220),
-        "card_photo_fallback_url": _resize_mlb_photo_url(photo_fallback_url, 220),
+        "card_photo_url": photo_url,
+        "card_photo_fallback_url": photo_fallback_url,
         "photo_source": photo_entry.get("source", ""),
     }
 

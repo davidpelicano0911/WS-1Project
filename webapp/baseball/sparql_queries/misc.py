@@ -22,19 +22,50 @@ def get_top_salaries():
 
 @lru_cache(maxsize=1)
 def get_awards_list():
-    # Usamos os links completos para garantir que ele encontra os triplos
     query = """
-    SELECT ?name ?award ?year
+    PREFIX bb: <http://baseball.ws.pt/>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+    SELECT ?playerID ?nameFirst ?nameLast ?nameGiven ?name ?awardName ?year ?lg
     WHERE {
-        ?p <http://xmlns.com/foaf/0.1/name> ?name .
-        ?p <http://baseball.ws.pt/wonAward> ?awObj .
-        ?awObj <http://baseball.ws.pt/awardName> ?award ;
-               <http://baseball.ws.pt/yearID> ?year .
+        ?p bb:wonAward ?awObj .
+        ?p bb:playerID ?playerID .
+        ?awObj bb:awardName ?awardName ;
+              bb:yearID ?year .
+
+        OPTIONAL { ?p foaf:name ?name . }
+        OPTIONAL { ?p bb:nameFirst ?nameFirst . }
+        OPTIONAL { ?p bb:nameLast ?nameLast . }
+        OPTIONAL { ?p bb:nameGiven ?nameGiven . }
+        OPTIONAL { ?awObj bb:lgID ?lg . }
     }
     ORDER BY DESC(?year)
     LIMIT 25
     """
-    return run_query(query)
+    awards = []
+    for row in run_query(query):
+        first_name = _row_value(row, "nameFirst", "")
+        last_name = _row_value(row, "nameLast", "")
+        full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+
+        if not full_name:
+            full_name = _row_value(row, "name", "")
+        if not full_name:
+            full_name = _row_value(row, "nameGiven", "")
+        if not full_name:
+            full_name = _row_value(row, "playerID", "Unknown player")
+
+        awards.append(
+            {
+                "player_id": _row_value(row, "playerID", ""),
+                "name": full_name,
+                "award_name": _row_value(row, "awardName", "Award"),
+                "year": _row_int(row, "year", 0),
+                "league": _row_value(row, "lg", ""),
+            }
+        )
+
+    return awards
 
 
 def get_header_teams_graph():

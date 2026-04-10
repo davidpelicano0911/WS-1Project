@@ -1,0 +1,199 @@
+{% load static %}
+
+<div
+    class="player-catalog-fragment"
+    data-total-players="{{ total_players }}"
+    data-active-filters-count="{{ active_filters|length }}"
+    data-has-active-filters="{% if active_filters %}1{% else %}0{% endif %}"
+    data-photo-only="{% if has_photo %}1{% else %}0{% endif %}"
+>
+    {% if players %}
+    <section class="player-card-grid">
+        {% for player in players %}
+            <div class="player-card-entry{% if player.compare_selected %} compare-selected{% endif %}">
+                <button
+                    type="button"
+                    class="compare-select-button compare-select-button-player{% if player.compare_selected %} active{% endif %}"
+                    data-compare-select
+                    data-compare-type="player"
+                    data-compare-id="{{ player.player_id }}"
+                    data-compare-label="{{ player.full_name|default:player.name }}"
+                    aria-pressed="{% if player.compare_selected %}true{% else %}false{% endif %}"
+                >
+                    <i class="bi {% if player.compare_selected %}bi-check2-circle{% else %}bi-plus-circle{% endif %}"></i>
+                    <span data-compare-select-label>{% if player.compare_selected %}Selected{% else %}Compare{% endif %}</span>
+                </button>
+
+                <a href="{% url 'player_detail' player.player_id %}" class="feature-card player-card-link">
+                    <article class="player-card-shell">
+                    <div class="player-card-front">
+                        <div class="player-card-portrait-frame">
+                            <div class="player-card-photo-fallback">
+                                <img
+                                    src="{% static 'default_player.png' %}"
+                                    alt="Default player portrait"
+                                    class="player-card-photo player-card-photo-default"
+                                >
+                            </div>
+                            {% if player.photo_url %}
+                                <img
+                                    src="{{ player.card_photo_url|default:player.photo_url }}"
+                                    data-fallback="{{ player.card_photo_fallback_url|default:player.photo_fallback_url }}"
+                                    data-default="{% static 'default_player.png' %}"
+                                    alt="{{ player.name }}"
+                                    class="player-card-photo"
+                                    loading="lazy"
+                                    decoding="async"
+                                    fetchpriority="low"
+                                    onerror="if(this.dataset.fallback && this.src !== this.dataset.fallback){this.src=this.dataset.fallback;}else if(this.dataset.default && this.src !== this.dataset.default){this.src=this.dataset.default;}else{this.onerror=null;this.style.display='none';}"
+                                >
+                            {% else %}
+                                <img
+                                    src="{% static 'default_player.png' %}"
+                                    alt="{{ player.name }}"
+                                    class="player-card-photo"
+                                    loading="lazy"
+                                    decoding="async"
+                                    fetchpriority="low"
+                                >
+                            {% endif %}
+                            <div class="player-card-glow"></div>
+                            <div class="player-card-nameplate">
+                                {% if player.first_name %}
+                                    <p class="player-card-kicker">{{ player.first_name }}</p>
+                                {% endif %}
+                                <h3 class="player-card-title">
+                                    {% if player.last_name %}
+                                        {{ player.last_name }}
+                                    {% else %}
+                                        {{ player.full_name }}
+                                    {% endif %}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="player-card-hover-panel">
+                        <span class="eyebrow player-hover-badge">
+                            <i class="bi bi-stars"></i>
+                            Player dossier
+                        </span>
+
+                        <div class="player-hover-headline">
+                            <p class="player-hover-kicker">{{ player.first_name|default:player.full_name }}</p>
+                            {% if player.last_name %}
+                                <h3 class="player-hover-title">{{ player.last_name }}</h3>
+                            {% else %}
+                                <h3 class="player-hover-title">{{ player.full_name }}</h3>
+                            {% endif %}
+                        </div>
+
+                        <div class="player-hover-section">
+                            <span class="player-hover-section-title">Identity</span>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Full name</span>
+                                <span class="player-bio-value">{{ player.full_name }}</span>
+                            </div>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Player ID</span>
+                                <span class="player-bio-value">{{ player.player_id }}</span>
+                            </div>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Birth</span>
+                                <span class="player-bio-value">{{ player.birth_date_display }}</span>
+                                <span class="player-life-place">{{ player.birth_primary_place }}</span>
+                            </div>
+                            {% if player.has_death_data %}
+                                <div class="player-hover-mini-item">
+                                    <span class="stat-label">Death</span>
+                                    <span class="player-bio-value">{{ player.death_date_display }}</span>
+                                    <span class="player-life-place">{{ player.death_primary_place }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="player-hover-section">
+                            <span class="player-hover-section-title">Physical profile</span>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Bats / Throws</span>
+                                <span class="player-bio-value">{{ player.bats_throws_display }}</span>
+                            </div>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Height / Weight</span>
+                                <span class="player-bio-value">{{ player.height_display }} · {{ player.weight_display }}</span>
+                            </div>
+                        </div>
+
+                        <div class="player-hover-section">
+                            <span class="player-hover-section-title">Career record</span>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Debut</span>
+                                <span class="player-bio-value">{{ player.debut_display }}</span>
+                            </div>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Final game</span>
+                                <span class="player-bio-value">{{ player.final_game_display }}</span>
+                            </div>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">Career span</span>
+                                <span class="player-bio-value">{{ player.career_span_display }}</span>
+                            </div>
+                            <div class="player-hover-mini-item">
+                                <span class="stat-label">{% if player.has_death_data %}Death record{% else %}Status{% endif %}</span>
+                                <span class="player-bio-value">{% if player.has_death_data %}{{ player.death_summary_display }}{% else %}No death record in dataset{% endif %}</span>
+                            </div>
+                        </div>
+
+                        {% if player.bbref_url %}
+                            <div class="player-hover-section">
+                                <span class="player-hover-section-title">Sources</span>
+                                <div class="player-hover-mini-item">
+                                    <span class="stat-label">External</span>
+                                    <span class="player-bio-value">Baseball Reference linked</span>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="player-card-actionbar">
+                            {% if player.bbref_url %}
+                                <span class="player-card-source">BRef linked</span>
+                            {% endif %}
+                            <span class="player-card-cta">Open player profile <i class="bi bi-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    </article>
+                </a>
+            </div>
+        {% endfor %}
+    </section>
+
+    <nav class="pager-app" aria-label="Players pagination">
+        {% if has_previous %}
+            <a class="btn-app btn-secondary-app" href="?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ previous_page }}">
+                <i class="bi bi-arrow-left"></i>
+                Previous
+            </a>
+        {% endif %}
+
+        <div class="pager-pages">
+            {% for page_number in page_numbers %}
+                <a class="pager-page{% if page_number == page %} active{% endif %}" href="?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ page_number }}">
+                    {{ page_number }}
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if has_next %}
+            <a class="btn-app btn-secondary-app" href="?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ next_page }}">
+                Next
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        {% endif %}
+    </nav>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-person-x-fill"></i>
+        No players matched the current filters.
+    </div>
+    {% endif %}
+</div>

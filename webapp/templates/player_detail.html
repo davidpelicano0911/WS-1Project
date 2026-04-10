@@ -75,7 +75,11 @@
             <div class="player-detail-identity-grid">
                 <div class="player-detail-portrait">
                     <div class="player-detail-photo-fallback">
-                        <span class="player-detail-avatar">{{ player.name|slice:":1" }}</span>
+                        <img
+                            src="{% static 'default_player.png' %}"
+                            alt="Default player portrait"
+                            class="player-detail-photo"
+                        >
                         <div class="player-detail-photo-copy">
                             <strong data-edit-display-for="display_name">{{ player.name }}</strong>
                             <span>No external headshot available</span>
@@ -85,10 +89,18 @@
                         <img
                             src="{{ player.photo_url }}"
                             data-fallback="{{ player.photo_fallback_url }}"
+                            data-default="{% static 'default_player.png' %}"
                             alt="{{ player.name }}"
                             class="player-detail-photo"
                             loading="lazy"
-                            onerror="if(this.dataset.fallback && this.src !== this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.style.display='none';}"
+                            onerror="if(this.dataset.fallback && this.src !== this.dataset.fallback){this.src=this.dataset.fallback;}else if(this.dataset.default && this.src !== this.dataset.default){this.src=this.dataset.default;}else{this.onerror=null;this.style.display='none';}"
+                        >
+                    {% else %}
+                        <img
+                            src="{% static 'default_player.png' %}"
+                            alt="{{ player.name }}"
+                            class="player-detail-photo"
+                            loading="lazy"
                         >
                     {% endif %}
                 </div>
