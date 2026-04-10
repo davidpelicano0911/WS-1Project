@@ -45,6 +45,7 @@
       link.hasAttribute("download") ||
       link.target === "_blank" ||
       link.dataset.noGlobalLoading !== undefined ||
+      link.dataset.authModalOpen !== undefined ||
       event.metaKey ||
       event.ctrlKey ||
       event.shiftKey ||
@@ -71,7 +72,7 @@
     if (!(form instanceof HTMLFormElement)) {
       return;
     }
-    if (form.dataset.noGlobalLoading !== undefined) {
+    if (form.dataset.noGlobalLoading !== undefined || form.dataset.authForm !== undefined) {
       return;
     }
     show();

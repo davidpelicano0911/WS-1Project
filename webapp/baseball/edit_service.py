@@ -345,8 +345,17 @@ def _run_graphdb_update(query):
     try:
         with urlopen(request, timeout=30):
             return
-    except (HTTPError, URLError) as exc:
-        raise RuntimeError("GraphDB update failed.") from exc
+    except HTTPError as exc:
+        try:
+            detail = exc.read().decode("utf-8", errors="replace").strip()
+        except Exception:
+            detail = ""
+        if detail:
+            raise RuntimeError(f"GraphDB update failed: {detail}") from exc
+        raise RuntimeError(f"GraphDB update failed: HTTP {exc.code}.") from exc
+    except URLError as exc:
+        reason = getattr(exc, "reason", "") or "Could not reach GraphDB."
+        raise RuntimeError(f"GraphDB update failed: {reason}") from exc
 
 
 def clear_sparql_caches():
