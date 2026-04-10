@@ -3,3 +3,12 @@ __pycache__/*
 *.pyc
 rdf/baseball.nt
 .graphdb-desktop.log
+
+# LaTeX build artifacts
+report/*.aux
+report/*.fdb_latexmk
+report/*.fls
+report/*.lof
+report/*.log
+report/*.out
+report/*.toc
