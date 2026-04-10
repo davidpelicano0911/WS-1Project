@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2025/dev/Debian) (preloaded format=pdflatex 2025.12.8)  10 APR 2026 18:13
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2025/dev/Debian) (preloaded format=pdflatex 2025.12.8)  10 APR 2026 18:17
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -599,11 +599,15 @@ Cap\'{\i }tulo 5.
 
 ]
 Cap\'{\i }tulo 6.
-) (./sections/07_run_configs.tex
+
 
 [87
 
 ]
+
+[88]) (./sections/07_run_configs.tex
+
+[89]
 Cap\'{\i }tulo 7.
 
 ./sections/07_run_configs.tex:37: LaTeX Error: \begin{document} ended by \end{center}.
@@ -627,15 +631,15 @@ Things are pretty mixed up, but I think the worst is over.
 
 
 
-[88
+[90
 
 ]
 
-[89]
+[91]
 
-[90])
+[92])
 
-[91] (./main.aux)
+[93] (./main.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
@@ -648,21 +652,21 @@ Package rerunfilecheck Warning: File `main.out' has changed.
 
 Package rerunfilecheck Info: Checksums for `main.out':
 (rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  328A0E2112E289F10538F78A29CA83C0;8546.
+(rerunfilecheck)             After:  DDF2F27C8FBE4BFE60130489D3721722;9376.
  ) 
 Here is how much of TeX's memory you used:
- 12784 strings out of 475085
- 206033 string characters out of 5764176
+ 12791 strings out of 475085
+ 206102 string characters out of 5764176
  643063 words of memory out of 5000000
  35460 multiletter control sequences out of 15000+600000
  573088 words of font info for 63 fonts, out of 8000000 for 9000
  61 hyphenation exceptions out of 8191
  75i,8n,79p,751b,847s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/tctt0800.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1440.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1095.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1200.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt0800.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1440.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1200.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1200.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1728.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1200.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx2488.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1440.600pk> </home/tomasbras/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm2074.600pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb>
-Output written on main.pdf (92 pages, 324948 bytes).
+Output written on main.pdf (94 pages, 333939 bytes).
 PDF statistics:
- 1176 PDF objects out of 1200 (max. 8388607)
- 452 compressed objects within 5 object streams
- 151 named destinations out of 1000 (max. 500000)
+ 1199 PDF objects out of 1200 (max. 8388607)
+ 464 compressed objects within 5 object streams
+ 158 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

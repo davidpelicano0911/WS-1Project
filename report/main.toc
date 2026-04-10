@@ -33,15 +33,20 @@
 \contentsline {chapter}{\numberline {4}Funcionalidades da Aplica\c {c}\~ao (UI)}{85}{chapter.4}%
 \contentsline {chapter}{\numberline {5}Funcionalidades de Administrador (Autentica\c {c}\~ao e Opera\c {c}\~oes CRUD)}{86}{chapter.5}%
 \contentsline {chapter}{\numberline {6}Conclus\~oes}{87}{chapter.6}%
-\contentsline {chapter}{\numberline {7}Configura\c {c}\~oes para executar a app}{88}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Vis\~ao geral}{88}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Pr\'e-requisitos}{88}{section.7.2}%
-\contentsline {section}{\numberline {7.3}Execu\c {c}\~ao manual}{89}{section.7.3}%
-\contentsline {subsection}{\numberline {7.3.1}1. Criar o ambiente virtual}{89}{subsection.7.3.1}%
-\contentsline {subsection}{\numberline {7.3.2}2. Gerar o RDF}{89}{subsection.7.3.2}%
-\contentsline {subsection}{\numberline {7.3.3}3. Iniciar o GraphDB e criar o reposit\'orio}{89}{subsection.7.3.3}%
-\contentsline {subsection}{\numberline {7.3.4}5. Iniciar o servidor web}{90}{subsection.7.3.4}%
-\contentsline {section}{\numberline {7.4}Fluxo completo recomendado}{90}{section.7.4}%
-\contentsline {section}{\numberline {7.5}Parar e reconstruir o reposit\'orio}{90}{section.7.5}%
-\contentsline {section}{\numberline {7.6}Execu\c {c}\~ao com Docker}{90}{section.7.6}%
-\contentsline {section}{\numberline {7.7}Notas finais de execu\c {c}\~ao}{91}{section.7.7}%
+\contentsline {section}{\numberline {6.1}Resumo do trabalho realizado}{87}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Objetivos alcan\c {c}ados}{87}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Desafios encontrados}{88}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Melhorias futuras}{88}{section.6.4}%
+\contentsline {section}{\numberline {6.5}Considera\c {c}\~oes finais}{89}{section.6.5}%
+\contentsline {chapter}{\numberline {7}Configura\c {c}\~oes para executar a app}{90}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Vis\~ao geral}{90}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Pr\'e-requisitos}{90}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Execu\c {c}\~ao manual}{91}{section.7.3}%
+\contentsline {subsection}{\numberline {7.3.1}1. Criar o ambiente virtual}{91}{subsection.7.3.1}%
+\contentsline {subsection}{\numberline {7.3.2}2. Gerar o RDF}{91}{subsection.7.3.2}%
+\contentsline {subsection}{\numberline {7.3.3}3. Iniciar o GraphDB e criar o reposit\'orio}{91}{subsection.7.3.3}%
+\contentsline {subsection}{\numberline {7.3.4}5. Iniciar o servidor web}{92}{subsection.7.3.4}%
+\contentsline {section}{\numberline {7.4}Fluxo completo recomendado}{92}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Parar e reconstruir o reposit\'orio}{92}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Execu\c {c}\~ao com Docker}{92}{section.7.6}%
+\contentsline {section}{\numberline {7.7}Notas finais de execu\c {c}\~ao}{93}{section.7.7}%

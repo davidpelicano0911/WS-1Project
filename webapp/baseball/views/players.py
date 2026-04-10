@@ -39,6 +39,9 @@ from ..sparql import (
     get_player_summary,
     get_player_team_history,
 )
+from ..sparql_queries.base import run_describe
+
+BB_PLAYER_URI = "http://baseball.ws.pt/player/{}"
 
 
 def _alphabet():
@@ -1613,10 +1616,16 @@ def player_detail_view(request, player_id):
     detail_payload = _build_player_detail_payload(player)
     graph_payload = _build_player_graph_payload(player)
 
+    try:
+        rdf_triples = run_describe(BB_PLAYER_URI.format(player_id))
+    except Exception:
+        rdf_triples = []
+
     context = {
         "player": player,
         **detail_payload,
         **graph_payload,
+        "rdf_triples": rdf_triples,
         "edit_state": build_player_edit_state(player, request.user.is_staff) if request.user.is_authenticated else None,
         "recent_salary_history": player["salary_history"][:10],
         "recent_team_history": sorted(

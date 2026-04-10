@@ -1,6 +1,46 @@
 from rdflib import Graph
 from SPARQLWrapper import JSON, XML, SPARQLWrapper
+
 ENDPOINT = "http://localhost:7200/repositories/baseball"
+
+BB_NS   = "http://baseball.ws.pt/"
+FOAF_NS = "http://xmlns.com/foaf/0.1/"
+RDF_NS  = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+XSD_NS  = "http://www.w3.org/2001/XMLSchema#"
+
+
+def _shorten_uri(uri: str) -> str:
+    """Return a human-readable predicate label from a full URI."""
+    for ns in (BB_NS, FOAF_NS, RDF_NS, XSD_NS):
+        if uri.startswith(ns):
+            return uri[len(ns):]
+    if "#" in uri:
+        return uri.split("#")[-1]
+    return uri.split("/")[-1]
+
+
+def run_describe(resource_uri: str) -> list[dict]:
+    """Execute DESCRIBE and return a sorted list of {predicate, value} dicts."""
+    sparql = SPARQLWrapper(ENDPOINT)
+    sparql.setQuery(f"DESCRIBE <{resource_uri}>")
+    sparql.setReturnFormat(XML)
+    payload = sparql.query().response.read()
+    graph = Graph()
+    graph.parse(data=payload, format="xml")
+
+    rows = []
+    for _s, p, o in graph:
+        pred_label = _shorten_uri(str(p))
+        # skip rdf:type noise and internal graph URIs
+        if pred_label in ("type",):
+            continue
+        value = str(o)
+        # strip XSD datatype suffix  e.g. "1934-02-06"^^xsd:date → "1934-02-06"
+        if "^^" in value:
+            value = value.split("^^")[0].strip('"')
+        rows.append({"predicate": pred_label, "value": value})
+
+    return sorted(rows, key=lambda r: (r["predicate"], r["value"]))
 
 
 def run_query(query):
