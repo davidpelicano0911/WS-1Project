@@ -160,7 +160,11 @@
                     <div class="team-meta-strip">
                         <span class="team-meta-pill">
                             <i class="bi bi-trophy-fill"></i>
+                            {% if selected_team.league_code %}
                             <a href="{% url 'league_detail' selected_team.league_code %}" data-edit-display-for="league_code">{{ selected_team.league_name }}</a>
+                            {% else %}
+                            <span data-edit-display-for="league_code">{{ selected_team.league_name }}</span>
+                            {% endif %}
                         </span>
                         <span class="team-meta-pill">
                             <i class="bi bi-signpost-split-fill"></i>
@@ -210,6 +214,43 @@
     </div>
 
     <section id="team-panel-overview" class="team-tab-panel active" data-team-tab-panel="overview" role="tabpanel" aria-labelledby="team-tab-overview">
+        <section class="data-panel graph-panel mb-4" id="team-relationship-graph">
+            <div class="graph-panel-header">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        Team network
+                    </span>
+                    <h2 class="feature-title h4 mb-2">Connected club view</h2>
+                    <p class="muted-copy mb-0">
+                        Explore this team’s links across franchise identity, league context, roster players, managers, and season awards in one interactive view.
+                    </p>
+                </div>
+                <div class="graph-legend">
+                    <span class="legend-chip legend-team">Team</span>
+                    <span class="legend-chip legend-player">Player</span>
+                    <span class="legend-chip legend-manager">Manager</span>
+                    <span class="legend-chip legend-franchise">Franchise</span>
+                    <span class="legend-chip legend-league">League</span>
+                    <span class="legend-chip legend-award">Award</span>
+                </div>
+            </div>
+
+            {% if has_team_graph %}
+                <div id="team-graph" class="graph-canvas"></div>
+                {{ team_graph_nodes|json_script:"team-graph-nodes-data" }}
+                {{ team_graph_edges|json_script:"team-graph-edges-data" }}
+            {% else %}
+                <div class="graph-empty-state">
+                    <i class="bi bi-diagram-3"></i>
+                    <h3 class="feature-title h4 mb-2">No graph data available</h3>
+                    <p class="muted-copy mb-0">
+                        There are no relationship nodes available for this team yet.
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
         <div class="row g-4">
             <div class="col-xl-7">
                 <article class="feature-card team-panel-card h-100">
@@ -329,7 +370,7 @@
                     <h4 class="team-season-name">{{ row.team_name }}</h4>
                     <p class="team-season-meta">{{ row.league_name }} · {{ row.division_name }}</p>
                     <div class="team-season-statline">
-                        <span>Win % {{ row.win_pct_display }}</span>
+                        <span>Win Percentage {{ row.win_pct_display }}</span>
                         <span>{{ row.attendance_display }} fans</span>
                     </div>
                     {% if row.badges %}
@@ -739,6 +780,10 @@
             panel.classList.toggle('active', isActive);
             panel.hidden = !isActive;
         });
+
+        document.dispatchEvent(new CustomEvent('team-detail-tab:change', {
+            detail: { tab: tabId },
+        }));
     };
 
     teamTabButtons.forEach((button) => {
@@ -769,5 +814,7 @@
         });
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="{% static 'baseball/js/team-graph.js' %}"></script>
 <script src="{% static 'baseball/js/entity-edit.js' %}"></script>
 {% endblock %}

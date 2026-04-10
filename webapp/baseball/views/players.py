@@ -432,15 +432,30 @@ def _build_player_detail_payload(profile):
 
 def _build_player_graph_payload(player):
     graph_data = deepcopy(get_player_graph_data(player.get("player_id", "")))
-    photo_url = ""
+    direct_photo_url = (
+        player.get("card_photo_url")
+        or player.get("photo_url")
+        or ""
+    )
+    fallback_photo_url = (
+        player.get("card_photo_fallback_url")
+        or player.get("photo_fallback_url")
+        or ""
+    )
+    proxy_photo_url = ""
     if player.get("photo_url") or player.get("photo_fallback_url"):
-        photo_url = reverse("player_graph_photo", kwargs={"player_id": player.get("player_id", "")})
+        proxy_photo_url = reverse("player_graph_photo", kwargs={"player_id": player.get("player_id", "")})
 
-    if photo_url:
+    if direct_photo_url or fallback_photo_url or proxy_photo_url:
         for node in graph_data.get("nodes", []):
             node_data = node.get("data", {})
             if node_data.get("type") == "player":
-                node_data["photoUrl"] = photo_url
+                if direct_photo_url:
+                    node_data["photoUrl"] = direct_photo_url
+                if fallback_photo_url:
+                    node_data["photoFallbackUrl"] = fallback_photo_url
+                if proxy_photo_url:
+                    node_data["photoProxyUrl"] = proxy_photo_url
                 break
 
     return {

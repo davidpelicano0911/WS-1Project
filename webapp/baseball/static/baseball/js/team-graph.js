@@ -1,7 +1,7 @@
 (() => {
-    const graphContainer = document.getElementById("player-graph");
-    const nodesElement = document.getElementById("graph-nodes-data");
-    const edgesElement = document.getElementById("graph-edges-data");
+    const graphContainer = document.getElementById("team-graph");
+    const nodesElement = document.getElementById("team-graph-nodes-data");
+    const edgesElement = document.getElementById("team-graph-edges-data");
 
     if (!graphContainer || !nodesElement || !edgesElement || typeof cytoscape === "undefined") {
         return;
@@ -48,34 +48,33 @@
     };
 
     nodes.forEach((node) => {
-        if (node.data.type !== "team") {
+        if (node.data.type !== "focus-team" && node.data.type !== "team") {
             return;
         }
 
         const idMatch = node.data.id.match(/\/team\/([A-Z]+)\//);
-        const teamCode = node.data.teamID || (idMatch && idMatch[1]) || "";
+        const teamCode = node.data.teamIDBR || node.data.teamID || (idMatch && idMatch[1]) || "";
         if (!teamCode) {
             return;
         }
 
         const normalizedCode = TEAM_CODE_NORMALIZATION[teamCode] || teamCode;
         const logoId = MLB_LOGO_IDS[normalizedCode];
-        if (logoId) {
+        if (logoId && !node.data.logoUrl) {
             node.data.logoUrl = `https://www.mlbstatic.com/team-logos/${logoId}.svg`;
         }
     });
 
     const initializeGraph = async () => {
         await Promise.all(nodes.map(async (node) => {
-            if (node.data.type === "player") {
+            if ((node.data.type === "player" || node.data.type === "manager") && (node.data.photoUrl || node.data.photoFallbackUrl)) {
                 node.data.resolvedPhotoUrl = await resolveFirstWorkingImage([
                     node.data.photoUrl,
                     node.data.photoFallbackUrl,
-                    node.data.photoProxyUrl,
                 ]);
             }
 
-            if (node.data.type === "team" && node.data.logoUrl) {
+            if ((node.data.type === "focus-team" || node.data.type === "team") && node.data.logoUrl) {
                 node.data.resolvedLogoUrl = await resolveFirstWorkingImage([node.data.logoUrl]);
             }
         }));
@@ -88,10 +87,10 @@
                 animate: false,
                 fit: true,
                 padding: 72,
-                nodeRepulsion: 160000,
-                idealEdgeLength: 160,
+                nodeRepulsion: 180000,
+                idealEdgeLength: 165,
                 edgeElasticity: 90,
-                gravity: 0.28,
+                gravity: 0.3,
                 nestingFactor: 0.8,
             },
             style: [
@@ -102,7 +101,7 @@
                         label: "data(label)",
                         color: "#ffffff",
                         "text-wrap": "wrap",
-                        "text-max-width": 150,
+                        "text-max-width": 156,
                         "font-size": 12,
                         "font-weight": 700,
                         "text-valign": "bottom",
@@ -111,24 +110,47 @@
                         "text-background-opacity": 1,
                         "text-background-padding": 5,
                         "text-background-shape": "roundrectangle",
-                        width: 28,
-                        height: 28,
+                        width: 30,
+                        height: 30,
                         "border-width": 2,
                         "border-color": "#ffffff",
+                    },
+                },
+                {
+                    selector: 'node[type="focus-team"]',
+                    style: {
+                        "background-color": "#ffffff",
+                        width: 128,
+                        height: 128,
+                        shape: "ellipse",
+                        "border-width": 5,
+                        "border-color": "#ffffff",
+                        "text-valign": "bottom",
+                        "text-margin-y": 14,
+                        "text-max-width": 170,
+                    },
+                },
+                {
+                    selector: 'node[type="focus-team"][resolvedLogoUrl]',
+                    style: {
+                        "background-image": "data(resolvedLogoUrl)",
+                        "background-fit": "contain",
+                        "background-repeat": "no-repeat",
+                        "background-clip": "node",
+                        "background-position-x": "50%",
+                        "background-position-y": "50%",
+                        "background-width": "120%",
+                        "background-height": "120%",
+                        "background-opacity": 1,
                     },
                 },
                 {
                     selector: 'node[type="player"]',
                     style: {
                         "background-color": "#c63845",
-                        width: 116,
-                        height: 116,
-                        shape: "ellipse",
-                        "border-width": 5,
-                        "border-color": "#ffffff",
-                        "text-valign": "bottom",
-                        "text-margin-y": 14,
-                        "text-max-width": 156,
+                        width: 52,
+                        height: 52,
+                        "border-width": 3,
                     },
                 },
                 {
@@ -139,7 +161,7 @@
                         "background-repeat": "no-repeat",
                         "background-clip": "node",
                         "background-position-x": "50%",
-                        "background-position-y": "32%",
+                        "background-position-y": "34%",
                         "background-width": "112%",
                         "background-height": "112%",
                         "background-opacity": 1,
@@ -147,43 +169,35 @@
                     },
                 },
                 {
-                    selector: 'node[type="team"]',
+                    selector: 'node[type="manager"]',
                     style: {
-                        "background-color": "#1d4f91",
-                        width: 82,
-                        height: 82,
+                        "background-color": "#33a66f",
+                        width: 54,
+                        height: 54,
                         "border-width": 3,
-                        shape: "ellipse",
                     },
                 },
                 {
-                    selector: 'node[type="team"][resolvedLogoUrl]',
+                    selector: 'node[type="manager"][resolvedPhotoUrl]',
                     style: {
-                        "background-color": "#ffffff",
-                        "background-fit": "contain",
+                        "background-image": "data(resolvedPhotoUrl)",
+                        "background-fit": "cover",
                         "background-repeat": "no-repeat",
                         "background-clip": "node",
-                        "background-image": "data(resolvedLogoUrl)",
                         "background-position-x": "50%",
-                        "background-position-y": "50%",
-                        "background-width": "118%",
-                        "background-height": "118%",
+                        "background-position-y": "34%",
+                        "background-width": "112%",
+                        "background-height": "112%",
                         "background-opacity": 1,
-                        width: 86,
-                        height: 86,
-                        "border-width": 3,
+                        "background-color": "#ffffff",
                     },
                 },
                 {
                     selector: 'node[type="franchise"]',
                     style: {
                         "background-color": "#5476a5",
-                    },
-                },
-                {
-                    selector: 'node[type="award"]',
-                    style: {
-                        "background-color": "#d9a728",
+                        width: 36,
+                        height: 36,
                     },
                 },
                 {
@@ -195,19 +209,11 @@
                     },
                 },
                 {
-                    selector: 'node[type="teammate"]',
+                    selector: 'node[type="award"]',
                     style: {
-                        "background-color": "#1f8c7a",
-                        width: 32,
-                        height: 32,
-                    },
-                },
-                {
-                    selector: 'node[type="manager"]',
-                    style: {
-                        "background-color": "#33a66f",
-                        width: 32,
-                        height: 32,
+                        "background-color": "#d9a728",
+                        width: 34,
+                        height: 34,
                     },
                 },
                 {
@@ -261,7 +267,7 @@
         refreshImageNodes();
         cy.fit(undefined, 72);
 
-        document.addEventListener("player-detail-tab:change", (event) => {
+        document.addEventListener("team-detail-tab:change", (event) => {
             if (event.detail?.tab !== "overview") {
                 return;
             }

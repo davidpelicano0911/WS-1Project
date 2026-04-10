@@ -3766,9 +3766,21 @@ body.auth-modal-open .site-shell {
     background: #d9a728;
 }
 
+.legend-league::before {
+    background: #5a4ea1;
+}
+
+.legend-teammate::before {
+    background: #1f8c7a;
+}
+
+.legend-manager::before {
+    background: #33a66f;
+}
+
 .graph-canvas {
     width: 100%;
-    height: 620px;
+    height: clamp(720px, 78vh, 980px);
     border-radius: 24px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(239, 244, 252, 0.92));
     border: 1px solid rgba(17, 52, 98, 0.08);
@@ -3793,12 +3805,6 @@ body.auth-modal-open .site-shell {
     font-size: 2.3rem;
     color: var(--accent-alt);
     margin-bottom: 0.9rem;
-}
-
-.graph-selection-meta {
-    padding: 0.85rem 1rem;
-    border-radius: 18px;
-    border: 1px solid rgba(17, 52, 98, 0.08);
 }
 
 .table-app {

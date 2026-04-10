@@ -1,4 +1,5 @@
-from SPARQLWrapper import JSON, SPARQLWrapper
+from rdflib import Graph
+from SPARQLWrapper import JSON, XML, SPARQLWrapper
 ENDPOINT = "http://localhost:7200/repositories/baseball"
 
 
@@ -16,6 +17,17 @@ def run_ask(query):
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
     return bool(results.get("boolean"))
+
+
+def run_construct(query):
+    sparql = SPARQLWrapper(ENDPOINT)
+    sparql.setQuery(query)
+    sparql.setReturnFormat(XML)
+    response = sparql.query()
+    payload = response.response.read()
+    graph = Graph()
+    graph.parse(data=payload, format="xml")
+    return graph
 
 
 def _row_value(row, key, default=None):
