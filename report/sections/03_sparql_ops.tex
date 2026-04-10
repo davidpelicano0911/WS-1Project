@@ -8,7 +8,7 @@ As opera\c{c}\~oes SPARQL do projeto foram reorganizadas por dom\'inio funcional
   \item \texttt{players.py}: cat\'alogo de jogadores, filtros, detalhe biogr\'afico, hist\'orico desportivo, pr\'emios, All-Star Games, Hall of Fame e sal\'arios.
   \item \texttt{teams.py}: diret\'orio de franquias, hist\'orico por \'{e}poca, postseason, plant\'eis, managers, All-Stars e pr\'emios por equipa.
   \item \texttt{leagues.py}: navega\c{c}\~ao por liga, equipas da liga, s\'eries e l\'ideres estat\'isticos.
-  \item \texttt{graphs.py}: queries usadas para construir o grafo relacional do detalhe de jogador.
+  \item \texttt{graphs.py}: queries usadas para construir os grafos relacionais dos detalhes de jogador e equipa.
   \item \texttt{misc.py}: listas auxiliares e rankings globais, como sal\'arios, Hall of Fame, managers e l\'ideres agregados.
   \item \texttt{quiz.py}: banco de perguntas do quiz e verifica\c{c}\~ao de respostas com \texttt{SELECT} e \texttt{ASK}.
   \item \texttt{edit\_service.py}: opera\c{c}\~oes \texttt{SPARQL UPDATE} para aprovar edi\c{c}\~oes sobre jogadores e equipas.
@@ -16,9 +16,9 @@ As opera\c{c}\~oes SPARQL do projeto foram reorganizadas por dom\'inio funcional
 
 O ficheiro \texttt{webapp/baseball/sparql.py} continua apenas como superf\'icie de compatibilidade, reexportando as fun\c{c}\~oes dos m\'odulos internos.
 
-\section{Cat\'alogo funcional das queries}
+\section{Queries por p\'agina}
 
-Nesta sec\c{c}\~ao, as opera\c{c}\~oes s\~ao apresentadas no formato funcional pedido no enunciado: rota ou contexto de utiliza\c{c}\~ao, fun\c{c}\~ao Python associada, descri\c{c}\~ao e tipo de opera\c{c}\~ao SPARQL.
+Nesta sec\c{c}\~ao, as opera\c{c}\~oes s\~ao apresentadas por p\'agina ou contexto funcional da aplica\c{c}\~ao: rota ou contexto de utiliza\c{c}\~ao, fun\c{c}\~ao Python associada, descri\c{c}\~ao e tipo de opera\c{c}\~ao SPARQL. A listagem cobre as queries SPARQL de alto n\'ivel efetivamente usadas pelas p\'aginas e fluxos da aplica\c{c}\~ao. Fun\c{c}\~oes auxiliares que apenas agregam resultados em Python, como \texttt{get\_player\_batting\_summary()} e \texttt{get\_player\_pitching\_summary()}, n\~ao aparecem como entradas independentes porque n\~ao executam uma query adicional.
 
 \subsection{Jogadores}
 
@@ -854,36 +854,113 @@ LIMIT 3
   
   Fun\c{c}\~ao: \texttt{get\_player\_graph\_data(player\_id)}
   
-  Descri\c{c}\~ao: usa tr\^es queries separadas para obter o n\'o do jogador, as equipas/franquias ligadas ao jogador e os pr\'emios conquistados.
+  Descri\c{c}\~ao: constr\'oi o grafo relacional do jogador com equipas, franquias, ligas, pr\'emios, teammates e managers relacionados.
   
-  Tipo SPARQL: \texttt{SELECT}
+  Tipo SPARQL: \texttt{CONSTRUCT}
 
   SPARQL:
 
 \begin{Verbatim}[fontsize=\scriptsize,breaklines=true]
 PREFIX bb: <http://baseball.ws.pt/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?team ?teamName ?teamID ?year ?franchise ?franchiseName
-WHERE {
-    ?player bb:playerID "aaronha01" .
-    {
-        ?player bb:hasBatting ?line .
-        ?line bb:teamOf ?team .
-    }
-    UNION
-    {
-        ?player bb:hasPitching ?line .
-        ?line bb:teamOf ?team .
-    }
-    OPTIONAL { ?team bb:teamName ?teamName . }
-    OPTIONAL { ?team bb:teamID ?teamID . }
-    OPTIONAL { ?team bb:yearID ?year . }
-    OPTIONAL {
-        ?team bb:franchiseOf ?franchise .
-        OPTIONAL { ?franchise bb:franchiseName ?franchiseName . }
-    }
+CONSTRUCT {
+    ?player a bb:GraphPlayer ;
+            bb:playerID ?playerCode ;
+            foaf:name ?playerName .
+
+    ?team a bb:GraphTeam ;
+          bb:teamName ?teamName ;
+          bb:teamID ?teamCode ;
+          bb:yearID ?teamYear .
+
+    ?franchise a bb:GraphFranchise ;
+               bb:franchiseName ?franchiseName .
+
+    ?leagueNode a bb:GraphLeague ;
+                bb:lgID ?leagueCode .
+
+    ?teammate a bb:GraphTeammate ;
+              bb:playerID ?teammateCode ;
+              foaf:name ?teammateName .
+
+    ?managerPlayer a bb:GraphManager ;
+                   bb:playerID ?managerCode ;
+                   foaf:name ?managerName .
+
+    ?award a bb:GraphAward ;
+           bb:awardName ?awardName ;
+           bb:yearID ?awardYear .
+
+    ?player bb:playedFor ?team .
+    ?team bb:franchiseLink ?franchise .
+    ?team bb:leagueLink ?leagueNode .
+    ?player bb:wonGraphAward ?award .
+    ?player bb:sharedClubhouseWith ?teammate .
+    ?team bb:managedByPerson ?managerPlayer .
 }
-ORDER BY ?year ?teamName
+WHERE {
+    ?player a bb:Player ;
+            bb:playerID ?playerCode .
+    FILTER(?playerCode = "aaronha01")
+    OPTIONAL { ?player foaf:name ?playerName . }
+    ...
+}
+\end{Verbatim}
+
+  \item \textbf{/teams/\{franchise\_id\}/ -- Grafo do detalhe da equipa}
+  
+  Fun\c{c}\~ao: \texttt{get\_team\_graph\_data(team\_code, year)}
+  
+  Descri\c{c}\~ao: constr\'oi o grafo centrado na equipa da \'{e}poca selecionada, ligando-a \`a franquia, liga, roster, managers e pr\'emios associados.
+  
+  Tipo SPARQL: \texttt{CONSTRUCT}
+
+  SPARQL:
+
+\begin{Verbatim}[fontsize=\scriptsize,breaklines=true]
+PREFIX bb: <http://baseball.ws.pt/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+CONSTRUCT {
+    ?team a bb:GraphFocusTeam ;
+          bb:teamName ?teamName ;
+          bb:teamID ?teamCode ;
+          bb:yearID ?teamYear .
+
+    ?franchise a bb:GraphFranchise ;
+               bb:franchiseName ?franchiseName .
+
+    ?leagueNode a bb:GraphLeague ;
+                bb:lgID ?leagueCode .
+
+    ?player a bb:GraphRosterPlayer ;
+            bb:playerID ?playerCode ;
+            foaf:name ?playerName .
+
+    ?managerPlayer a bb:GraphManager ;
+                   bb:playerID ?managerCode ;
+                   foaf:name ?managerName .
+
+    ?award a bb:GraphAward ;
+           bb:awardName ?awardName ;
+           bb:yearID ?awardYear .
+
+    ?team bb:franchiseLink ?franchise .
+    ?team bb:leagueLink ?leagueNode .
+    ?team bb:rosterLink ?player .
+    ?team bb:managedByPerson ?managerPlayer .
+    ?player bb:wonGraphAward ?award .
+}
+WHERE {
+    ?team a bb:Team ;
+          bb:teamID "ARI" ;
+          bb:yearID 2015 .
+    OPTIONAL { ?team bb:teamName ?teamName . }
+    OPTIONAL { ?team bb:franchiseOf ?franchise . }
+    OPTIONAL { ?team bb:lgID ?leagueCode . }
+    ...
+}
 \end{Verbatim}
 \end{itemize}
 
@@ -1346,231 +1423,3 @@ WHERE {
 }
 \end{Verbatim}
 \end{itemize}
-
-\section{Exemplos representativos}
-
-\subsection{Exemplo 1: cat\'alogo de jogadores}
-
-\textbf{/players/ -- Lista paginada de jogadores}
-
-\textbf{Fun\c{c}\~ao:} \texttt{get\_players\_catalog(...)}
-
-\textbf{Descri\c{c}\~ao:} devolve um subconjunto paginado do cat\'alogo, com filtros por nome, inicial, pa\'is de nascimento, \textit{bats}, \textit{throws}, d\'ecada de estreia e disponibilidade de fotografia.
-
-\textbf{SPARQL:}
-
-\begin{Verbatim}[fontsize=\small,breaklines=true]
-PREFIX bb: <http://baseball.ws.pt/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-
-SELECT ?playerID ?bbrefID ?name ?nameFirst ?nameLast ?nameGiven
-       ?birthYear ?birthMonth ?birthDay ?birthCountry ?birthState ?birthCity
-       ?deathYear ?deathMonth ?deathDay ?deathCountry ?deathState ?deathCity
-       ?height ?weight ?bats ?throws ?debut ?finalGame
-WHERE {
-    ?player a bb:Player ;
-            bb:playerID ?playerID ;
-            foaf:name ?name .
-    OPTIONAL { ?player bb:nameFirst ?nameFirst . }
-    OPTIONAL { ?player bb:nameLast ?nameLast . }
-    OPTIONAL { ?player bb:nameGiven ?nameGiven . }
-    OPTIONAL { ?player bb:bbrefID ?bbrefID . }
-    OPTIONAL { ?player bb:birthYear ?birthYear . }
-    OPTIONAL { ?player bb:birthMonth ?birthMonth . }
-    OPTIONAL { ?player bb:birthDay ?birthDay . }
-    OPTIONAL { ?player bb:birthCountry ?birthCountry . }
-    OPTIONAL { ?player bb:birthState ?birthState . }
-    OPTIONAL { ?player bb:birthCity ?birthCity . }
-    OPTIONAL { ?player bb:deathYear ?deathYear . }
-    OPTIONAL { ?player bb:deathMonth ?deathMonth . }
-    OPTIONAL { ?player bb:deathDay ?deathDay . }
-    OPTIONAL { ?player bb:deathCountry ?deathCountry . }
-    OPTIONAL { ?player bb:deathState ?deathState . }
-    OPTIONAL { ?player bb:deathCity ?deathCity . }
-    OPTIONAL { ?player bb:height ?height . }
-    OPTIONAL { ?player bb:weight ?weight . }
-    OPTIONAL { ?player bb:bats ?bats . }
-    OPTIONAL { ?player bb:throws ?throws . }
-    OPTIONAL { ?player bb:debut ?debut . }
-    OPTIONAL { ?player bb:finalGame ?finalGame . }
-    BIND(
-        CONCAT(
-            LCASE(COALESCE(STR(?name), "")), " ",
-            LCASE(COALESCE(STR(?nameFirst), "")), " ",
-            LCASE(COALESCE(STR(?nameLast), "")), " ",
-            LCASE(COALESCE(STR(?nameGiven), ""))
-        ) AS ?searchBlob
-    )
-}
-ORDER BY ?name ?playerID
-LIMIT {limit}
-OFFSET {offset}
-\end{Verbatim}
-
-\subsection{Exemplo 2: hist\'orico de franquia}
-
-\textbf{/teams/\{franchise\_id\}/ -- Hist\'orico completo da franquia}
-
-\textbf{Fun\c{c}\~ao:} \texttt{get\_team\_history(franchise\_id)}
-
-\textbf{Descri\c{c}\~ao:} devolve todas as \'{e}pocas de uma franquia, com indicadores desportivos, batting, pitching, frequ\^encia e contexto competitivo.
-
-\textbf{SPARQL:}
-
-\begin{Verbatim}[fontsize=\small,breaklines=true]
-PREFIX bb: <http://baseball.ws.pt/>
-
-SELECT ?year ?teamName ?teamId ?teamIdBr ?league ?division ?rank ?games ?homeGames
-       ?wins ?losses ?divisionWinner ?wildCardWinner ?leagueWinner ?worldSeriesWinner
-       ?runs ?atBats ?hits ?doubles ?triples ?homeRuns ?walks ?strikeouts ?stolenBases
-       ?caughtStealing ?hitByPitch ?sacrificeFlies ?runsAllowed ?earnedRuns ?era
-       ?completeGames ?shutouts ?saves ?inningsOuts ?hitsAllowed ?homeRunsAllowed
-       ?walksAllowed ?strikeoutsPitching ?errors ?doublePlays ?fieldPct ?park
-       ?attendance ?bpf ?ppf
-WHERE {
-    ?franchise a bb:Franchise ;
-               bb:franchID ?franchiseId .
-    FILTER(?franchiseId = "{franchise_id}")
-
-    ?team a bb:Team ;
-          bb:franchiseOf ?franchise ;
-          bb:yearID ?year .
-
-    OPTIONAL { ?team bb:teamName ?teamName . }
-    OPTIONAL { ?team bb:teamID ?teamId . }
-    OPTIONAL { ?team bb:teamIDBR ?teamIdBr . }
-    OPTIONAL { ?team bb:lgID ?league . }
-    OPTIONAL { ?team bb:divID ?division . }
-    OPTIONAL { ?team bb:Rank ?rank . }
-    OPTIONAL { ?team bb:G ?games . }
-    OPTIONAL { ?team bb:Ghome ?homeGames . }
-    OPTIONAL { ?team bb:W ?wins . }
-    OPTIONAL { ?team bb:L ?losses . }
-    OPTIONAL { ?team bb:DivWin ?divisionWinner . }
-    OPTIONAL { ?team bb:WCWin ?wildCardWinner . }
-    OPTIONAL { ?team bb:LgWin ?leagueWinner . }
-    OPTIONAL { ?team bb:WSWin ?worldSeriesWinner . }
-    OPTIONAL { ?team bb:R ?runs . }
-    OPTIONAL { ?team bb:AB ?atBats . }
-    OPTIONAL { ?team bb:H ?hits . }
-    OPTIONAL { ?team bb:2B ?doubles . }
-    OPTIONAL { ?team bb:3B ?triples . }
-    OPTIONAL { ?team bb:HR ?homeRuns . }
-    OPTIONAL { ?team bb:BB ?walks . }
-    OPTIONAL { ?team bb:SO ?strikeouts . }
-    OPTIONAL { ?team bb:SB ?stolenBases . }
-    OPTIONAL { ?team bb:CS ?caughtStealing . }
-    OPTIONAL { ?team bb:HBP ?hitByPitch . }
-    OPTIONAL { ?team bb:SF ?sacrificeFlies . }
-    OPTIONAL { ?team bb:RA ?runsAllowed . }
-    OPTIONAL { ?team bb:ER ?earnedRuns . }
-    OPTIONAL { ?team bb:ERA ?era . }
-    OPTIONAL { ?team bb:CG ?completeGames . }
-    OPTIONAL { ?team bb:SHO ?shutouts . }
-    OPTIONAL { ?team bb:SV ?saves . }
-    OPTIONAL { ?team bb:IPouts ?inningsOuts . }
-    OPTIONAL { ?team bb:HA ?hitsAllowed . }
-    OPTIONAL { ?team bb:HRA ?homeRunsAllowed . }
-    OPTIONAL { ?team bb:BBA ?walksAllowed . }
-    OPTIONAL { ?team bb:SOA ?strikeoutsPitching . }
-    OPTIONAL { ?team bb:E ?errors . }
-    OPTIONAL { ?team bb:DP ?doublePlays . }
-    OPTIONAL { ?team bb:FP ?fieldPct . }
-    OPTIONAL { ?team bb:park ?park . }
-    OPTIONAL { ?team bb:attendance ?attendance . }
-    OPTIONAL { ?team bb:BPF ?bpf . }
-    OPTIONAL { ?team bb:PPF ?ppf . }
-}
-ORDER BY DESC(?year)
-\end{Verbatim}
-
-\subsection{Exemplo 3: verifica\c{c}\~ao do quiz com ASK}
-
-\textbf{/quiz/api/answer/ -- Confirma\c{c}\~ao da resposta}
-
-\textbf{Fun\c{c}\~ao:} \texttt{ask\_quiz\_leaderboard\_answer(stat\_key, league\_code, year, player\_id)}
-
-\textbf{Descri\c{c}\~ao:} confirma se o jogador escolhido \'{e} realmente o l\'ider da estat\'istica pedida nesse ano e nessa liga.
-
-\textbf{SPARQL:}
-
-\begin{Verbatim}[fontsize=\small,breaklines=true]
-PREFIX bb: <http://baseball.ws.pt/>
-
-ASK {
-    ?player bb:playerID "{player_id}" ;
-            bb:{has_relation} ?stat .
-    ?stat a bb:{stat_type_class} ;
-          bb:lgID "{league_code}" ;
-          bb:yearID {year} ;
-          bb:{stat_property} ?statValue .
-
-    FILTER NOT EXISTS {
-        ?otherStat a bb:{stat_type_class} ;
-                  bb:lgID "{league_code}" ;
-                  bb:yearID {year} ;
-                  bb:{stat_property} ?otherValue .
-        FILTER(?otherValue > ?statValue)
-    }
-}
-\end{Verbatim}
-
-\subsection{Exemplo 4: publica\c{c}\~ao de edi\c{c}\~oes aprovadas}
-
-\textbf{/suggestions/publish/ -- Atualiza\c{c}\~ao direta do grafo}
-
-\textbf{Fun\c{c}\~ao:} \texttt{\_build\_update\_query(...)}
-
-\textbf{Descri\c{c}\~ao:} substitui o valor atual de um predicado pelo novo valor aprovado, mantendo a opera\c{c}\~ao limitada ao sujeito correto.
-
-\textbf{SPARQL:}
-
-\begin{Verbatim}[fontsize=\small,breaklines=true]
-PREFIX bb: <http://baseball.ws.pt/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-DELETE { ?subject {predicate} ?currentValue . }
-INSERT { ?subject {predicate} {literal} . }
-WHERE {
-  {subject_selector}
-  OPTIONAL { ?subject {predicate} ?currentValue . }
-}
-\end{Verbatim}
-
-\section{Invent\'ario completo das queries}
-
-Para garantir que o relat\'orio inclui \textbf{todas} as queries utilizadas pela aplica\c{c}\~ao, apresentam-se abaixo os m\'odulos completos onde essas queries est\~ao definidas. As fun\c{c}\~oes auxiliares que apenas transformam resultados em Python n\~ao s\~ao o foco deste invent\'ario; o objetivo \'{e} documentar integralmente as opera\c{c}\~oes SPARQL efetivas do projeto.
-
-\subsection{\texttt{players.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/sparql_queries/players.py}
-
-\subsection{\texttt{teams.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/sparql_queries/teams.py}
-
-\subsection{\texttt{leagues.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/sparql_queries/leagues.py}
-
-\subsection{\texttt{graphs.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/sparql_queries/graphs.py}
-
-\subsection{\texttt{misc.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/sparql_queries/misc.py}
-
-\subsection{\texttt{quiz.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/sparql_queries/quiz.py}
-
-\subsection{\texttt{edit\_service.py}}
-\VerbatimInput[fontsize=\scriptsize,breaklines=true]{../webapp/baseball/edit_service.py}
-
-\section{S\'intese}
-
-O sistema usa tr\^es tipos principais de opera\c{c}\~oes SPARQL:
-
-\begin{itemize}[leftmargin=*]
-  \item \texttt{SELECT}, para construir cat\'alogos, detalhes, rankings, hist\'oricos e grafos;
-  \item \texttt{ASK}, para validar respostas no quiz diretamente contra o GraphDB;
-  \item \texttt{DELETE/INSERT}, para publicar edi\c{c}\~oes aprovadas por administradores.
-\end{itemize}
-
-Esta organiza\c{c}\~ao torna o relat\'orio mais claro, aproxima a documenta\c{c}\~ao da implementa\c{c}\~ao real e evidencia como o projeto explora o GraphDB n\~ao apenas para leitura, mas tamb\'em para valida\c{c}\~ao e atualiza\c{c}\~ao de dados.

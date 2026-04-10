@@ -1,2 +1,231 @@
 \chapter{Funcionalidades de Administrador (Autentica\c{c}\~ao e Opera\c{c}\~oes CRUD)}
 
+Este cap\'itulo descreve os mecanismos de autentica\c{c}\~ao da aplica\c{c}\~ao e as funcionalidades dispon\'iveis apenas para utilizadores com perfil administrativo. O objetivo foi criar uma distin\c{c}\~ao clara entre navega\c{c}\~ao p\'ublica, contribui\c{c}\~ao autenticada e interven\c{c}\~ao administrativa, garantindo que altera\c{c}\~oes aos dados passam por controlo adequado antes de serem publicadas no reposit\'orio ativo.
+
+% ============================================================
+\section{Modelo de Acesso e Perfis de Utilizador}
+% ============================================================
+
+O sistema trabalha com dois perfis principais:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Utilizador normal:} pode autenticar-se, jogar o quiz com hist\'orico associado \`a sua conta e submeter sugest\~oes de edi\c{c}\~ao para jogadores e equipas;
+    \item \textbf{Administrador:} corresponde a um utilizador autenticado com permiss\~oes \texttt{is\_staff}, podendo publicar altera\c{c}\~oes diretamente no GraphDB e rever todas as sugest\~oes submetidas pela comunidade.
+\end{itemize}
+
+Esta separa\c{c}\~ao permite manter a plataforma aberta \`a explora\c{c}\~ao, mas reservar a modifica\c{c}\~ao efetiva dos dados a utilizadores com permiss\~oes de valida\c{c}\~ao.
+
+% ============================================================
+\section{Como Funciona a Autentica\c{c}\~ao}
+% ============================================================
+
+\subsection{Entrada no sistema}
+
+A autentica\c{c}\~ao est\'a integrada diretamente na interface principal atrav\'es de um \textit{modal}. Quando o utilizador clica em \textit{Login} ou \textit{Register} na barra superior, a aplica\c{c}\~ao abre uma janela sobreposta \`a p\'agina atual, sem for\c{c}ar navega\c{c}\~ao para outra vista. Isto reduz fric\c{c}\~ao na experi\^encia de uso e preserva o contexto da p\'agina onde o utilizador se encontrava.
+
+O modal apresenta dois separadores:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Login}, para autenticar contas j\'a existentes;
+    \item \textbf{Register}, para criar uma nova conta de utilizador normal.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{figures/auth_modal.png}
+    \fbox{\parbox[c][6.2cm][c]{0.88\textwidth}{\centering
+    Espa\c{c}o reservado para imagem do modal de autentica\c{c}\~ao\\
+    (\textit{login / register})}}
+    \caption{Modal de autentica\c{c}\~ao integrado na interface principal, com acesso a \textit{Login} e \textit{Register}.}
+    \label{fig:auth_modal}
+\end{figure}
+
+\subsection{Valida\c{c}\~ao das credenciais}
+
+O processo de autentica\c{c}\~ao reutiliza os mecanismos nativos do Django:
+
+\begin{itemize}[leftmargin=*]
+    \item o \texttt{AuthenticationForm} valida o par \textit{username/password};
+    \item o \texttt{UserCreationForm} serve de base ao registo de novas contas;
+    \item os formul\'arios foram adaptados visualmente para a identidade da aplica\c{c}\~ao.
+\end{itemize}
+
+No caso do \textit{login}, as credenciais s\~ao verificadas no servidor e, se forem v\'alidas, o utilizador passa a ter uma sess\~ao autenticada. No caso do \textit{registo}, o sistema cria um novo utilizador, associa-lhe \textit{username}, \textit{email} e palavra-passe, e autentica-o de imediato ap\'os cria\c{c}\~ao da conta.
+
+Os pedidos submetidos a partir do modal s\~ao tratados por AJAX. Isto significa que:
+
+\begin{itemize}[leftmargin=*]
+    \item erros de autentica\c{c}\~ao s\~ao devolvidos no pr\'oprio modal;
+    \item o utilizador recebe feedback imediato sem recarregamento completo da p\'agina;
+    \item em caso de sucesso, a interface redireciona para o destino pretendido ou para a p\'agina principal.
+\end{itemize}
+
+\subsection{Sess\~ao e adapta\c{c}\~ao da interface}
+
+Depois de autenticado, o comportamento da interface muda automaticamente. A barra superior deixa de mostrar os bot\~oes \textit{Login} e \textit{Register} e passa a apresentar:
+
+\begin{itemize}[leftmargin=*]
+    \item o nome do utilizador autenticado;
+    \item o respetivo papel (\textit{Regular user} ou \textit{Administrator});
+    \item um atalho contextual para \textit{My Suggestions} ou \textit{Suggestions};
+    \item a op\c{c}\~ao de \textit{Logout}.
+\end{itemize}
+
+O \textit{logout} termina a sess\~ao ativa e devolve o utilizador ao estado p\'ublico da aplica\c{c}\~ao.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{figures/auth_logged_state.png}
+    \fbox{\parbox[c][5.8cm][c]{0.88\textwidth}{\centering
+    Espa\c{c}o reservado para imagem do estado autenticado da barra superior\\
+    (nome do utilizador, papel e atalhos)}} 
+    \caption{Interface ap\'os autentica\c{c}\~ao, com personaliza\c{c}\~ao da navega\c{c}\~ao consoante o papel do utilizador.}
+    \label{fig:auth_logged_state}
+\end{figure}
+
+\subsection{Cria\c{c}\~ao de contas e perfis por omiss\~ao}
+
+As contas criadas pela interface de registo s\~ao sempre contas normais, isto \'e, sem permiss\~oes administrativas. O sistema impede que um utilizador se autoatribua privil\'egios elevados durante o registo.
+
+Para efeitos de demonstra\c{c}\~ao e testes, a aplica\c{c}\~ao disponibiliza tamb\'em dois utilizadores por omiss\~ao:
+
+\begin{itemize}[leftmargin=*]
+    \item \texttt{user} / \texttt{password}
+    \item \texttt{admin} / \texttt{password}
+\end{itemize}
+
+O segundo possui permiss\~oes administrativas completas e \'{e} usado para validar os fluxos de aprova\c{c}\~ao, rejei\c{c}\~ao e publica\c{c}\~ao de altera\c{c}\~oes.
+
+% ============================================================
+\section{Edi\c{c}\~ao Colaborativa por Utilizadores Registados}
+% ============================================================
+
+Embora o foco deste cap\'itulo seja o perfil administrativo, o seu funcionamento depende diretamente do mecanismo de sugest\~oes submetidas pelos utilizadores autenticados. Nas p\'aginas de detalhe de jogadores e equipas, um utilizador normal pode entrar em modo de edi\c{c}\~ao \textit{inline} e alterar apenas um conjunto controlado de campos, como nome apresentado, local de nascimento, \textit{bats}, \textit{throws}, nome da equipa, liga, divis\~ao ou parque.
+
+As altera\c{c}\~oes n\~ao s\~ao publicadas de imediato. Quando o utilizador conclui a edi\c{c}\~ao, o sistema abre um segundo modal onde \'{e} obrigat\'orio justificar a sugest\~ao. O resultado fica registado localmente na base de dados da aplica\c{c}\~ao como uma proposta pendente de revis\~ao.
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox[c][6.2cm][c]{0.88\textwidth}{\centering
+    Espa\c{c}o reservado para imagem da submiss\~ao de sugest\~ao\\
+    numa p\'agina de jogador ou equipa}}
+    \caption{Submiss\~ao de uma sugest\~ao de edi\c{c}\~ao por um utilizador autenticado.}
+    \label{fig:suggest_edit}
+\end{figure}
+
+Para acompanhar o estado das suas propostas, o utilizador tem acesso \`a p\'agina \textit{My Suggestions}, onde pode consultar:
+
+\begin{itemize}[leftmargin=*]
+    \item a entidade a que a sugest\~ao diz respeito;
+    \item os campos alterados;
+    \item o estado atual (\textit{pending}, \textit{approved}, \textit{rejected});
+    \item a nota deixada pelo administrador, caso exista.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/suggest_mine.png}
+    \fbox{\parbox[c][6.0cm][c]{0.88\textwidth}{\centering
+    Espa\c{c}o reservado para imagem da p\'agina \textit{My Suggestions}}}
+    \caption{P\'agina pessoal de acompanhamento das sugest\~oes submetidas pelo utilizador, incluindo estado e feedback administrativo.}
+    \label{fig:suggest_mine}
+\end{figure}
+
+% ============================================================
+\section{Funcionalidades Espec\'ificas do Administrador}
+% ============================================================
+
+\subsection{Acesso reservado}
+
+As funcionalidades administrativas est\~ao protegidas por verifica\c{c}\~oes de permiss\~ao no servidor. Apenas utilizadores autenticados com \texttt{is\_staff = True} conseguem:
+
+\begin{itemize}[leftmargin=*]
+    \item aceder \`a fila de revis\~ao de sugest\~oes;
+    \item aprovar ou rejeitar propostas submetidas por outros utilizadores;
+    \item editar diretamente dados de jogadores e equipas;
+    \item publicar altera\c{c}\~oes no GraphDB.
+\end{itemize}
+
+Se um utilizador normal tentar aceder a estas rotas, o sistema bloqueia o pedido e redireciona ou devolve erro de permiss\~ao, conforme o contexto.
+
+\subsection{Fila de revis\~ao (\textit{Review Queue})}
+
+A principal ferramenta administrativa \'{e} a p\'agina \textit{Suggestions}, que funciona como uma fila de revis\~ao centralizada. Nela, o administrador visualiza todas as sugest\~oes submetidas pelos utilizadores e pode filtr\'a-las por:
+
+\begin{itemize}[leftmargin=*]
+    \item estado da sugest\~ao;
+    \item tipo de entidade (\textit{player} ou \textit{team}).
+\end{itemize}
+
+Cada cart\~ao da fila apresenta:
+
+\begin{itemize}[leftmargin=*]
+    \item a entidade visada;
+    \item o utilizador que submeteu a proposta;
+    \item a data de submiss\~ao;
+    \item a justifica\c{c}\~ao apresentada;
+    \item os campos alterados, comparando valor atual e valor proposto.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.9\textwidth]{figures/suggest_review.png}
+    \fbox{\parbox[c][6.6cm][c]{0.88\textwidth}{\centering
+    Espa\c{c}o reservado para imagem da \textit{Review Queue}}}
+    \caption{Fila de revis\~ao administrativa com sugest\~oes pendentes e ferramentas de decis\~ao.}
+    \label{fig:suggest_review}
+\end{figure}
+
+\subsection{Aprovar com ou sem ajustes}
+
+Uma das decis\~oes de desenho mais importantes foi permitir que o administrador n\~ao fique limitado a aceitar uma sugest\~ao exatamente como foi submetida. Antes de aprovar, ele pode ajustar os valores propostos diretamente na interface. Isto torna a revis\~ao mais flex\'ivel, por exemplo quando:
+
+\begin{itemize}[leftmargin=*]
+    \item a ideia da sugest\~ao est\'a correta, mas o formato do valor precisa de corre\c{c}\~ao;
+    \item apenas parte da proposta deve ser mantida;
+    \item \'{e} necess\'ario normalizar o valor final antes da publica\c{c}\~ao.
+\end{itemize}
+
+Ap\'os a aprova\c{c}\~ao, a sugest\~ao muda de estado para \texttt{approved}, fica associada ao administrador que a reviu e pode incluir uma \textit{review note}. Essa nota fica vis\'ivel posteriormente para o utilizador que submeteu a proposta.
+
+\subsection{Rejeitar com justifica\c{c}\~ao}
+
+Quando a sugest\~ao n\~ao deve ser aceite, o administrador pode rejeit\'a-la. Neste caso:
+
+\begin{itemize}[leftmargin=*]
+    \item o estado passa para \texttt{rejected};
+    \item a data de revis\~ao \'{e} registada;
+    \item pode ser escrita uma nota de rejei\c{c}\~ao.
+\end{itemize}
+
+Esta decis\~ao n\~ao altera o GraphDB, mas fornece transpar\^encia ao processo, porque o utilizador consegue consultar posteriormente o motivo da recusa na sua \'{a}rea pessoal.
+
+\subsection{Edi\c{c}\~ao direta de dados}
+
+Para al\'em da revis\~ao de sugest\~oes, os administradores podem editar diretamente campos selecionados nas p\'aginas de detalhe de jogadores e equipas. Aqui obviamente n\~ao existe um processo de revis\~ao, j\'a que o administrador tem autoridade para publicar a altera\c{c}\~ao de imediato.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{figures/admin_direct_edit.png}
+    \fbox{\parbox[c][6.2cm][c]{0.88\textwidth}{\centering
+    Espa\c{c}o reservado para imagem da edi\c{c}\~ao direta por um administrador\\
+    }} 
+    \caption{Edi\c{c}\~ao direta de dados por um administrador}
+    \label{fig:admin_direct_edit}
+\end{figure}
+
+
+
+Mesmo assim, a aplica\c{c}\~ao guarda um registo dessa a\c{c}\~ao como sugest\~ao j\'a aprovada, funcionando como trilho de auditoria interno.
+
+\subsection{Publica\c{c}\~ao no GraphDB}
+
+Quando uma altera\c{c}\~ao \'{e} aprovada ou publicada diretamente por um administrador, a aplica\c{c}\~ao executa uma opera\c{c}\~ao \texttt{SPARQL UPDATE} sobre o GraphDB ativo. 
+
+Existe, no entanto, uma limita\c{c}\~ao importante: estas altera\c{c}\~oes afetam apenas o GraphDB em execu\c{c}\~ao. Se o reposit\'orio for removido e recriado a partir do ficheiro base \texttt{baseball.nt}, essas edi\c{c}\~oes deixam de existir. Decidimos deixar assim para enquanto testarmos não alterarmos os dados originais, mas não seria difícil implementar um mecanismo de persistência dessas altera\c{c}\~oes.
+
+% ============================================================
+\section{S\'intese}
+% ============================================================
+
+O subsistema de autentica\c{c}\~ao e administra\c{c}\~ao complementa a componente de explora\c{c}\~ao sem\^antica do projeto com uma camada de gest\~ao e governa\c{c}\~ao dos dados. A autentica\c{c}\~ao distingue claramente utilizadores normais de administradores, enquanto o fluxo de sugest\~oes e revis\~ao assegura que a base de conhecimento pode evoluir com contributos da comunidade sem perder controlo sobre a qualidade da informa\c{c}\~ao publicada.

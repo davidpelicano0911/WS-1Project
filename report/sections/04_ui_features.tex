@@ -38,6 +38,8 @@ As p\'aginas de detalhe constituem o n\'ucleo informativo da aplica\c{c}\~ao e a
 
 A p\'agina de detalhe de um jogador (Figura~\ref{fig:player_detail}) inclui o componente \textbf{Career Pulse}, que consolida m\'etricas complexas num painel visual intuitivo: picos salariais ao longo da carreira, estat\'isticas acumuladas de batismo (\textit{batting}) e lan\c{c}amento (\textit{pitching}), e o hist\'orial de prem\'ios e indu\c{c}\~ao no \textit{Hall of Fame}. Todos os dados s\~ao extra\'idos em tempo real via SPARQL a partir do grafo RDF.
 
+Para al\'em do painel estat\'istico, o detalhe do jogador inclui um grafo relacional centrado no atleta. Essa visualiza\c{c}\~ao permite perceber rapidamente por que equipas passou, que franquias representou, que liga\c{c}\~oes manteve com teammates e managers, e que pr\'emios marcaram o seu percurso. Desta forma, a p\'agina combina leitura tabular com explora\c{c}\~ao visual da carreira.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.82\textwidth]{figures/player_detail.png}
@@ -54,6 +56,15 @@ A p\'agina de detalhe de uma equipa (Figura~\ref{fig:team_detail}) adapta-se din
 \]
 
 \noindent onde $W$ representa o n\'umero de vit\'orias e $L$ o n\'umero de derrotas na temporada. O resultado \'e apresentado como valor decimal com tr\^es casas decimais (e.g., \texttt{0.623}), seguindo a conven\c{c}\~ao hist\'orica do beisebol profissional norte-americano.
+
+Para al\'em do resumo estat\'istico, a vista de equipa inclui um grafo relacional pr\'oprio, centrado na \'{e}poca selecionada. Este grafo liga a equipa \`a sua franquia, \`a liga em que competiu, aos jogadores do plantel, aos managers e \`as distin\c{c}\~oes relevantes desse contexto. Assim, o utilizador consegue interpretar a temporada tanto do ponto de vista num\'erico como do ponto de vista relacional, sem sair da mesma p\'agina.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/team_graph.png}
+    \caption{Grafo relacional do detalhe de equipa, evidenciando as liga\c{c}\~oes entre a \'{e}poca selecionada, a franquia, a liga, o plantel e os managers associados.}
+    \label{fig:team_graph}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -202,14 +213,14 @@ A tabela comparativa destaca automaticamente o melhor valor em cada categoria (e
 \section{Visualiza\c{c}\~ao Interativa do Grafo RDF}
 % ============================================================
 
-Sendo uma aplica\c{c}\~ao de Web Sem\^antica, foi integrada uma visualiza\c{c}\~ao interativa do grafo de conhecimento RDF (Figura~\ref{fig:graph_view}). Esta funcionalidade permite navegar visualmente pelos n\'os (recursos como jogadores, equipas, franquias e pr\'emios) e pelas arestas (propriedades RDF), explorando as rela\c{c}\~oes sem\^anticas do modelo de dados.
+As visualiza\c{c}\~oes de grafo embutidas nas p\'aginas de detalhe partilham a mesma l\'ogica de intera\c{c}\~ao. O utilizador pode explorar visualmente n\'os e liga\c{c}\~oes, selecionar entidades para obter contexto adicional e perceber rela\c{c}\~oes sem\^anticas que seriam menos evidentes numa tabela tradicional.
 
-O grafo \'e renderizado dinamicamente no cliente com recurso \`a biblioteca \texttt{vis.js}, com um \textit{layout} f\'isico baseado em for\c{c}as (\textit{force-directed}) que distribui os n\'os de forma leg\'ivel. Os dados s\~ao obtidos em tempo real via uma consulta SPARQL que extrai os triplos relevantes do \textit{triple store}. A interface utiliza uma codifica\c{c}\~ao de cores para distinguir as diferentes classes de entidades, facilitando a interpreta\c{c}\~ao da rede de carreira do atleta.
+O grafo \'e renderizado dinamicamente no cliente com recurso \`a biblioteca \texttt{Cytoscape.js}. Os dados s\~ao obtidos em tempo real via SPARQL a partir do \textit{triple store}, e a representa\c{c}\~ao visual distingue diferentes tipos de entidades atrav\'es de estilos pr\'oprios, tornando a leitura mais imediata.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/graph_view.png}
-    \caption{Visualiza\c{c}\~ao interativa do grafo RDF: n\'os codificados por cor representando jogadores, equipas e eventos, ligados pelas propriedades do modelo de conhecimento.}
+    \caption{Visualiza\c{c}\~ao interativa do grafo RDF embutida nas p\'aginas de detalhe, permitindo explorar rela\c{c}\~oes entre jogadores, equipas, franquias, ligas e pr\'emios.}
     \label{fig:graph_view}
 \end{figure}
 

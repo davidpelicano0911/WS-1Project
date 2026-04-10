@@ -131,6 +131,10 @@ a {
     pointer-events: none;
 }
 
+.suggestions-page-hero {
+    margin-top: 1.15rem;
+}
+
 .eyebrow {
     display: inline-flex;
     align-items: center;
@@ -3836,7 +3840,7 @@ body.auth-modal-open .site-shell {
     padding: 0.55rem 0.9rem;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(17, 52, 98, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     color: var(--accent-alt-strong);
     font-size: 0.85rem;
     font-weight: 700;
@@ -3854,28 +3858,56 @@ body.auth-modal-open .site-shell {
     background: #c63845;
 }
 
+.legend-player {
+    border-color: rgba(198, 56, 69, 0.65);
+}
+
 .legend-team::before {
     background: #1d4f91;
+}
+
+.legend-team {
+    border-color: rgba(29, 79, 145, 0.65);
 }
 
 .legend-franchise::before {
     background: #5476a5;
 }
 
+.legend-franchise {
+    border-color: rgba(84, 118, 165, 0.65);
+}
+
 .legend-award::before {
     background: #d9a728;
+}
+
+.legend-award {
+    border-color: rgba(217, 167, 40, 0.7);
 }
 
 .legend-league::before {
     background: #5a4ea1;
 }
 
+.legend-league {
+    border-color: rgba(90, 78, 161, 0.65);
+}
+
 .legend-teammate::before {
     background: #1f8c7a;
 }
 
+.legend-teammate {
+    border-color: rgba(31, 140, 122, 0.65);
+}
+
 .legend-manager::before {
     background: #33a66f;
+}
+
+.legend-manager {
+    border-color: rgba(51, 166, 111, 0.65);
 }
 
 .graph-canvas {
@@ -5323,6 +5355,12 @@ body.auth-modal-open .site-shell {
 
 .entity-review-card {
     padding: 1.4rem;
+}
+
+.entity-review-card > .entity-review-reason,
+.entity-review-card > .entity-review-change-grid,
+.entity-review-card > .entity-review-actions {
+    margin-top: 1rem;
 }
 
 .entity-review-link {

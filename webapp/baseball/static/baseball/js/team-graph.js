@@ -120,14 +120,15 @@
                 {
                     selector: 'node[type="focus-team"][resolvedLogoUrl]',
                     style: {
+                        "background-color": "#ffffff",
                         "background-image": "data(resolvedLogoUrl)",
-                        "background-fit": "contain",
+                        "background-fit": "cover",
                         "background-repeat": "no-repeat",
                         "background-clip": "node",
                         "background-position-x": "50%",
                         "background-position-y": "50%",
-                        "background-width": "120%",
-                        "background-height": "120%",
+                        "background-width": "112%",
+                        "background-height": "112%",
                         "background-opacity": 1,
                     },
                 },
