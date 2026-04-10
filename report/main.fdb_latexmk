@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1775841432.39365 "/home/tomasbras/Desktop/WS/Project/WS-1Project/report/main.tex" "main.pdf" "main" 1775841434.28652 2
+["pdflatex"] 1775841483.14254 "/home/tomasbras/Desktop/WS/Project/WS-1Project/report/main.tex" "main.pdf" "main" 1775841485.05481 2
   "../webapp/baseball/edit_service.py" 1775831210.4951 12708 0b54a753d56f9f175c5ab84b0038efd5 ""
   "../webapp/baseball/sparql_queries/graphs.py" 1775836931.03354 16467 29a4f656f3d31daeac01cfc66bb8980c ""
   "../webapp/baseball/sparql_queries/leagues.py" 1775653138.25704 7689 897ec868c8c331d17d4fee61a72356e6 ""
@@ -116,11 +116,11 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1741904018 41538 c016915c1d51223b6dbbfe27341748a8 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1765208080 165211 6b08d096f3d0fe5ff6b266061a2b45e0 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1765208277 1959986 b294882af89a1675ce2b13dcdfeedcac ""
-  "main.aux" 1775841434.18947 7654 ba4ca52b3186ad997d367ab8378d00b0 "pdflatex"
-  "main.lof" 1775841434.19147 173 bf2ff55d16976c7ba39b2a43157155ca "pdflatex"
-  "main.out" 1775841434.19147 9376 ddf2f27c8fbe4bfe60130489d3721722 "pdflatex"
+  "main.aux" 1775841484.95762 7654 ba4ca52b3186ad997d367ab8378d00b0 "pdflatex"
+  "main.lof" 1775841484.96032 173 bf2ff55d16976c7ba39b2a43157155ca "pdflatex"
+  "main.out" 1775841484.95962 9376 ddf2f27c8fbe4bfe60130489d3721722 "pdflatex"
   "main.tex" 1775831210.49254 974 e971de29eccdbebff16b4144220239a8 ""
-  "main.toc" 1775841434.19147 4753 a9dafcaaa534a555a1d8b6f072e6bdda "pdflatex"
+  "main.toc" 1775841484.96032 4753 a9dafcaaa534a555a1d8b6f072e6bdda "pdflatex"
   "sections/01_intro.tex" 1775837829.35781 3500 0c582e3a71aa539c72b2ffda895a293e ""
   "sections/02_data_sources.tex" 1775837829.35781 5088 cd32248c345d00d949c23c40e772e47d ""
   "sections/03_sparql_ops.tex" 1775831210.49307 48753 07054b0cd5c2d246b87398ac99a585ce ""

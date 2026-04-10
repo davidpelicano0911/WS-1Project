@@ -65,24 +65,6 @@
             </div>
         </div>
 
-        <div class="team-filter-status-row">
-            <span class="form-label-app mb-0">Status view</span>
-            <div class="team-filter-status-group">
-                <label class="team-filter-status-option">
-                    <input type="radio" name="status" value="all"{% if status == "all" %} checked{% endif %}>
-                    <span>All teams</span>
-                </label>
-                <label class="team-filter-status-option">
-                    <input type="radio" name="status" value="active"{% if status == "active" %} checked{% endif %}>
-                    <span>Active</span>
-                </label>
-                <label class="team-filter-status-option">
-                    <input type="radio" name="status" value="historical"{% if status == "historical" %} checked{% endif %}>
-                    <span>Historical</span>
-                </label>
-            </div>
-        </div>
-
         <div class="team-filter-grid">
             <div class="team-filter-search">
                 <label for="team-search" class="form-label-app">Search team</label>
@@ -202,7 +184,7 @@
                     </div>
                     <div class="team-card-glow"></div>
                     <div class="team-card-nameplate">
-                        <p class="team-card-kicker">{{ card.status_label }}</p>
+                        <p class="team-card-kicker">{{ card.season_kicker }}</p>
                         <h3 class="team-card-title">{{ card.team_name }}</h3>
                         <p class="team-card-subtitle">{{ card.name }}</p>
                     </div>

@@ -298,7 +298,7 @@ def _build_team_cards(franchise_catalog, selected_franchise):
                 "league_name": _league_display(entry.get("latest_league_code")),
                 "park": entry.get("latest_park") or "Park not recorded",
                 "record_display": _format_record(latest_wins, latest_losses) if has_record else "Record N/A",
-                "status_label": "Active franchise" if entry.get("active") else "Historical franchise",
+                "season_kicker": f"{_format_number(entry.get('latest_year'))} season" if entry.get("latest_year") else "Franchise profile",
                 "badges": _catalog_badges(entry),
             }
         )
@@ -777,7 +777,7 @@ def _build_team_detail_context(requested_franchise, requested_year=""):
     }
 
 
-def _filter_team_directory(franchise_catalog, search_term, league_code, status, sort_code):
+def _filter_team_directory(franchise_catalog, search_term, league_code, sort_code):
     filtered = []
     search_term_normalized = search_term.lower()
 
@@ -796,11 +796,6 @@ def _filter_team_directory(franchise_catalog, search_term, league_code, status, 
                 continue
 
         if league_code and entry.get("latest_league_code") != league_code:
-            continue
-
-        if status == "active" and not entry.get("active"):
-            continue
-        if status == "historical" and entry.get("active"):
             continue
 
         filtered.append(entry)
@@ -895,7 +890,6 @@ def teams_view(request):
     franchise_catalog = get_team_franchise_catalog()
     search_term = request.GET.get("q", "").strip()
     league_code = request.GET.get("league", "").strip().upper()
-    status = request.GET.get("status", "all").strip().lower()
     sort_code = request.GET.get("sort", "name_asc").strip()
     try:
         page = max(int(request.GET.get("page", "1")), 1)
@@ -905,10 +899,6 @@ def teams_view(request):
         page = max(int(request.GET.get("page", "1")), 1)
     except ValueError:
         page = 1
-
-    valid_status = {"all", "active", "historical"}
-    if status not in valid_status:
-        status = "all"
 
     valid_sorts = {"name_asc", "latest_year_desc", "seasons_desc"}
     if sort_code not in valid_sorts:
@@ -920,7 +910,7 @@ def teams_view(request):
     if league_code and league_code not in valid_leagues:
         league_code = ""
 
-    filtered_catalog = _filter_team_directory(franchise_catalog, search_term, league_code, status, sort_code)
+    filtered_catalog = _filter_team_directory(franchise_catalog, search_term, league_code, sort_code)
     directory_catalog = _dedupe_team_directory(filtered_catalog)
     page_size = 12
     total_teams = len(directory_catalog)
@@ -940,7 +930,6 @@ def teams_view(request):
     base_params = {
         "q": search_term,
         "league": league_code,
-        "status": status,
         "sort": sort_code,
     }
     active_filters = []
@@ -948,10 +937,6 @@ def teams_view(request):
         active_filters.append({"label": "", "value": search_term})
     if league_code:
         active_filters.append({"label": "League", "value": _league_display(league_code)})
-    if status == "active":
-        active_filters.append({"label": "Status", "value": "Active"})
-    elif status == "historical":
-        active_filters.append({"label": "Status", "value": "Historical"})
 
     context = {
         "page_title": "Teams",
@@ -960,7 +945,6 @@ def teams_view(request):
         "total_teams": total_teams,
         "search_term": search_term,
         "league_code": league_code,
-        "status": status,
         "sort_code": sort_code,
         "league_options": [{"code": code, "name": _league_display(code)} for code in valid_leagues],
         "sort_options": [
@@ -982,7 +966,6 @@ def teams_view(request):
                 for key, value in {
                     "q": search_term,
                     "league": league_code,
-                    "status": status if status != "all" else "",
                     "sort": sort_code,
                 }.items()
                 if value not in (None, "")
@@ -1156,6 +1139,17 @@ def league_detail_view(request, league_code):
     if not league:
         raise Http404("League not found")
     league["image_asset"] = LEAGUE_IMAGE_ASSETS.get(league["code"], "")
+    league_tabs = [
+        {"id": "overview", "label": "Overview", "icon": "bi-grid-1x2-fill"},
+        {"id": "statistics", "label": "Statistics", "icon": "bi-bar-chart-fill"},
+        {"id": "clubs", "label": "Clubs", "icon": "bi-shield-fill"},
+        {"id": "history", "label": "History", "icon": "bi-clock-history"},
+        {"id": "postseason", "label": "Postseason", "icon": "bi-trophy-fill"},
+    ]
+    league_tab = request.GET.get("tab", "overview").strip().lower()
+    valid_tabs = {tab["id"] for tab in league_tabs}
+    if league_tab not in valid_tabs:
+        league_tab = "overview"
     teams_raw = get_teams_by_league(league_code)
     teams = _merge_league_team_periods(teams_raw)
     registry_mode = request.GET.get("registry", "clubs").strip().lower()
@@ -1178,7 +1172,7 @@ def league_detail_view(request, league_code):
             registry_teams = [team for team in registry_teams if (team.get("franchise") or "").strip().upper() == registry_franchise]
 
     pagination = _paginate_items(registry_teams, registry_page, per_page=15)
-    pagination_params = {"registry": registry_mode}
+    pagination_params = {"registry": registry_mode, "tab": league_tab}
     if registry_mode == "periods":
         if registry_search:
             pagination_params["team"] = registry_search
@@ -1195,6 +1189,8 @@ def league_detail_view(request, league_code):
         "leaders": leaders,
         "teams": teams,
         "teams_raw": teams_raw,
+        "league_tabs": league_tabs,
+        "league_tab": league_tab,
         "registry_mode": registry_mode,
         "registry_teams": pagination["items"],
         "registry_club_count": len(teams),
