@@ -6,6 +6,9 @@ from uuid import uuid4
 
 from .sparql import (
     LEAGUE_LABELS,
+    ask_quiz_award_answer,
+    ask_quiz_leaderboard_answer,
+    ask_quiz_salary_answer,
     get_quiz_award_bank,
     get_quiz_leaderboard_bank,
     get_quiz_salary_bank,
@@ -148,6 +151,8 @@ def build_leaderboard_questions(stat_keys=None):
             leaders = entry["leaders"][:4]
             if len(leaders) < 4:
                 continue
+            if leaders[0]["value"] == leaders[1]["value"]:
+                continue
 
             league_name = _league_label(entry["league_code"])
             leader = leaders[0]
@@ -163,6 +168,12 @@ def build_leaderboard_questions(stat_keys=None):
                     f"{leader['name']} led the {league_name} with "
                     f"{_format_number(leader['value'])} {config['value_label']} in {entry['year']}."
                 ),
+                "answer_check": {
+                    "kind": "leaderboard",
+                    "stat_key": stat_key,
+                    "league_code": entry["league_code"],
+                    "year": entry["year"],
+                },
             }
             if len(question["options"]) < 4:
                 continue
@@ -175,6 +186,8 @@ def build_salary_questions():
     for entry in get_quiz_salary_bank():
         leaders = entry["leaders"][:4]
         if len(leaders) < 4:
+            continue
+        if leaders[0]["value"] == leaders[1]["value"]:
             continue
 
         leader = leaders[0]
@@ -190,6 +203,10 @@ def build_salary_questions():
                 f"{leader['name']} had the highest recorded salary in {entry['year']} "
                 f"at {_format_currency(leader['value'])}."
             ),
+            "answer_check": {
+                "kind": "salary",
+                "year": entry["year"],
+            },
         }
         if len(question["options"]) < 4:
             continue
@@ -242,6 +259,12 @@ def build_award_questions():
                 "options": options,
                 "correct_option_id": f"player:{winner['player_id']}",
                 "explanation": explanation,
+                "answer_check": {
+                    "kind": "award",
+                    "award_name": award_name,
+                    "league_code": league_code,
+                    "year": winner["year"],
+                },
             }
             questions.append(_shuffle_options(question))
     return questions
@@ -269,8 +292,8 @@ def _get_cached_question_families(leaderboard_stats=None):
     }
 
 
-def get_quiz_question_families():
-    return deepcopy(_get_cached_question_families())
+def get_quiz_question_families(leaderboard_stats=None):
+    return deepcopy(_get_cached_question_families(leaderboard_stats))
 
 
 def get_quiz_question_pool():
@@ -291,6 +314,40 @@ def _public_question_payload(question, question_number, total_questions):
         "total_questions": total_questions,
         "options": question["options"],
     }
+
+
+def _option_player_id(option_id):
+    text = str(option_id or "").strip()
+    if not text.startswith("player:"):
+        return ""
+    return text.split(":", 1)[1].strip()
+
+
+def _ask_question_is_correct(question, selected_option_id):
+    answer_check = question.get("answer_check") or {}
+    selected_player_id = _option_player_id(selected_option_id)
+    if not selected_player_id:
+        return False
+
+    kind = answer_check.get("kind")
+    if kind == "leaderboard":
+        return ask_quiz_leaderboard_answer(
+            answer_check.get("stat_key"),
+            answer_check.get("league_code"),
+            answer_check.get("year"),
+            selected_player_id,
+        )
+    if kind == "salary":
+        return ask_quiz_salary_answer(answer_check.get("year"), selected_player_id)
+    if kind == "award":
+        return ask_quiz_award_answer(
+            answer_check.get("award_name"),
+            answer_check.get("league_code"),
+            answer_check.get("year"),
+            selected_player_id,
+        )
+
+    return selected_option_id == question.get("correct_option_id")
 
 
 def _build_summary(round_state):
@@ -321,7 +378,7 @@ def build_round_state(question_count=ROUND_SIZE):
             k=min(ROUND_LEADERBOARD_STAT_COUNT, len(LEADERBOARD_CONFIG)),
         )
     )
-    families = deepcopy(_get_cached_question_families(leaderboard_keys))
+    families = get_quiz_question_families(leaderboard_keys)
     selected = []
     used_ids = set()
 
@@ -409,7 +466,7 @@ def answer_round_question(round_state, question_id, selected_option_id):
     if selected_option_id not in valid_option_ids:
         raise ValueError("That answer option is invalid.")
 
-    is_correct = selected_option_id == question["correct_option_id"]
+    is_correct = _ask_question_is_correct(question, selected_option_id)
     round_state["answers"].append(
         {
             "question_id": question_id,

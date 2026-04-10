@@ -10,6 +10,14 @@ def run_query(query):
     return results["results"]["bindings"]
 
 
+def run_ask(query):
+    sparql = SPARQLWrapper(ENDPOINT)
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    return bool(results.get("boolean"))
+
+
 def _row_value(row, key, default=None):
     return row.get(key, {}).get("value", default)
 

@@ -1,26 +1,181 @@
-\chapter{Configura\c{c}\~oes para executar a app}\chapter{Configura\c{c}\~oes para executar a app}
+\chapter{Configura\c{c}\~oes para executar a app}
 
+\section{Vis\~ao geral}
 
+Para executar o projeto BaseBallX s\~ao necess\'arios tr\^es elementos principais:
 
+\begin{itemize}[leftmargin=*]
+  \item um ambiente Python com as depend\^encias da aplica\c{c}\~ao;
+  \item um reposit\'orio \texttt{baseball} ativo no GraphDB;
+  \item a aplica\c{c}\~ao Django a correr localmente.
+\end{itemize}
 
+O fluxo de execu\c{c}\~ao pode ser resumido da seguinte forma:
 
+\begin{enumerate}[leftmargin=*]
+  \item criar e ativar o ambiente virtual Python;
+  \item instalar depend\^encias;
+  \item gerar o ficheiro RDF \texttt{rdf/baseball.nt};
+  \item iniciar o GraphDB e carregar o reposit\'orio \texttt{baseball};
+  \item aplicar as migrations do Django;
+  \item iniciar o servidor web.
+\end{enumerate}
 
+\section{Pr\'e-requisitos}
 
+Antes da execu\c{c}\~ao, o sistema deve ter instalado:
 
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Python 3};
+  \item \textbf{GraphDB Desktop}
+  \item \textbf{curl}, usado pelos scripts auxiliares;
+  \item acesso ao diret\'orio do projeto com os dados na pasta \texttt{archive/}.
+\end{itemize}
 
+Garantir que a porta \texttt{7200} est\'a livre para o GraphDB 
+\texttt{http://localhost:7200}
+\end{center}
 
+\section{Execu\c{c}\~ao manual}
 
+\subsection{1. Criar o ambiente virtual}
 
+Na raiz do projeto:
 
-Liste os ficheiros e diret\'orios relevantes para instala\c{c}\~ao, execu\c{c}\~ao e manuten\c{c}\~ao.\section{Ficheiros Importantes}Descreva os comandos de build e run dos cont\^eineres.\section{Execu\c{c}\~ao com Docker}Descreva os passos para executar manualmente (GraphDB, Django, depend\^encias e vari\'aveis necess\'arias).\section{Execu\c{c}\~ao Manual}
-\section{Execu\c{c}\~ao Manual}
+\begin{verbatim}
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+\end{verbatim}
 
-Descreva os passos para preparar depend\^encias, iniciar GraphDB e executar o servidor web.
+\subsection{2. Gerar o RDF}
+
+Se o ficheiro RDF ainda n\~ao existir deve ser executada a convers\~ao:
+
+\begin{verbatim}
+python3 rdf/convert.py
+\end{verbatim}
+
+Este comando gera o ficheiro:
+
+\begin{center}
+\texttt{rdf/baseball.nt}
+\end{center}
+
+\subsection{3. Iniciar o GraphDB e criar o reposit\'orio}
+
+Existem duas formas de preparar o GraphDB.
+
+\textbf{Op\c{c}\~ao A: usar o script auxiliar}
+
+\begin{verbatim}
+./scripts/start_graphdb.sh
+\end{verbatim}
+
+Este script:
+
+\begin{itemize}[leftmargin=*]
+  \item verifica se o GraphDB est\'a acess\'ivel;
+  \item tenta abrir o GraphDB Desktop se o servi\c{c}o ainda n\~ao estiver ativo;
+  \item cria o reposit\'orio \texttt{baseball} se este ainda n\~ao existir;
+  \item importa automaticamente o ficheiro \texttt{rdf/baseball.nt}.
+\end{itemize}
+
+Por omiss\~ao, o script usa:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{GRAPHDB\_URL=http://localhost:7200}
+  \item \texttt{REPOSITORY\_ID=baseball}
+  \item \texttt{RDF\_FILE=\$ROOT\_DIR/rdf/baseball.nt}
+  \item \texttt{GRAPHDB\_DESKTOP\_BIN=/opt/graphdb-desktop/bin/graphdb-desktop}
+\end{itemize}
+
+% \textbf{Op\c{c}\~ao B: fazer manualmente no GraphDB Desktop}
+% 
+% \begin{enumerate}[leftmargin=*]
+%   \item abrir o GraphDB Desktop;
+%   \item iniciar o servi\c{c}o local;
+%   \item criar um reposit\'orio com o nome \texttt{baseball};
+%   \item importar o ficheiro \texttt{rdf/baseball.nt} para esse reposit\'orio.
+% \end{enumerate}
+% 
+% \subsection{4. Preparar a base de dados Django}
+
+A aplica\c{c}\~ao usa SQLite para persistir contas, sugest\~oes, sess\~oes e resultados do quiz. Depois de ativar o ambiente virtual, devem ser aplicadas as migrations:
+
+\begin{verbatim}
+cd webapp
+python manage.py migrate
+\end{verbatim}
+
+\subsection{5. Iniciar o servidor web}
+
+Ainda na pasta \texttt{webapp}, iniciar a aplica\c{c}\~ao Django:
+
+\begin{verbatim}
+python manage.py runserver
+\end{verbatim}
+
+Depois disso, a aplica\c{c}\~ao fica dispon\'ivel em:
+
+\begin{center}
+\texttt{http://127.0.0.1:8000/}
+\end{center}
+
+\section{Fluxo completo recomendado}
+
+O fluxo mais direto para executar o projeto desde o in\'icio \'{e}:
+
+\begin{verbatim}
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 rdf/convert.py
+./scripts/start_graphdb.sh
+cd webapp
+python manage.py migrate
+python manage.py runserver
+\end{verbatim}
+
+\section{Parar e reconstruir o reposit\'orio}
+
+Se for necess\'ario apagar o reposit\'orio do GraphDB e voltar a import\'a-lo, existe um script dedicado:
+
+\begin{verbatim}
+./scripts/delete_graphdb_repo.sh
+\end{verbatim}
+
+Depois da remo\c{c}\~ao, basta correr novamente:
+
+\begin{verbatim}
+./scripts/start_graphdb.sh
+\end{verbatim}
+
+Isto volta a criar o reposit\'orio \texttt{baseball} e a importar o ficheiro RDF.
 
 \section{Execu\c{c}\~ao com Docker}
 
-Descreva os comandos Docker (build/up/down), vari\'aveis de ambiente e portas.
+Nesta vers\~ao do projeto n\~ao foi inclu\'ida uma configura\c{c}\~ao Docker operacional, isto \'{e}, n\~ao existem \texttt{Dockerfile} nem \texttt{docker-compose.yml} prontos a usar no reposit\'orio. Assim, a forma suportada de execu\c{c}\~ao \'{e} a execu\c{c}\~ao manual descrita acima.
 
-\section{Ficheiros Importantes}
+Se no futuro for pretendida uma distribui\c{c}\~ao por contentores, a configura\c{c}\~ao natural seria separar:
 
-Liste os ficheiros essenciais para opera\c{c}\~ao e manuten\c{c}\~ao.
+\begin{itemize}[leftmargin=*]
+  \item um contentor para a aplica\c{c}\~ao Django;
+  \item um contentor ou servi\c{c}o externo para o GraphDB;
+  \item um volume persistente para o reposit\'orio RDF;
+  \item um volume persistente para a base de dados SQLite, ou a sua substitui\c{c}\~ao por uma base de dados mais adequada a ambientes conteinerizados.
+\end{itemize}
+
+\section{Notas finais de execu\c{c}\~ao}
+
+Durante a execu\c{c}\~ao, os problemas mais prov\'aveis s\~ao:
+
+\begin{itemize}[leftmargin=*]
+  \item o GraphDB n\~ao estar ativo em \texttt{http://localhost:7200};
+  \item o reposit\'orio \texttt{baseball} n\~ao existir ou estar vazio;
+  \item o ficheiro \texttt{rdf/baseball.nt} ainda n\~ao ter sido gerado;
+  \item as migrations do Django n\~ao terem sido aplicadas;
+  \item o ambiente virtual n\~ao estar ativado.
+\end{itemize}
+
+Se estes pontos estiverem corretamente configurados, a aplica\c{c}\~ao arranca sem depend\^encias adicionais.

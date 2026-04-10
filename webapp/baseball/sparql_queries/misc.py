@@ -1,7 +1,6 @@
 from functools import lru_cache
 
-from .base import _row_value, run_query
-from ..sparql import _row_int
+from .base import _row_int, _row_value, run_query
 
 @lru_cache(maxsize=1)
 def get_top_salaries():

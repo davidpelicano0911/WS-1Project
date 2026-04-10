@@ -150,6 +150,34 @@ class QuizServiceTests(TestCase):
         self.assertEqual(round_state["score"], 1)
         self.assertTrue(round_state["completed"])
 
+    @patch("baseball.quiz_service.ask_quiz_leaderboard_answer")
+    def test_answer_round_question_uses_ask_for_leaderboard_questions(self, mock_ask):
+        mock_ask.return_value = True
+        round_state = {
+            "round_id": "round-1",
+            "questions": [
+                {
+                    **_sample_question("q1", correct_option_id="player:a"),
+                    "answer_check": {
+                        "kind": "leaderboard",
+                        "stat_key": "home_runs",
+                        "league_code": "AL",
+                        "year": 2005,
+                    },
+                }
+            ],
+            "current_index": 0,
+            "answers": [],
+            "score": 0,
+            "completed": False,
+            "total_questions": 1,
+        }
+
+        payload = answer_round_question(round_state, "q1", "player:b")
+
+        self.assertTrue(payload["is_correct"])
+        mock_ask.assert_called_once_with("home_runs", "AL", 2005, "b")
+
 
 class QuizViewTests(TestCase):
     def test_quiz_page_renders(self):
