@@ -25,6 +25,13 @@ Run the conversion script to generate the RDF file:
 python3 rdf/convert.py
 ```
 
+By default the converter uses a lean profile that exports only the RDF currently used by the web application.
+If you want the full archive export instead, run:
+
+```bash
+python3 rdf/convert.py --profile full
+```
+
 ### 3. Setup GraphDB
 
 Before running the web application, load the data:

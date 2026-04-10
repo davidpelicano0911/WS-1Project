@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+import argparse
 import csv
 import re
 import sys
+from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -25,6 +27,7 @@ FOAF = Namespace("http://xmlns.com/foaf/0.1/")
 
 ARCHIVE = Path(__file__).resolve().parent.parent / "archive"
 OUT = Path(__file__).resolve().parent / "baseball.n3"
+NORMALIZATION_STATS = defaultdict(int)
 
 
 # --- Conversion Helpers ---
@@ -42,6 +45,203 @@ def entity_uri(prefix: str, *parts) -> URIRef:
 
 def prop(name: str) -> URIRef:
     return uri(name)
+
+
+def clean_text(value):
+    if value is None:
+        return ""
+    return re.sub(r"\s+", " ", str(value).strip())
+
+
+COUNTRY_ALIASES = {
+    "USA": "United States",
+    "U.S.A.": "United States",
+    "US": "United States",
+    "CAN": "Canada",
+    "D.R.": "Dominican Republic",
+    "DR": "Dominican Republic",
+    "P.R.": "Puerto Rico",
+    "PR": "Puerto Rico",
+}
+
+
+def normalize_country(value):
+    text = clean_text(value)
+    if not text:
+        return ""
+    return COUNTRY_ALIASES.get(text, text)
+
+
+def normalize_flag(value):
+    text = clean_text(value).upper()
+    if not text:
+        return ""
+    if text in {"Y", "YES", "TRUE", "1", "T"}:
+        return "Y"
+    if text in {"N", "NO", "FALSE", "0", "F"}:
+        return "N"
+    return text
+
+
+def normalize_choice(value, allowed):
+    text = clean_text(value).upper()
+    return text if text in allowed else ""
+
+
+def normalize_code(value):
+    return clean_text(value).upper()
+
+
+ROW_NORMALIZERS = {
+    "Master.csv": {
+        "birthCountry": normalize_country,
+        "deathCountry": normalize_country,
+        "birthState": clean_text,
+        "deathState": clean_text,
+        "birthCity": clean_text,
+        "deathCity": clean_text,
+        "nameFirst": clean_text,
+        "nameLast": clean_text,
+        "nameGiven": clean_text,
+        "bats": lambda value: normalize_choice(value, {"R", "L", "B"}),
+        "throws": lambda value: normalize_choice(value, {"R", "L"}),
+        "retroID": normalize_code,
+        "bbrefID": clean_text,
+    },
+    "TeamsFranchises.csv": {
+        "franchID": normalize_code,
+        "franchName": clean_text,
+        "active": normalize_flag,
+        "NAassoc": clean_text,
+    },
+    "Teams.csv": {
+        "lgID": normalize_code,
+        "teamID": normalize_code,
+        "franchID": normalize_code,
+        "divID": normalize_code,
+        "DivWin": normalize_flag,
+        "WCWin": normalize_flag,
+        "LgWin": normalize_flag,
+        "WSWin": normalize_flag,
+        "name": clean_text,
+        "park": clean_text,
+        "teamIDBR": normalize_code,
+        "teamIDlahman45": normalize_code,
+        "teamIDretro": normalize_code,
+    },
+    "TeamsHalf.csv": {
+        "lgID": normalize_code,
+        "teamID": normalize_code,
+        "divID": normalize_code,
+        "DivWin": normalize_flag,
+    },
+    "Batting.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+    },
+    "BattingPost.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+        "round": normalize_code,
+    },
+    "Pitching.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+    },
+    "PitchingPost.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+        "round": normalize_code,
+    },
+    "Fielding.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+        "POS": normalize_code,
+    },
+    "FieldingOF.csv": {
+        "playerID": clean_text,
+    },
+    "Salaries.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+    },
+    "AwardsPlayers.csv": {
+        "playerID": clean_text,
+        "awardID": clean_text,
+        "lgID": normalize_code,
+        "tie": normalize_flag,
+        "notes": clean_text,
+    },
+    "AwardsSharePlayers.csv": {
+        "awardID": clean_text,
+        "lgID": normalize_code,
+        "playerID": clean_text,
+    },
+    "HallOfFame.csv": {
+        "playerID": clean_text,
+        "votedBy": clean_text,
+        "inducted": normalize_flag,
+        "category": clean_text,
+        "needed_note": clean_text,
+    },
+    "AllstarFull.csv": {
+        "playerID": clean_text,
+        "gameID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+    },
+    "Managers.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+        "plyrMgr": normalize_flag,
+    },
+    "ManagersHalf.csv": {
+        "playerID": clean_text,
+        "teamID": normalize_code,
+        "lgID": normalize_code,
+    },
+    "AwardsManagers.csv": {
+        "playerID": clean_text,
+        "awardID": clean_text,
+        "lgID": normalize_code,
+        "tie": normalize_flag,
+        "notes": clean_text,
+    },
+    "AwardsShareManagers.csv": {
+        "awardID": clean_text,
+        "lgID": normalize_code,
+        "playerID": clean_text,
+    },
+    "SeriesPost.csv": {
+        "round": normalize_code,
+        "teamIDwinner": normalize_code,
+        "lgIDwinner": normalize_code,
+        "teamIDloser": normalize_code,
+        "lgIDloser": normalize_code,
+    },
+}
+
+
+def normalize_row(filename, row):
+    normalizers = ROW_NORMALIZERS.get(filename)
+    if not normalizers:
+        return row
+
+    normalized = dict(row)
+    for column, normalizer in normalizers.items():
+        original = row.get(column)
+        updated = normalizer(original)
+        normalized[column] = updated
+        if (original or "") != updated:
+            NORMALIZATION_STATS[f"{filename}:{column}"] += 1
+    return normalized
 
 
 def lit(value, datatype=None):
@@ -134,7 +334,18 @@ def read_csv(filename: str):
         print(f"  [SKIP] {filename} not found", file=sys.stderr)
         return
     with open(path, encoding="utf-8", errors="replace") as f:
-        yield from csv.DictReader(f)
+        for row in csv.DictReader(f):
+            yield normalize_row(filename, row)
+
+
+def print_normalization_summary():
+    if not NORMALIZATION_STATS:
+        print("No preprocessing changes were needed.")
+        return
+
+    print("\nPreprocessing summary:")
+    for key in sorted(NORMALIZATION_STATS):
+        print(f"  {key}: {NORMALIZATION_STATS[key]} normalized values")
 
 
 # --- Field Specifications ---
@@ -811,32 +1022,66 @@ def convert_series_post():
             add(s, BB.winnerTeam, entity_uri("team", w_team, year))
         if l_team:
             add(s, BB.loserTeam, entity_uri("team", l_team, year))
+
+
+CONVERSION_PROFILES = {
+    "lean": [
+        ("Players", convert_master),
+        ("Franchises", convert_franchises),
+        ("Teams", convert_teams),
+        ("Batting", convert_batting),
+        ("Pitching", convert_pitching),
+        ("Salaries", convert_salaries),
+        ("Awards", convert_awards),
+        ("Hall of Fame", convert_hall_of_fame),
+        ("All-Star", convert_allstar_full),
+        ("Managers", convert_managers),
+        ("Series/Postseason", convert_series_post),
+    ],
+    "full": [
+        ("Players", convert_master),
+        ("Franchises", convert_franchises),
+        ("Teams", convert_teams),
+        ("TeamsHalf", convert_teams_half),
+        ("Batting", convert_batting),
+        ("BattingPost", convert_batting_post),
+        ("Pitching", convert_pitching),
+        ("PitchingPost", convert_pitching_post),
+        ("Salaries", convert_salaries),
+        ("Awards", convert_awards),
+        ("AwardsSharePlayers", convert_awards_share_players),
+        ("Fielding", convert_fielding),
+        ("FieldingOF", convert_fielding_of),
+        ("Hall of Fame", convert_hall_of_fame),
+        ("All-Star", convert_allstar_full),
+        ("Managers", convert_managers),
+        ("ManagersHalf", convert_managers_half),
+        ("AwardsManagers", convert_awards_managers),
+        ("AwardsShareManagers", convert_awards_share_managers),
+        ("Series/Postseason", convert_series_post),
+    ],
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Convert Lahman baseball CSV data to RDF/N3.")
+    parser.add_argument(
+        "--profile",
+        choices=sorted(CONVERSION_PROFILES),
+        default="lean",
+        help="Export profile. 'lean' keeps only data currently used by the web app; 'full' exports everything.",
+    )
+    return parser.parse_args()
 # --- Main ---
 def main():
+    args = parse_args()
     try:
-        print("Starting RDF conversion (Streaming Mode)...")
+        print(f"Starting RDF conversion (Streaming Mode, profile={args.profile})...")
         declare_ontology()
-        convert_master()
-        convert_franchises()
-        convert_teams()
-        convert_teams_half()
-        convert_batting()
-        convert_batting_post()
-        convert_pitching()
-        convert_pitching_post()
-        convert_salaries()
-        convert_awards()
-        convert_awards_share_players()
-        convert_fielding()
-        convert_fielding_of()
-        convert_hall_of_fame()
-        convert_allstar_full()
-        convert_managers()
-        convert_managers_half()
-        convert_awards_managers()
-        convert_awards_share_managers()
-        convert_series_post()
+        for _label, converter in CONVERSION_PROFILES[args.profile]:
+            converter()
 
+        print_normalization_summary()
         print(f"\nSuccess! File generated: {OUT}")
         print(f"Size: {OUT.stat().st_size / 1024 / 1024:.2f} MB")
     finally:
