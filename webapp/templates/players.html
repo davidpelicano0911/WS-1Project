@@ -54,7 +54,7 @@
 </section>
 
 <section class="hero-panel mb-4 player-filter-hero-panel">
-    <form method="get" action="{% url 'players' %}" class="data-panel player-filter-panel player-filter-panel-compact" data-auto-submit-filters data-auto-submit-delay="450" data-player-catalog-form>
+    <form method="get" action="{% url 'players' %}" class="data-panel player-filter-panel player-filter-panel-compact" data-player-catalog-form>
         <div class="player-filter-head">
             <div>
                 <span class="eyebrow">
@@ -200,7 +200,7 @@
     data-players-fragment-base="{% url 'players' %}"
 >
     <div class="players-catalog-loading">
-        <div class="players-catalog-loading-bar"></div>
+        <img src="{% static 'baseball.gif' %}" alt="Loading players" class="players-catalog-spinner">
         <p>Loading player cards…</p>
     </div>
 </section>

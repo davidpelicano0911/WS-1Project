@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from functools import lru_cache
 from urllib.parse import urlencode
@@ -620,61 +621,97 @@ def _build_players_catalog_context(
     active_filters,
 ):
     page_size = 12
-    if has_photo:
-        total_players = _count_catalog_players_with_photo(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-        )
-    else:
-        total_players = get_players_catalog_count(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-            False,
-        )
-
     try:
-        page = max(int(request.GET.get("page", "1")), 1)
+        requested_page = max(int(request.GET.get("page", "1")), 1)
     except ValueError:
-        page = 1
+        requested_page = 1
+
+    requested_offset = (requested_page - 1) * page_size
+
+    if has_photo:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            total_future = executor.submit(
+                _count_catalog_players_with_photo,
+                selected_letter,
+                search_term,
+                birth_country,
+                bats,
+                throws,
+                debut_decade,
+            )
+            players_future = executor.submit(
+                _get_catalog_players_page_with_photo,
+                selected_letter,
+                search_term,
+                birth_country,
+                bats,
+                throws,
+                debut_decade,
+                sort,
+                page_size,
+                requested_offset,
+            )
+            total_players = total_future.result()
+            raw_players = players_future.result()
+    else:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            total_future = executor.submit(
+                get_players_catalog_count,
+                selected_letter,
+                search_term,
+                birth_country,
+                bats,
+                throws,
+                debut_decade,
+                False,
+            )
+            players_future = executor.submit(
+                get_players_catalog,
+                selected_letter,
+                search_term,
+                birth_country,
+                bats,
+                throws,
+                debut_decade,
+                False,
+                sort,
+                page_size,
+                requested_offset,
+            )
+            total_players = total_future.result()
+            raw_players = players_future.result()
 
     total_pages = max((total_players + page_size - 1) // page_size, 1)
-    page = min(page, total_pages)
-    offset = (page - 1) * page_size
+    page = min(requested_page, total_pages)
 
-    raw_players = (
-        _get_catalog_players_page_with_photo(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-            sort,
-            page_size,
-            offset,
+    if page != requested_page:
+        offset = (page - 1) * page_size
+        raw_players = (
+            _get_catalog_players_page_with_photo(
+                selected_letter,
+                search_term,
+                birth_country,
+                bats,
+                throws,
+                debut_decade,
+                sort,
+                page_size,
+                offset,
+            )
+            if has_photo
+            else get_players_catalog(
+                selected_letter,
+                search_term,
+                birth_country,
+                bats,
+                throws,
+                debut_decade,
+                False,
+                sort,
+                page_size,
+                offset,
+            )
         )
-        if has_photo
-        else get_players_catalog(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-            False,
-            sort,
-            page_size,
-            offset,
-        )
-    )
 
     players = [_build_player_card(player) for player in raw_players]
     players = enrich_players_with_media(players)

@@ -9,9 +9,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const filterCountNodes = Array.from(document.querySelectorAll(".js-player-active-filter-count"));
   const catalogCopyNode = document.querySelector(".js-player-catalog-copy");
   let controller = null;
+  let debounceTimer = null;
+  let latestRequestId = 0;
 
   const setLoading = (loading) => {
     shell.classList.toggle("is-loading", loading);
+    shell.setAttribute("aria-busy", loading ? "true" : "false");
   };
 
   const updateSummary = (fragment) => {
@@ -72,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (controller) {
       controller.abort();
     }
+    const requestId = ++latestRequestId;
     controller = new AbortController();
     setLoading(true);
 
@@ -85,10 +89,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         throw new Error("Failed to load players.");
       }
-      shell.innerHTML = await response.text();
+      const html = await response.text();
+      if (requestId !== latestRequestId) {
+        return;
+      }
+      shell.innerHTML = html;
       const fragment = shell.querySelector(".player-catalog-fragment");
       if (fragment) {
         updateSummary(fragment);
+      }
+      if (typeof window.initPlayerCardPhotos === "function") {
+        window.initPlayerCardPhotos(shell);
       }
       if (pushState) {
         window.history.pushState({}, "", buildHistoryUrl(new URL(url, window.location.origin).searchParams.get("page")));
@@ -103,13 +114,51 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       }
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestId) {
+        setLoading(false);
+      }
     }
+  };
+
+  const scheduleTextLoad = () => {
+    window.clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(() => {
+      loadCatalog(buildUrl(), true);
+    }, 280);
   };
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    window.clearTimeout(debounceTimer);
     loadCatalog(buildUrl(), true);
+  });
+
+  form.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) {
+      return;
+    }
+
+    if (target.type === "text" || target.type === "search") {
+      scheduleTextLoad();
+      return;
+    }
+
+    if (target.type === "checkbox") {
+      window.clearTimeout(debounceTimer);
+      loadCatalog(buildUrl(), true);
+    }
+  });
+
+  form.addEventListener("change", (event) => {
+    const target = event.target;
+    if (
+      target instanceof HTMLSelectElement ||
+      (target instanceof HTMLInputElement && (target.type === "radio" || target.type === "checkbox"))
+    ) {
+      window.clearTimeout(debounceTimer);
+      loadCatalog(buildUrl(), true);
+    }
   });
 
   shell.addEventListener("click", (event) => {
@@ -124,6 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   window.addEventListener("popstate", () => {
+    window.clearTimeout(debounceTimer);
     syncFormWithUrl(window.location.href);
     const url = new URL(window.location.href);
     const page = url.searchParams.get("page");

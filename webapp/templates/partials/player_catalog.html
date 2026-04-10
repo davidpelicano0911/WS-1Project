@@ -1,8 +1,11 @@
+{% load static %}
+
 <div
     class="player-catalog-fragment"
     data-total-players="{{ total_players }}"
     data-active-filters-count="{{ active_filters|length }}"
     data-has-active-filters="{% if active_filters %}1{% else %}0{% endif %}"
+    data-photo-only="{% if has_photo %}1{% else %}0{% endif %}"
 >
     {% if players %}
     <section class="player-card-grid">
@@ -26,12 +29,27 @@
                     <div class="player-card-front">
                         <div class="player-card-portrait-frame">
                             <div class="player-card-photo-fallback">
-                                <span class="player-card-avatar">{{ player.initials }}</span>
+                                <img
+                                    src="{% static 'default_player.png' %}"
+                                    alt="Default player portrait"
+                                    class="player-card-photo player-card-photo-default"
+                                >
                             </div>
                             {% if player.photo_url %}
                                 <img
                                     src="{{ player.card_photo_url|default:player.photo_url }}"
                                     data-fallback="{{ player.card_photo_fallback_url|default:player.photo_fallback_url }}"
+                                    data-default="{% static 'default_player.png' %}"
+                                    alt="{{ player.name }}"
+                                    class="player-card-photo"
+                                    loading="lazy"
+                                    decoding="async"
+                                    fetchpriority="low"
+                                    onerror="if(this.dataset.fallback && this.src !== this.dataset.fallback){this.src=this.dataset.fallback;}else if(this.dataset.default && this.src !== this.dataset.default){this.src=this.dataset.default;}else{this.onerror=null;this.style.display='none';}"
+                                >
+                            {% else %}
+                                <img
+                                    src="{% static 'default_player.png' %}"
                                     alt="{{ player.name }}"
                                     class="player-card-photo"
                                     loading="lazy"

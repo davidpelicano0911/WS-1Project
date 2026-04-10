@@ -2130,24 +2130,31 @@ body.quiz-modal-open.quiz-page [data-quiz-underlay] {
 
 .players-catalog-loading {
     display: grid;
-    gap: 1rem;
-    justify-items: start;
-    padding: 1.3rem 0;
+    gap: 0.9rem;
+    justify-items: center;
+    align-content: center;
+    min-height: 16rem;
+    padding: 1.5rem;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 40%),
+        linear-gradient(180deg, rgba(10, 23, 43, 0.78), rgba(6, 16, 32, 0.92));
+    border: 1px solid rgba(136, 174, 232, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .players-catalog-loading p {
     margin: 0;
     color: #9fb6d9;
     font-weight: 700;
+    text-align: center;
 }
 
-.players-catalog-loading-bar {
-    width: min(18rem, 100%);
-    height: 0.5rem;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(31, 95, 196, 0.22), rgba(244, 197, 66, 0.44), rgba(31, 95, 196, 0.22));
-    background-size: 200% 100%;
-    animation: playersCatalogLoading 1.1s linear infinite;
+.players-catalog-spinner {
+    width: 5.5rem;
+    height: 5.5rem;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 28px rgba(4, 12, 24, 0.34));
 }
 
 @keyframes playersCatalogLoading {
