@@ -585,6 +585,129 @@ def _summarize_values(values, limit=4):
     return f"{', '.join(values[:limit])} +{len(values) - limit} more"
 
 
+def _build_player_active_filters(search_term, selected_letter, birth_country, bats, throws, debut_decade, has_photo, filter_options):
+    active_filters = []
+    if search_term:
+        active_filters.append({"label": "", "value": search_term, "soft": True})
+    if selected_letter:
+        active_filters.append({"label": "Initial", "value": selected_letter})
+    if birth_country:
+        active_filters.append({"label": "Country", "value": birth_country})
+    if bats:
+        bats_name = next((item["name"] for item in filter_options["bats"] if item["code"] == bats), bats)
+        active_filters.append({"label": "Bats", "value": bats_name})
+    if throws:
+        throws_name = next((item["name"] for item in filter_options["throws"] if item["code"] == throws), throws)
+        active_filters.append({"label": "Throws", "value": throws_name})
+    if debut_decade:
+        active_filters.append({"label": "Debut era", "value": f"{debut_decade}s"})
+    if has_photo:
+        active_filters.append({"label": "Media", "value": "Photo available"})
+    return active_filters
+
+
+def _build_players_catalog_context(
+    request,
+    *,
+    selected_letter,
+    search_term,
+    birth_country,
+    bats,
+    throws,
+    debut_decade,
+    sort,
+    has_photo,
+    active_filters,
+):
+    page_size = 12
+    if has_photo:
+        total_players = _count_catalog_players_with_photo(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+        )
+    else:
+        total_players = get_players_catalog_count(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            False,
+        )
+
+    try:
+        page = max(int(request.GET.get("page", "1")), 1)
+    except ValueError:
+        page = 1
+
+    total_pages = max((total_players + page_size - 1) // page_size, 1)
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+
+    raw_players = (
+        _get_catalog_players_page_with_photo(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            sort,
+            page_size,
+            offset,
+        )
+        if has_photo
+        else get_players_catalog(
+            selected_letter,
+            search_term,
+            birth_country,
+            bats,
+            throws,
+            debut_decade,
+            False,
+            sort,
+            page_size,
+            offset,
+        )
+    )
+
+    players = [_build_player_card(player) for player in raw_players]
+    players = enrich_players_with_media(players)
+    selected_players = _selected_compare_map(request, "player")
+    for player in players:
+        player["compare_selected"] = player["player_id"] in selected_players
+
+    base_params = {
+        "q": search_term,
+        "letter": selected_letter,
+        "birth_country": birth_country,
+        "bats": bats,
+        "throws": throws,
+        "debut_decade": debut_decade,
+        "sort": sort,
+        "has_photo": "1" if has_photo else "",
+    }
+
+    return {
+        "players": players,
+        "total_players": total_players,
+        "active_filters": active_filters,
+        "page": page,
+        "total_pages": total_pages,
+        "page_numbers": list(range(max(1, page - 2), min(total_pages, page + 2) + 1)),
+        "has_previous": page > 1,
+        "has_next": page < total_pages,
+        "previous_page": page - 1,
+        "next_page": page + 1,
+        "pagination_query": _build_player_list_querystring(base_params),
+    }
+
+
 def _build_compare_row(
     label,
     player1_value,
@@ -1345,11 +1468,6 @@ def players_view(request):
     sort = request.GET.get("sort", "name_asc").strip()
     has_photo = request.GET.get("has_photo") in {"1", "true", "on"}
 
-    try:
-        page = max(int(request.GET.get("page", "1")), 1)
-    except ValueError:
-        page = 1
-
     if selected_letter and selected_letter not in letters:
         selected_letter = ""
     if birth_country and birth_country not in filter_options["countries"]:
@@ -1365,98 +1483,34 @@ def players_view(request):
     if sort not in valid_sorts:
         sort = "name_asc"
 
-    page_size = 12
-    if has_photo:
-        total_players = _count_catalog_players_with_photo(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-        )
-    else:
-        total_players = get_players_catalog_count(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-            False,
-        )
-    total_pages = max((total_players + page_size - 1) // page_size, 1)
-    page = min(page, total_pages)
-    offset = (page - 1) * page_size
-
-    raw_players = (
-        _get_catalog_players_page_with_photo(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-            sort,
-            page_size,
-            offset,
-        )
-        if has_photo
-        else get_players_catalog(
-            selected_letter,
-            search_term,
-            birth_country,
-            bats,
-            throws,
-            debut_decade,
-            False,
-            sort,
-            page_size,
-            offset,
-        )
+    active_filters = _build_player_active_filters(
+        search_term,
+        selected_letter,
+        birth_country,
+        bats,
+        throws,
+        debut_decade,
+        has_photo,
+        filter_options,
     )
 
-    players = [_build_player_card(player) for player in raw_players]
-    players = enrich_players_with_media(players)
-    selected_players = _selected_compare_map(request, "player")
-    for player in players:
-        player["compare_selected"] = player["player_id"] in selected_players
-        if player.get("photo_url") or player.get("photo_fallback_url"):
-            player["card_photo_proxy_url"] = reverse(
-                "player_graph_photo",
-                kwargs={"player_id": player["player_id"]},
-            )
-        else:
-            player["card_photo_proxy_url"] = ""
-    page_numbers = list(range(max(1, page - 2), min(total_pages, page + 2) + 1))
-    base_params = {
-        "q": search_term,
-        "letter": selected_letter,
-        "birth_country": birth_country,
-        "bats": bats,
-        "throws": throws,
-        "debut_decade": debut_decade,
-        "sort": sort,
-        "has_photo": "1" if has_photo else "",
-    }
-
-    active_filters = []
-    if search_term:
-        active_filters.append({"label": "", "value": search_term, "soft": True})
-    if selected_letter:
-        active_filters.append({"label": "Initial", "value": selected_letter})
-    if birth_country:
-        active_filters.append({"label": "Country", "value": birth_country})
-    if bats:
-        bats_name = next((item["name"] for item in filter_options["bats"] if item["code"] == bats), bats)
-        active_filters.append({"label": "Bats", "value": bats_name})
-    if throws:
-        throws_name = next((item["name"] for item in filter_options["throws"] if item["code"] == throws), throws)
-        active_filters.append({"label": "Throws", "value": throws_name})
-    if debut_decade:
-        active_filters.append({"label": "Debut era", "value": f"{debut_decade}s"})
-    if has_photo:
-        active_filters.append({"label": "Media", "value": "Photo available"})
+    if request.GET.get("fragment") == "catalog":
+        return render(
+            request,
+            "partials/player_catalog.html",
+            _build_players_catalog_context(
+                request,
+                selected_letter=selected_letter,
+                search_term=search_term,
+                birth_country=birth_country,
+                bats=bats,
+                throws=throws,
+                debut_decade=debut_decade,
+                sort=sort,
+                has_photo=has_photo,
+                active_filters=active_filters,
+            ),
+        )
 
     context = {
         "letters": letters,
@@ -1470,17 +1524,7 @@ def players_view(request):
         "sort": sort,
         "has_photo": has_photo,
         "active_filters": active_filters,
-        "players": players,
-        "total_players": total_players,
-        "page": page,
-        "total_pages": total_pages,
-        "page_numbers": page_numbers,
-        "has_previous": page > 1,
-        "has_next": page < total_pages,
-        "previous_page": page - 1,
-        "next_page": page + 1,
-        "pagination_query": _build_player_list_querystring(base_params),
-        "page_query_builder": base_params,
+        "total_players": None,
         "comparator_url": f"{reverse('compare_players')}?mode=players",
         "analytics_url": reverse("analytics"),
     }
