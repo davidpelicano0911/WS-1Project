@@ -163,6 +163,58 @@
         </div>
     </div>
 
+    <div class="chatbot-shell" data-chatbot-root data-chatbot-url="{% url 'chatbot_ask' %}">
+        <button type="button" class="chatbot-fab" aria-label="Open BaseBallX assistant" data-chatbot-toggle>
+            <img src="{% static 'bot.png' %}" alt="" class="chatbot-fab-icon">
+        </button>
+
+        <div class="chatbot-panel" hidden data-chatbot-panel>
+            <div class="chatbot-head">
+                <div>
+                    <span class="eyebrow">
+                        <i class="bi bi-robot"></i>
+                        Graph Assistant
+                    </span>
+                    <h2 class="feature-title h5 mb-0">Ask BaseBallX</h2>
+                </div>
+                <button type="button" class="chatbot-close" aria-label="Close chatbot" data-chatbot-close>
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="chatbot-copy">
+                Ask about players, teams, leagues, awards, or salaries. Responses use live GraphDB queries.
+            </div>
+
+            <div class="chatbot-suggestions" data-chatbot-suggestions>
+                <button type="button" class="chatbot-suggestion" data-chatbot-prompt="Show AL teams">Show AL teams</button>
+                <button type="button" class="chatbot-suggestion" data-chatbot-prompt="Players from Cuba">Players from Cuba</button>
+                <button type="button" class="chatbot-suggestion" data-chatbot-prompt="Awards in 2015">Awards in 2015</button>
+                <button type="button" class="chatbot-suggestion" data-chatbot-prompt="Top salaries">Top salaries</button>
+            </div>
+
+            <div class="chatbot-messages" data-chatbot-messages>
+                <article class="chatbot-message chatbot-message-assistant">
+                    <div class="chatbot-bubble">
+                        Try a question like <strong>Find player Aaron Judge</strong> or <strong>Show Federal League teams</strong>.
+                    </div>
+                </article>
+            </div>
+
+            <form class="chatbot-form" data-chatbot-form data-no-global-loading>
+                <label for="chatbot-input" class="visually-hidden">Ask BaseBallX</label>
+                <input
+                    id="chatbot-input"
+                    type="text"
+                    class="input-app chatbot-input"
+                    placeholder="Ask something about the baseball graph"
+                    autocomplete="off"
+                >
+                <button type="submit" class="btn-app btn-primary-app chatbot-submit">Ask</button>
+            </form>
+        </div>
+    </div>
+
     <div class="compare-modal-backdrop" hidden data-compare-modal-backdrop>
         <div class="compare-modal-card" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
             <div class="compare-modal-head">
@@ -280,5 +332,6 @@
     <script src="{% static 'baseball/js/player-card-photos.js' %}"></script>
     <script src="{% static 'baseball/js/compare-selection.js' %}"></script>
     <script src="{% static 'baseball/js/auth-modal.js' %}"></script>
+    <script src="{% static 'baseball/js/chatbot.js' %}"></script>
 </body>
 </html>
