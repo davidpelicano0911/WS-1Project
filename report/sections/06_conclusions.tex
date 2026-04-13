@@ -26,7 +26,7 @@ Ao longo do desenvolvimento foram encontradas algumas dificuldades:
 
 \begin{itemize}[leftmargin=*]
   \item \textbf{Qualidade dos dados de origem}: os ficheiros CSV cont\^em valores em falta, inconsist\^encias de encoding e identificadores sem correspondência cruzada, o que exigiu normaliza\c{c}\~ao cuidadosa durante a convers\~ao para RDF.
-  \item \textbf{Performance das consultas SPARQL}: algumas consultas que agregam dados de m\'ultiplos grafos (por exemplo, estat\'isticas combinadas de batting e pitching) revelaram lat\^encias not\'aveis. Foi necess\'ario simplificar certas queries e limitar os resultados retornados para manter a interface responsiva.
+  \item \textbf{Performance das consultas SPARQL}: algumas consultas que agregam dados de m\'ultiplos grafos (por exemplo, estat\'isticas combinadas de batting e pitching) revelaram lat\^encias not\'aveis. Foi necess\'ario simplificar certas queries, limitar os resultados retornados e introduzir uma camada de cache em mem\'oria com \texttt{functools.lru\_cache} nas fun\c{c}\~oes de acesso ao triple store, evitando consultas repetidas ao GraphDB para os mesmos dados e mantendo a interface responsiva.
   \item \textbf{Modelação do grafo RDF}: decidir o n\'ivel de granularidade das entidades RDF nomeadamente se as estat\'isticas por época deviam ser recursos pr\'oprios ou literais associados ao jogador -- implicou v\'arias itera\c{c}\~oes sobre o script de convers\~ao.
 \end{itemize}
 
@@ -35,7 +35,6 @@ Ao longo do desenvolvimento foram encontradas algumas dificuldades:
 Com mais tempo de desenvolvimento, as melhorias mais relevantes seriam:
 
 \begin{itemize}[leftmargin=*]
-  \item \textbf{Cache de consultas}: introduzir uma camada de cache (por exemplo, Redis) para as queries SPARQL mais frequentes, reduzindo a lat\^encia percebida pelo utilizador.
   \item \textbf{P\'aginas de detalhe adicionais}: estender a navega\c{c}\~ao para cobrir entidades ainda sem p\'agina pr\'opria, como s\'eries de p\'os-temporada, All-Star Games individuais e pr\'emios de managers.
   \item \textbf{Exporta\c{c}\~ao de dados}: permitir ao utilizador exportar os resultados de uma vista ou consulta nos formatos CSV, JSON ou Turtle.
 \end{itemize}
