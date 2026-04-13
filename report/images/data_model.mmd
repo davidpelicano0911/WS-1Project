@@ -1,0 +1,192 @@
+%% Editable in Mermaid Live Editor: https://mermaid.live/
+classDiagram
+direction TB
+
+class TeamsFranchises {
+  franchID (PK)
+  franchName
+  active
+}
+
+class Teams {
+  teamID, yearID (PK)
+  franchID (FK)
+  lgID, divID, name
+  W / L / G / Rank
+  ERA, park, attendance...
+}
+
+class TeamsHalf {
+  teamID (FK)
+  yearID, Half
+  divID, DivWin
+  W / L / Rank
+}
+
+class SeriesPost {
+  yearID, round
+  teamIDwinner (FK)
+  teamIDloser (FK)
+  wins / losses / ties
+}
+
+class Batting {
+  playerID (FK)
+  yearID, stint
+  teamID (FK), lgID
+  AB / H / HR / RBI
+  BB / SO / SB...
+}
+
+class BattingPost {
+  playerID (FK)
+  yearID, round
+  teamID (FK)
+  AB / H / HR / RBI
+}
+
+class Pitching {
+  playerID (FK)
+  yearID, stint
+  teamID (FK)
+  W / L / ERA / SO
+  SV / CG / BFP...
+}
+
+class PitchingPost {
+  playerID (FK)
+  yearID, round
+  teamID (FK)
+  W / L / ERA / SO
+}
+
+class Fielding {
+  playerID (FK)
+  yearID, stint
+  teamID (FK), POS
+  E / A / PO / DP
+}
+
+class FieldingOF {
+  playerID (FK)
+  yearID, stint
+  Glf / Gcf / Grf
+}
+
+class Player {
+  playerID (PK)
+  nameFirst, nameLast
+  birthYear, birthCountry
+  bats, throws
+  debut, finalGame
+}
+
+class Salaries {
+  playerID (FK)
+  yearID
+  teamID (FK), lgID
+  salary
+}
+
+class AllstarFull {
+  playerID (FK)
+  yearID
+  teamID (FK), gameID
+  GP, startingPos
+}
+
+class HallOfFame {
+  playerID (FK)
+  yearid
+  inducted
+  votes / ballots
+  category
+}
+
+class Managers {
+  playerID (FK)
+  yearID
+  teamID (FK)
+  W / L / rank
+  plyrMgr
+}
+
+class ManagersHalf {
+  playerID (FK)
+  yearID
+  teamID (FK)
+  half, W / L
+}
+
+class AwardsPlayers {
+  playerID (FK)
+  awardID
+  yearID, lgID
+  tie, notes
+}
+
+class AwardSharePlayers {
+  awardID, yearID, lgID
+  playerID (FK)
+  pointsWon / pointsMax
+}
+
+class AwardsManagers {
+  playerID (FK)
+  awardID
+  yearID, lgID
+  tie
+}
+
+class AwardShareManagers {
+  awardID, yearID, lgID
+  playerID (FK)
+  pointsWon / pointsMax
+}
+
+TeamsFranchises --> Teams : franchID
+Teams --> TeamsHalf : teamID, yearID
+Teams --> SeriesPost : teamID
+
+Player --> Batting : playerID
+Player --> BattingPost : playerID
+Player --> Pitching : playerID
+Player --> PitchingPost : playerID
+Player --> Fielding : playerID
+Player --> FieldingOF : playerID
+Player --> Salaries : playerID
+Player --> AllstarFull : playerID
+Player --> HallOfFame : playerID
+Player --> Managers : playerID
+Player --> ManagersHalf : playerID
+Player --> AwardsPlayers : playerID
+Player --> AwardSharePlayers : playerID
+
+Managers --> AwardsManagers : playerID
+ManagersHalf --> AwardShareManagers : playerID
+
+style TeamsFranchises fill:#dbeafe,stroke:#1e40af,color:#111827,stroke-width:2px
+
+style Teams fill:#e0e7ff,stroke:#3730a3,color:#111827,stroke-width:2px
+style TeamsHalf fill:#e0e7ff,stroke:#3730a3,color:#111827,stroke-width:2px
+style Managers fill:#e0e7ff,stroke:#3730a3,color:#111827,stroke-width:2px
+style ManagersHalf fill:#e0e7ff,stroke:#3730a3,color:#111827,stroke-width:2px
+
+style Player fill:#fee2e2,stroke:#991b1b,color:#111827,stroke-width:2px
+
+style Batting fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style BattingPost fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style Pitching fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style PitchingPost fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style Fielding fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style FieldingOF fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style Salaries fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+style AllstarFull fill:#dcfce7,stroke:#166534,color:#111827,stroke-width:2px
+
+style HallOfFame fill:#fef9c3,stroke:#854d0e,color:#111827,stroke-width:2px
+style AwardsPlayers fill:#fef9c3,stroke:#854d0e,color:#111827,stroke-width:2px
+style AwardSharePlayers fill:#fef9c3,stroke:#854d0e,color:#111827,stroke-width:2px
+style AwardsManagers fill:#fef9c3,stroke:#854d0e,color:#111827,stroke-width:2px
+style AwardShareManagers fill:#fef9c3,stroke:#854d0e,color:#111827,stroke-width:2px
+
+style SeriesPost fill:#f3e8ff,stroke:#6b21a8,color:#111827,stroke-width:2px

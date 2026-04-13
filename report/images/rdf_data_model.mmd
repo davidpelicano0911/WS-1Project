@@ -1,0 +1,69 @@
+%% Editable online in Mermaid Live Editor: https://mermaid.live/
+flowchart LR
+  %% Column layout
+  subgraph LEFT[ ]
+    direction TB
+    Batting["bb:BattingStat"]
+    Pitching["bb:PitchingStat"]
+    Hall["bb:HallOfFameVote"]
+  end
+
+  subgraph CENTER[ ]
+    direction TB
+    Player["bb:Player"]
+    Award["bb:Award"]
+  end
+
+  subgraph TEAMS[ ]
+    direction TB
+    Team["bb:Team"]
+    Manager["bb:Manager"]
+  end
+
+  subgraph RIGHT[ ]
+    direction TB
+    Franchise["bb:Franchise"]
+    WorldSeries["bb:WorldSeriesResult"]
+    Salary["bb:Salary"]
+    AllStar["bb:AllStarAppearance"]
+  end
+
+  %% Main RDF relations
+  Player -->|bb:hasBatting| Batting
+  Player -->|bb:hasPitching| Pitching
+  Player -->|bb:hallOfFameVote| Hall
+  Player -->|bb:wonAward| Award
+  Player -->|bb:isManager| Manager
+  Player -->|bb:hasSalary| Salary
+  Player -->|bb:playedInAllStar| AllStar
+
+  Batting -->|bb:teamOf| Team
+  Pitching -->|bb:teamOf| Team
+  Salary -->|bb:teamOf| Team
+  AllStar -->|bb:teamOf| Team
+  Manager -->|bb:managedTeam| Team
+
+  Team -->|bb:franchiseOf| Franchise
+  WorldSeries -->|bb:winnerTeam| Team
+  WorldSeries -->|bb:loserTeam| Team
+
+  %% Color groups
+  classDef player fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+  classDef team fill:#dbeafe,stroke:#1d4ed8,color:#111827,stroke-width:2px;
+  classDef stat fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+  classDef award fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+  classDef post fill:#ede9fe,stroke:#7c3aed,color:#111827,stroke-width:2px;
+  classDef org fill:#e0e7ff,stroke:#4338ca,color:#111827,stroke-width:2px;
+
+  class Player player;
+  class Team,Manager team;
+  class Batting,Pitching,Salary,AllStar stat;
+  class Award,Hall award;
+  class WorldSeries post;
+  class Franchise org;
+
+  %% Hide subgraph borders
+  style LEFT fill:none,stroke:none;
+  style CENTER fill:none,stroke:none;
+  style TEAMS fill:none,stroke:none;
+  style RIGHT fill:none,stroke:none;

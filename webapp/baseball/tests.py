@@ -17,6 +17,12 @@ from baseball.quiz_service import (
     build_round_state,
 )
 from baseball.sparql_queries.graphs import get_player_graph_data, get_team_graph_data
+from baseball.sparql_queries.misc import (
+    get_awards_timeline,
+    get_franchise_history,
+    get_hall_of_fame_timeline,
+    get_salary_trends,
+)
 
 
 def _sample_question(question_id, family="leaderboard", correct_option_id="player:a"):
@@ -315,6 +321,109 @@ class TeamGraphQueryTests(TestCase):
         self.assertIn("won", edge_labels)
 
 
+class AnalyticsQueryTests(TestCase):
+    def tearDown(self):
+        get_salary_trends.cache_clear()
+        get_franchise_history.cache_clear()
+        get_awards_timeline.cache_clear()
+        get_hall_of_fame_timeline.cache_clear()
+
+    @patch("baseball.sparql_queries.misc.run_query")
+    def test_salary_trends_transform_rows_into_sorted_numeric_payload(self, mock_run_query):
+        mock_run_query.return_value = [
+            {
+                "year": {"value": "2001"},
+                "totalSalary": {"value": "3000000"},
+                "avgSalary": {"value": "1500000.5"},
+                "maxSalary": {"value": "2000000"},
+                "paidPlayers": {"value": "2"},
+            },
+            {
+                "year": {"value": "1999"},
+                "totalSalary": {"value": "1000000"},
+                "avgSalary": {"value": "500000"},
+                "maxSalary": {"value": "700000"},
+                "paidPlayers": {"value": "3"},
+            },
+        ]
+
+        trends = get_salary_trends()
+
+        self.assertEqual([row["year"] for row in trends], [1999, 2001])
+        self.assertEqual(trends[1]["total_salary"], 3000000)
+        self.assertEqual(trends[1]["avg_salary"], 1500000.5)
+        self.assertEqual(trends[1]["max_salary"], 2000000)
+        self.assertEqual(trends[1]["paid_players"], 2)
+
+    @patch("baseball.sparql_queries.misc.run_query")
+    def test_franchise_history_computes_win_pct_and_run_diff(self, mock_run_query):
+        mock_run_query.return_value = [
+            {
+                "franchID": {"value": "ATL"},
+                "franchName": {"value": "Atlanta Braves"},
+                "year": {"value": "1998"},
+                "wins": {"value": "106"},
+                "losses": {"value": "56"},
+                "runs": {"value": "795"},
+                "runsAllowed": {"value": "595"},
+            }
+        ]
+
+        history = get_franchise_history()
+
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["franch_id"], "ATL")
+        self.assertEqual(history[0]["franch_name"], "Atlanta Braves")
+        self.assertEqual(history[0]["run_diff"], 200)
+        self.assertAlmostEqual(history[0]["win_pct"], 0.654, places=3)
+
+    @patch("baseball.sparql_queries.misc.run_query")
+    def test_awards_timeline_keeps_award_and_league_dimensions(self, mock_run_query):
+        mock_run_query.return_value = [
+            {
+                "year": {"value": "2005"},
+                "awardName": {"value": "MVP"},
+                "league": {"value": "AL"},
+                "awardCount": {"value": "1"},
+            },
+            {
+                "year": {"value": "2006"},
+                "awardName": {"value": "MVP"},
+                "awardCount": {"value": "1"},
+            },
+        ]
+
+        timeline = get_awards_timeline()
+
+        self.assertEqual(timeline[0]["award_name"], "MVP")
+        self.assertEqual(timeline[0]["league"], "AL")
+        self.assertEqual(timeline[1]["league"], "")
+        self.assertEqual(timeline[1]["count"], 1)
+
+    @patch("baseball.sparql_queries.misc.run_query")
+    def test_hall_timeline_computes_weighted_vote_pct_and_skips_zero_division(self, mock_run_query):
+        mock_run_query.return_value = [
+            {
+                "year": {"value": "1995"},
+                "inductedCount": {"value": "3"},
+                "totalVotes": {"value": "900"},
+                "totalBallots": {"value": "1200"},
+            },
+            {
+                "year": {"value": "1996"},
+                "inductedCount": {"value": "1"},
+                "totalVotes": {"value": "0"},
+                "totalBallots": {"value": "0"},
+            },
+        ]
+
+        timeline = get_hall_of_fame_timeline()
+
+        self.assertEqual(timeline[0]["inducted_count"], 3)
+        self.assertEqual(timeline[0]["vote_pct"], 75.0)
+        self.assertIsNone(timeline[1]["vote_pct"])
+
+
 class QuizViewTests(TestCase):
     def test_quiz_page_renders(self):
         response = self.client.get(reverse("quiz"))
@@ -477,6 +586,98 @@ class QuizViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["active"])
+
+
+class AnalyticsViewTests(TestCase):
+    @patch("baseball.views.stats.get_managers_list")
+    @patch("baseball.views.stats.get_hall_of_fame_timeline")
+    @patch("baseball.views.stats.get_hall_of_fame_members")
+    @patch("baseball.views.stats.get_award_league_options")
+    @patch("baseball.views.stats.get_award_options")
+    @patch("baseball.views.stats.get_award_year_options")
+    @patch("baseball.views.stats.get_awards_timeline")
+    @patch("baseball.views.stats.get_awards_catalog")
+    @patch("baseball.views.stats.get_awards_list")
+    @patch("baseball.views.stats.get_franchise_history")
+    @patch("baseball.views.stats.get_franchise_options")
+    @patch("baseball.views.stats.get_salary_trends")
+    @patch("baseball.views.stats.get_top_salaries")
+    @patch("baseball.views.stats.get_global_team_leaders")
+    @patch("baseball.views.stats.get_global_player_leaders")
+    def test_analytics_view_exposes_graph_context_and_renders_controls(
+        self,
+        mock_global_players,
+        mock_global_teams,
+        mock_top_salaries,
+        mock_salary_trends,
+        mock_franchise_options,
+        mock_franchise_history,
+        mock_awards_list,
+        mock_awards_catalog,
+        mock_awards_timeline,
+        mock_award_years,
+        mock_award_options,
+        mock_award_leagues,
+        mock_hall_members,
+        mock_hall_timeline,
+        mock_managers,
+    ):
+        mock_global_players.return_value = {"hr": [], "rbi": [], "strikeouts": []}
+        mock_global_teams.return_value = [{"franch_id": "ATL", "name": "Atlanta Braves", "wins": 100}]
+        mock_top_salaries.return_value = [{"name": {"value": "Player One"}, "salary": {"value": "4000000"}, "year": {"value": "2001"}}]
+        mock_salary_trends.return_value = [{"year": 2001, "total_salary": 4000000, "avg_salary": 2000000.0, "max_salary": 4000000, "paid_players": 2}]
+        mock_franchise_options.return_value = [{"franch_id": "ATL", "name": "Atlanta Braves"}]
+        mock_franchise_history.return_value = [{"franch_id": "ATL", "franch_name": "Atlanta Braves", "year": 2001, "wins": 88, "losses": 74, "runs": 799, "runs_allowed": 677, "win_pct": 0.543, "run_diff": 122}]
+        mock_awards_list.return_value = [{"player_id": "p1", "name": "Player One", "award_name": "MVP", "year": 2001, "league": "AL"}]
+        mock_awards_catalog.return_value = [{"player_id": "p1", "name": "Player One", "award_name": "MVP", "year": 2001, "league": "AL"}]
+        mock_awards_timeline.return_value = [{"year": 2001, "award_name": "MVP", "league": "AL", "count": 1}]
+        mock_award_years.return_value = [{"year": 2001}]
+        mock_award_options.return_value = [{"award_name": "MVP"}]
+        mock_award_leagues.return_value = [{"league": "AL"}]
+        mock_hall_members.return_value = [{"player_id": "p1", "name": "Player One", "year": 2001, "percent": "75.0%"}]
+        mock_hall_timeline.return_value = [{"year": 2001, "inducted_count": 1, "vote_pct": 75.0}]
+        mock_managers.return_value = [{"player_id": "m1", "name": "Manager One", "wins": 100, "win_pct": ".600"}]
+
+        response = self.client.get(reverse("analytics"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("salary_trends", response.context)
+        self.assertIn("franchise_history", response.context)
+        self.assertIn("awards_timeline", response.context)
+        self.assertIn("hall_timeline", response.context)
+        self.assertEqual(response.context["default_franchise_id"], "ATL")
+        self.assertContains(response, 'id="analytics-salary-trends-data"', html=False)
+        self.assertContains(response, 'id="analytics-franchise-select"', html=False)
+        self.assertContains(response, 'id="analytics-league-filter"', html=False)
+        self.assertContains(response, 'id="analytics-awards-table-year"', html=False)
+        self.assertContains(response, 'id="analytics-awards-table-award"', html=False)
+        self.assertContains(response, 'id="analytics-awards-pagination"', html=False)
+        self.assertContains(response, 'id="analytics-hall-chart"', html=False)
+        self.assertContains(response, 'id="analytics-awards-catalog-data"', html=False)
+
+    @patch("baseball.views.stats.get_managers_list", return_value=[])
+    @patch("baseball.views.stats.get_hall_of_fame_timeline", return_value=[])
+    @patch("baseball.views.stats.get_hall_of_fame_members", return_value=[])
+    @patch("baseball.views.stats.get_award_league_options", return_value=[])
+    @patch("baseball.views.stats.get_award_options", return_value=[])
+    @patch("baseball.views.stats.get_award_year_options", return_value=[])
+    @patch("baseball.views.stats.get_awards_timeline", return_value=[])
+    @patch("baseball.views.stats.get_awards_catalog", return_value=[])
+    @patch("baseball.views.stats.get_awards_list", return_value=[])
+    @patch("baseball.views.stats.get_franchise_history", return_value=[])
+    @patch("baseball.views.stats.get_franchise_options", return_value=[])
+    @patch("baseball.views.stats.get_salary_trends", return_value=[])
+    @patch("baseball.views.stats.get_top_salaries", return_value=[])
+    @patch("baseball.views.stats.get_global_team_leaders", return_value=[])
+    @patch("baseball.views.stats.get_global_player_leaders", return_value={"hr": [], "rbi": [], "strikeouts": []})
+    def test_analytics_view_renders_chart_empty_states(self, *_mocks):
+        response = self.client.get(reverse("analytics"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No salary trend data is available for charting.")
+        self.assertContains(response, "No franchise history data is available for charting.")
+        self.assertContains(response, "No awards timeline data is available for charting.")
+        self.assertContains(response, "No Hall of Fame timeline data is available for charting.")
 
 
 class AuthViewTests(TestCase):

@@ -2,6 +2,7 @@ venv/*
 __pycache__/*
 *.pyc
 rdf/baseball.nt
+rdf/baseball.n3
 .graphdb-desktop.log
 
 # LaTeX build artifacts

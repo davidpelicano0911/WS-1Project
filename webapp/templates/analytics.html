@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Analytics Dashboard · Baseball Data Explorer{% endblock %}
 
@@ -17,7 +18,6 @@
 </section>
 
 <div class="card mb-5 border-0 bg-transparent">
-    <!-- Navbar Tabs -->
     <ul class="nav nav-pills mb-4 gap-2" id="analytics-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="btn-app btn-primary-app active d-flex align-items-center gap-2" id="players-tab" data-bs-toggle="pill" data-bs-target="#players-stats" type="button" role="tab" aria-controls="players-stats" aria-selected="true" style="padding: 0.5rem 1.2rem; border-radius: 8px;">
@@ -51,15 +51,13 @@
         </li>
     </ul>
 
-    <!-- Tab Contents -->
     <div class="tab-content" id="analytics-tabs-content">
-        <!-- GLOBAL LEADERS TAB -->
         <div class="tab-pane fade show active" id="players-stats" role="tabpanel" aria-labelledby="players-tab">
             <div class="row g-3">
                 <div class="col-12 col-md-6 col-lg-4">
                     <article class="feature-card h-100 border-top border-danger" style="border-top-width: 3px !important; padding: 1.5rem; background: var(--bg-card);">
-                        <div class="d-flex justify-content-between align-items-center mb-2" 
-                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                        <div class="d-flex justify-content-between align-items-center mb-2"
+                            data-bs-toggle="tooltip" data-bs-placement="top"
                             data-bs-title="Automatic runs scored by hitting the ball out of the field.">
                             <h3 class="feature-title h5 mb-0" style="cursor: help;">
                                 <i class="bi bi-fire me-1 text-danger"></i> Home Runs
@@ -85,8 +83,8 @@
 
                 <div class="col-12 col-md-6 col-lg-4">
                     <article class="feature-card h-100 border-top border-success" style="border-top-width: 3px !important; padding: 1.5rem; background: var(--bg-card);">
-                        <div class="d-flex justify-content-between align-items-center mb-2" 
-                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                        <div class="d-flex justify-content-between align-items-center mb-2"
+                            data-bs-toggle="tooltip" data-bs-placement="top"
                             data-bs-title="Runs Batted In: runs scored on a batter's turn at the plate.">
                             <h3 class="feature-title h5 mb-0" style="cursor: help;">
                                 <i class="bi bi-lightning-fill me-1 text-success"></i> RBI
@@ -112,8 +110,8 @@
 
                 <div class="col-12 col-md-6 col-lg-4">
                     <article class="feature-card h-100 border-top border-warning" style="border-top-width: 3px !important; padding: 1.5rem; background: var(--bg-card);">
-                        <div class="d-flex justify-content-between align-items-center mb-2" 
-                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                        <div class="d-flex justify-content-between align-items-center mb-2"
+                            data-bs-toggle="tooltip" data-bs-placement="top"
                             data-bs-title="Strikeouts: pitcher retiring a batter on three strikes.">
                             <h3 class="feature-title h5 mb-0" style="cursor: help;">
                                 <i class="bi bi-x-circle-fill me-1 text-warning"></i> Strikeouts
@@ -139,8 +137,40 @@
             </div>
         </div>
 
-        <!-- TEAMS TAB -->
         <div class="tab-pane fade" id="teams-stats" role="tabpanel" aria-labelledby="teams-tab">
+            <section class="data-panel mb-4">
+                <div class="analytics-chart-header">
+                    <div>
+                        <h2 class="h3 mb-2"><i class="bi bi-graph-up text-primary pe-2"></i> Franchise Trajectory</h2>
+                        <p class="muted-copy mb-0">Track a franchise across seasons by win percentage.</p>
+                    </div>
+                    <div class="analytics-control-grid analytics-control-grid-single">
+                        <div>
+                            <label class="form-label-app" for="analytics-franchise-select">Franchise</label>
+                            <select class="form-select analytics-select" id="analytics-franchise-select">
+                                {% for option in franchise_options %}
+                                <option value="{{ option.franch_id }}"{% if option.franch_id == default_franchise_id %} selected{% endif %}>{{ option.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% if franchise_history %}
+                <div class="analytics-chart-shell">
+                    <canvas id="analytics-franchise-chart"></canvas>
+                    <div id="analytics-franchise-empty" class="graph-empty-state" hidden>
+                        <i class="bi bi-bar-chart-line-fill"></i>
+                        No franchise history matches the selected filters.
+                    </div>
+                </div>
+                {% else %}
+                <div id="analytics-franchise-empty" class="graph-empty-state">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    No franchise history data is available for charting.
+                </div>
+                {% endif %}
+            </section>
+
             <div class="data-panel">
                 <h2 class="h3 mb-4"><i class="bi bi-shield-fill text-primary pe-2"></i> Franchise History Leaders</h2>
                 <div class="table-responsive table-app">
@@ -172,8 +202,40 @@
             </div>
         </div>
 
-        <!-- SALARIES TAB -->
         <div class="tab-pane fade" id="salaries-stats" role="tabpanel" aria-labelledby="salaries-tab">
+            <section class="data-panel mb-4">
+                <div class="analytics-chart-header">
+                    <div>
+                        <h2 class="h3 mb-2"><i class="bi bi-graph-up-arrow text-success pe-2"></i> Salary Trends</h2>
+                        <p class="muted-copy mb-0">Switch between total payroll volume, average salary, and the yearly top contract.</p>
+                    </div>
+                    <div class="analytics-control-grid analytics-control-grid-single">
+                        <div>
+                            <label class="form-label-app" for="analytics-salary-metric">Salary view</label>
+                            <select class="form-select analytics-select" id="analytics-salary-metric">
+                                <option value="total_salary" selected>Total salary paid</option>
+                                <option value="avg_salary">Average salary</option>
+                                <option value="max_salary">Highest recorded salary</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% if salary_trends %}
+                <div class="analytics-chart-shell">
+                    <canvas id="analytics-salary-chart"></canvas>
+                    <div id="analytics-salary-empty" class="graph-empty-state" hidden>
+                        <i class="bi bi-cash-stack"></i>
+                        No salary trend data is available for the selected view.
+                    </div>
+                </div>
+                {% else %}
+                <div id="analytics-salary-empty" class="graph-empty-state">
+                    <i class="bi bi-cash-stack"></i>
+                    No salary trend data is available for charting.
+                </div>
+                {% endif %}
+            </section>
+
             <div class="data-panel">
                 <h2 class="h3 mb-4"><i class="bi bi-cash-stack text-success pe-2"></i> Highest Salaries in History</h2>
                 <div class="table-responsive table-app">
@@ -205,10 +267,72 @@
             </div>
         </div>
 
-        <!-- AWARDS TAB -->
         <div class="tab-pane fade" id="awards-stats" role="tabpanel" aria-labelledby="awards-tab">
+            <section class="data-panel mb-4">
+                <div class="analytics-chart-header">
+                    <div>
+                        <h2 class="h3 mb-2"><i class="bi bi-award-fill text-warning pe-2"></i> Awards Volume by Year</h2>
+                        <p class="muted-copy mb-0">Compare total award volume over time, with an optional league filter.</p>
+                    </div>
+                    <div class="analytics-control-grid analytics-control-grid-single">
+                        <div>
+                            <label class="form-label-app" for="analytics-league-filter">League</label>
+                            <select class="form-select analytics-select" id="analytics-league-filter">
+                                <option value="" selected>All leagues</option>
+                                {% for option in league_options %}
+                                <option value="{{ option.league }}">{{ option.league }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% if awards_timeline %}
+                <div class="analytics-chart-shell">
+                    <canvas id="analytics-awards-chart"></canvas>
+                    <div id="analytics-awards-empty" class="graph-empty-state" hidden>
+                        <i class="bi bi-award"></i>
+                        No awards data matches the selected filters.
+                    </div>
+                </div>
+                {% else %}
+                <div id="analytics-awards-empty" class="graph-empty-state">
+                    <i class="bi bi-award"></i>
+                    No awards timeline data is available for charting.
+                </div>
+                {% endif %}
+            </section>
+
             <div class="data-panel">
-                <h2 class="h3 mb-4"><i class="bi bi-award-fill text-warning pe-2"></i> Awards timeline</h2>
+                <h2 class="h3 mb-4"><i class="bi bi-award-fill text-warning pe-2"></i> Awards Timeline</h2>
+                <div class="analytics-control-grid mb-4">
+                    <div>
+                        <label class="form-label-app" for="analytics-awards-table-year">Year</label>
+                        <select class="form-select analytics-select" id="analytics-awards-table-year">
+                            <option value="" selected>All years</option>
+                            {% for option in award_year_options %}
+                            <option value="{{ option.year }}">{{ option.year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label-app" for="analytics-awards-table-award">Award</label>
+                        <select class="form-select analytics-select" id="analytics-awards-table-award">
+                            <option value="" selected>All awards</option>
+                            {% for option in award_options %}
+                            <option value="{{ option.award_name }}">{{ option.award_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label-app" for="analytics-awards-table-league">League</label>
+                        <select class="form-select analytics-select" id="analytics-awards-table-league">
+                            <option value="" selected>All leagues</option>
+                            {% for option in league_options %}
+                            <option value="{{ option.league }}">{{ option.league }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive table-app">
                     <table class="table align-middle text-center mb-0">
                         <thead>
@@ -219,8 +343,8 @@
                                 <th>League</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for award in awards|slice:":25" %}
+                        <tbody id="analytics-awards-table-body">
+                            {% for award in awards_catalog|slice:":15" %}
                             <tr>
                                 <td class="text-start">
                                     {% if award.player_id %}
@@ -239,11 +363,41 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="analytics-awards-table-empty" class="empty-state" hidden>
+                    No awards match the selected filters.
+                </div>
+                <nav id="analytics-awards-pagination" class="pager-app" aria-label="Awards timeline pagination">
+                    <button type="button" class="btn-app btn-secondary-app" id="analytics-awards-prev">Previous</button>
+                    <div class="pager-pages" id="analytics-awards-pages"></div>
+                    <button type="button" class="btn-app btn-secondary-app" id="analytics-awards-next">Next</button>
+                </nav>
             </div>
         </div>
 
-        <!-- HALL OF FAME TAB -->
         <div class="tab-pane fade" id="hall-stats" role="tabpanel" aria-labelledby="hall-tab">
+            <section class="data-panel mb-4">
+                <div class="analytics-chart-header">
+                    <div>
+                        <h2 class="h3 mb-2"><i class="bi bi-bank2 text-warning pe-2"></i> Hall of Fame Momentum</h2>
+                        <p class="muted-copy mb-0">Bars show how many players were inducted into the Hall of Fame each year.</p>
+                    </div>
+                </div>
+                {% if hall_timeline %}
+                <div class="analytics-chart-shell">
+                    <canvas id="analytics-hall-chart"></canvas>
+                    <div id="analytics-hall-empty" class="graph-empty-state" hidden>
+                        <i class="bi bi-bank"></i>
+                        No Hall of Fame timeline data is available for charting.
+                    </div>
+                </div>
+                {% else %}
+                <div id="analytics-hall-empty" class="graph-empty-state">
+                    <i class="bi bi-bank"></i>
+                    No Hall of Fame timeline data is available for charting.
+                </div>
+                {% endif %}
+            </section>
+
             <div class="data-panel">
                 <h2 class="h3 mb-4"><i class="bi bi-bank text-warning pe-2"></i> Hall of Fame</h2>
                 <div class="table-responsive table-app">
@@ -277,7 +431,6 @@
             </div>
         </div>
 
-        <!-- MANAGERS TAB -->
         <div class="tab-pane fade" id="managers-stats" role="tabpanel" aria-labelledby="managers-tab">
             <div class="data-panel">
                 <h2 class="h3 mb-4"><i class="bi bi-person-badge text-info pe-2"></i> Managers</h2>
@@ -311,28 +464,18 @@
                 </div>
             </div>
         </div>
-
-
     </div>
 </div>
+
+{{ salary_trends|json_script:"analytics-salary-trends-data" }}
+{{ franchise_history|json_script:"analytics-franchise-history-data" }}
+{{ awards_timeline|json_script:"analytics-awards-timeline-data" }}
+{{ awards_catalog|json_script:"analytics-awards-catalog-data" }}
+{{ hall_timeline|json_script:"analytics-hall-timeline-data" }}
 
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    // Tab dynamic styler helper to swap button colors
-    document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('#analytics-tabs .btn-app');
-        tabs.forEach(t => {
-            t.addEventListener('shown.bs.tab', (e) => {
-                tabs.forEach(btn => {
-                    btn.classList.remove('btn-primary-app');
-                    btn.classList.add('btn-secondary-app');
-                });
-                e.target.classList.remove('btn-secondary-app');
-                e.target.classList.add('btn-primary-app');
-            });
-        });
-    });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'baseball/js/analytics-dashboard.js' %}"></script>
 {% endblock %}

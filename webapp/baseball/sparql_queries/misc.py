@@ -1,6 +1,41 @@
 from functools import lru_cache
 
-from .base import _row_int, _row_value, run_query
+from .base import _row_float, _row_int, _row_value, run_query
+
+
+def _year_sort_key(entry):
+    year = entry.get("year")
+    return (year is None, year if year is not None else 0)
+
+
+def _option_sort_key(entry):
+    return ((entry.get("name") or entry.get("award_name") or entry.get("league") or "").lower(),)
+
+
+def _build_awards_payload(rows):
+    awards = []
+    for row in rows:
+        first_name = _row_value(row, "nameFirst", "")
+        last_name = _row_value(row, "nameLast", "")
+        full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+
+        if not full_name:
+            full_name = _row_value(row, "name", "")
+        if not full_name:
+            full_name = _row_value(row, "nameGiven", "")
+        if not full_name:
+            full_name = _row_value(row, "playerID", "Unknown player")
+
+        awards.append(
+            {
+                "player_id": _row_value(row, "playerID", ""),
+                "name": full_name,
+                "award_name": _row_value(row, "awardName", "Award"),
+                "year": _row_int(row, "year", 0),
+                "league": _row_value(row, "lg", ""),
+            }
+        )
+    return awards
 
 @lru_cache(maxsize=1)
 def get_top_salaries():
@@ -18,6 +53,184 @@ def get_top_salaries():
     LIMIT 10
     """
     return run_query(query)
+
+
+@lru_cache(maxsize=1)
+def get_salary_trends():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year
+           (SUM(?salary) AS ?totalSalary)
+           (AVG(?salary) AS ?avgSalary)
+           (MAX(?salary) AS ?maxSalary)
+           (COUNT(DISTINCT ?playerID) AS ?paidPlayers)
+    WHERE {
+        ?player bb:playerID ?playerID ;
+                bb:hasSalary ?salaryObj .
+        ?salaryObj bb:salary ?salary ;
+                   bb:yearID ?year .
+    }
+    GROUP BY ?year
+    ORDER BY ?year
+    """
+    rows = []
+    for row in run_query(query):
+        year = _row_int(row, "year", None)
+        if year is None:
+            continue
+        rows.append(
+            {
+                "year": year,
+                "total_salary": _row_int(row, "totalSalary", 0),
+                "avg_salary": round(_row_float(row, "avgSalary", 0.0), 2),
+                "max_salary": _row_int(row, "maxSalary", 0),
+                "paid_players": _row_int(row, "paidPlayers", 0),
+            }
+        )
+    return sorted(rows, key=_year_sort_key)
+
+
+@lru_cache(maxsize=1)
+def get_franchise_history():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?franchID ?franchName ?year ?wins ?losses ?runs ?runsAllowed
+    WHERE {
+        ?franchise a bb:Franchise ;
+                   bb:franchID ?franchID .
+        OPTIONAL { ?franchise bb:franchiseName ?franchName . }
+
+        ?team a bb:Team ;
+              bb:franchiseOf ?franchise ;
+              bb:yearID ?year .
+
+        OPTIONAL { ?team bb:W ?wins . }
+        OPTIONAL { ?team bb:L ?losses . }
+        OPTIONAL { ?team bb:R ?runs . }
+        OPTIONAL { ?team bb:RA ?runsAllowed . }
+    }
+    ORDER BY ?franchName ?franchID ?year
+    """
+    history = []
+    for row in run_query(query):
+        franch_id = _row_value(row, "franchID", "")
+        year = _row_int(row, "year", None)
+        if not franch_id or year is None:
+            continue
+
+        wins = _row_int(row, "wins", 0)
+        losses = _row_int(row, "losses", 0)
+        total_games = wins + losses
+        runs = _row_int(row, "runs", 0)
+        runs_allowed = _row_int(row, "runsAllowed", 0)
+
+        history.append(
+            {
+                "franch_id": franch_id,
+                "franch_name": _row_value(row, "franchName", "") or franch_id,
+                "year": year,
+                "wins": wins,
+                "losses": losses,
+                "runs": runs,
+                "runs_allowed": runs_allowed,
+                "win_pct": round((wins / total_games), 3) if total_games else 0.0,
+                "run_diff": runs - runs_allowed,
+            }
+        )
+    return sorted(history, key=lambda entry: ((entry["franch_name"] or entry["franch_id"]).lower(), entry["franch_id"], entry["year"]))
+
+
+@lru_cache(maxsize=1)
+def get_franchise_options():
+    options = {}
+    for row in get_franchise_history():
+        options.setdefault(
+            row["franch_id"],
+            {"franch_id": row["franch_id"], "name": row["franch_name"] or row["franch_id"]},
+        )
+    return sorted(options.values(), key=_option_sort_key)
+
+
+@lru_cache(maxsize=1)
+def get_awards_timeline():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year ?awardName ?league (COUNT(DISTINCT ?awardObj) AS ?awardCount)
+    WHERE {
+        ?player bb:wonAward ?awardObj .
+        ?awardObj bb:awardName ?awardName ;
+                  bb:yearID ?year .
+        OPTIONAL { ?awardObj bb:lgID ?league . }
+    }
+    GROUP BY ?year ?awardName ?league
+    ORDER BY ?year ?awardName ?league
+    """
+    timeline = []
+    for row in run_query(query):
+        year = _row_int(row, "year", None)
+        award_name = _row_value(row, "awardName", "")
+        if year is None or not award_name:
+            continue
+        timeline.append(
+            {
+                "year": year,
+                "award_name": award_name,
+                "league": _row_value(row, "league", ""),
+                "count": _row_int(row, "awardCount", 0),
+            }
+        )
+    return sorted(timeline, key=lambda entry: (entry["year"], entry["award_name"].lower(), entry["league"]))
+
+
+@lru_cache(maxsize=1)
+def get_award_options():
+    options = {row["award_name"] for row in get_awards_timeline() if row.get("award_name")}
+    return [{"award_name": award_name} for award_name in sorted(options, key=str.lower)]
+
+
+@lru_cache(maxsize=1)
+def get_award_league_options():
+    leagues = {row["league"] for row in get_awards_timeline() if row.get("league")}
+    return [{"league": league} for league in sorted(leagues, key=str.upper)]
+
+
+@lru_cache(maxsize=1)
+def get_hall_of_fame_timeline():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+
+    SELECT ?year
+           (COUNT(DISTINCT ?hof) AS ?inductedCount)
+           (SUM(?votes) AS ?totalVotes)
+           (SUM(?ballots) AS ?totalBallots)
+    WHERE {
+        ?hof a bb:HallOfFameVote ;
+             bb:inducted true ;
+             bb:yearID ?year ;
+             bb:votes ?votes ;
+             bb:ballots ?ballots .
+    }
+    GROUP BY ?year
+    ORDER BY ?year
+    """
+    rows = []
+    for row in run_query(query):
+        year = _row_int(row, "year", None)
+        if year is None:
+            continue
+        total_ballots = _row_int(row, "totalBallots", 0)
+        total_votes = _row_int(row, "totalVotes", 0)
+        rows.append(
+            {
+                "year": year,
+                "inducted_count": _row_int(row, "inductedCount", 0),
+                "vote_pct": round((total_votes / total_ballots) * 100, 1) if total_ballots else None,
+            }
+        )
+    return sorted(rows, key=_year_sort_key)
 
 
 @lru_cache(maxsize=1)
@@ -42,30 +255,37 @@ def get_awards_list():
     ORDER BY DESC(?year)
     LIMIT 25
     """
-    awards = []
-    for row in run_query(query):
-        first_name = _row_value(row, "nameFirst", "")
-        last_name = _row_value(row, "nameLast", "")
-        full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+    return _build_awards_payload(run_query(query))
 
-        if not full_name:
-            full_name = _row_value(row, "name", "")
-        if not full_name:
-            full_name = _row_value(row, "nameGiven", "")
-        if not full_name:
-            full_name = _row_value(row, "playerID", "Unknown player")
 
-        awards.append(
-            {
-                "player_id": _row_value(row, "playerID", ""),
-                "name": full_name,
-                "award_name": _row_value(row, "awardName", "Award"),
-                "year": _row_int(row, "year", 0),
-                "league": _row_value(row, "lg", ""),
-            }
-        )
+@lru_cache(maxsize=1)
+def get_awards_catalog():
+    query = """
+    PREFIX bb: <http://baseball.ws.pt/>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    return awards
+    SELECT ?playerID ?nameFirst ?nameLast ?nameGiven ?name ?awardName ?year ?lg
+    WHERE {
+        ?p bb:wonAward ?awObj .
+        ?p bb:playerID ?playerID .
+        ?awObj bb:awardName ?awardName ;
+              bb:yearID ?year .
+
+        OPTIONAL { ?p foaf:name ?name . }
+        OPTIONAL { ?p bb:nameFirst ?nameFirst . }
+        OPTIONAL { ?p bb:nameLast ?nameLast . }
+        OPTIONAL { ?p bb:nameGiven ?nameGiven . }
+        OPTIONAL { ?awObj bb:lgID ?lg . }
+    }
+    ORDER BY DESC(?year) ?awardName ?playerID
+    """
+    return _build_awards_payload(run_query(query))
+
+
+@lru_cache(maxsize=1)
+def get_award_year_options():
+    years = {row["year"] for row in get_awards_timeline() if row.get("year")}
+    return [{"year": year} for year in sorted(years, reverse=True)]
 
 
 def get_header_teams_graph():

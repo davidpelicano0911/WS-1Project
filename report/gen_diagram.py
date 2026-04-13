@@ -5,7 +5,7 @@ from pathlib import Path
 
 # ── Layout ────────────────────────────────────────────────────────────────────
 BOX_W, BOX_H = 183, 122
-COL_STEP     = 218
+COL_STEP     = 248
 ROW_STEP     = 155
 MARGIN_X     = 34
 MARGIN_Y     = 48

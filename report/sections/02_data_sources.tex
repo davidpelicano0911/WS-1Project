@@ -19,6 +19,13 @@ O n\'ucleo do projeto assenta num arquivo hist\'orico de baseball em formato CSV
 
 Este conjunto de fontes foi suficiente para modelar um dom\'inio rico, com rela\c{c}\~oes entre pessoas, equipas, desempenhos desportivos, distin\c{c}\~oes individuais e contexto competitivo ao longo do tempo.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/data_model.png}
+  \caption{Modelo de dados original baseado nos ficheiros CSV utilizados no projeto.}
+  \label{fig:csv_data_model}
+\end{figure}
+
 \section{Transforma\c{c}\~ao para RDF}
 
 O processo de transforma\c{c}\~ao foi implementado no script \texttt{rdf/convert.py}. Esse script percorre cada CSV com \texttt{csv.DictReader}, extrai os atributos relevantes e cria recursos RDF com base no namespace \texttt{http://baseball.ws.pt/}. Para cada tipo de entidade \'{e} gerada uma URI est\'avel e leg\'ivel, sendo aplicadas regras de normaliza\c{c}\~ao para evitar caracteres problem\'aticos nos identificadores.
@@ -34,6 +41,77 @@ Durante a convers\~ao s\~ao declaradas classes para jogadores, franquias, equipa
 \end{itemize}
 
 O resultado final desta transforma\c{c}\~ao \'{e} o ficheiro \texttt{rdf/baseball.n3}, em formato N3. Esse ficheiro \'{e} depois importado para um reposit\'orio \texttt{baseball} no GraphDB, onde passa a estar dispon\'ivel para consulta atrav\'es de SPARQL pela aplica\c{c}\~ao Django.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/rdf_data_model.png}
+  \caption{Vis\~ao simplificada do modelo RDF resultante, destacando as principais classes e rela\c{c}\~oes materializadas no grafo.}
+  \label{fig:rdf_data_model}
+\end{figure}
+
+\section{Decis\~oes de Modela\c{c}\~ao, Limpeza e Exclus\~ao}
+
+Embora os dados de origem sejam ricos, o arquivo original encontra-se organizado como um conjunto de tabelas CSV independentes, com conven\c{c}\~oes herdadas da base de dados Lahman e com alguns problemas t\'ipicos de dados hist\'oricos: valores omissos, variantes de c\'odigos, flags representadas por letras, colunas redundantes e diferentes n\'iveis de detalhe conforme o ficheiro. Por isso, antes da gera\c{c}\~ao do grafo RDF, foi necess\'ario tomar algumas decis\~oes expl\'icitas de normaliza\c{c}\~ao e de desenho do modelo.
+
+\subsection{Como os dados originais foram interpretados}
+
+Cada ficheiro CSV foi tratado como uma fonte de uma entidade ou rela\c{c}\~ao principal do dom\'inio:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{Master.csv} foi usado como fonte can\'onica para jogadores, porque concentra o identificador principal (\texttt{playerID}) e os atributos biogr\'aficos mais est\'aveis.
+  \item \texttt{Teams.csv} e \texttt{TeamsFranchises.csv} foram usados para distinguir duas no\c{c}\~oes diferentes: a equipa numa dada \'{e}poca e a franquia enquanto entidade hist\'orica.
+  \item Os ficheiros de batting, pitching, fielding, sal\'arios, pr\'emios, Hall of Fame, All-Star e managers foram interpretados como ocorr\^encias temporais ligadas a um jogador e, quando aplic\'avel, a uma equipa e a um ano.
+  \item Nos casos em que o significado do registo dependia de mais do que um identificador, a URI RDF passou a incorporar essas componentes. Por exemplo, as estat\'isticas usam combina\c{c}\~oes como jogador + ano + stint, e as equipas usam equipa + ano.
+\end{itemize}
+
+Esta decis\~ao evita colis\~oes entre recursos e preserva o car\'acter temporal do dataset original, que \'{e} central para o dom\'inio desportivo.
+
+\subsection{Regras de limpeza e normaliza\c{c}\~ao}
+
+O script \texttt{rdf/convert.py} n\~ao se limita a copiar os valores dos CSV para RDF. Antes disso, aplica um conjunto pequeno, mas importante, de regras de limpeza:
+
+\begin{itemize}[leftmargin=*]
+  \item Espa\c{c}os em branco repetidos s\~ao removidos e o texto \'{e} aparado para evitar diferen\c{c}as artificiais entre valores semanticamente iguais.
+  \item C\'odigos como \texttt{teamID}, \texttt{lgID}, \texttt{franchID} e \texttt{divID} s\~ao normalizados para mai\'usculas, tornando as refer\^encias mais consistentes.
+  \item Alguns pa\'ises aparecem com variantes no arquivo original, como \texttt{USA}, \texttt{US} ou \texttt{U.S.A.}; essas variantes foram consolidadas numa forma comum, como \texttt{United States}.
+  \item Flags como \texttt{Y}/\texttt{N}, \texttt{TRUE}/\texttt{FALSE} e variantes equivalentes s\~ao convertidas para booleanos RDF.
+  \item Valores vazios ou marcadores como \texttt{NA}, \texttt{N/A}, \texttt{null}, \texttt{none} e semelhantes n\~ao s\~ao materializados no grafo.
+  \item Datas, inteiros e decimais s\~ao tipados explicitamente com \texttt{xsd:date}, \texttt{xsd:integer} e \texttt{xsd:decimal}, o que simplifica consultas e ordena\c{c}\~oes em SPARQL.
+  \item Os componentes usados nas URIs passam por uma sanitiza\c{c}\~ao simples, removendo caracteres problem\'aticos e garantindo identificadores est\'aveis.
+\end{itemize}
+
+Na pr\'atica, esta fase reduz ru\'ido no grafo e evita que diferen\c{c}as de formata\c{c}\~ao nos CSV comprometam a liga\c{c}\~ao entre entidades.
+
+\subsection{Decis\~oes de modela\c{c}\~ao RDF}
+
+Também fora tomadas algumas decis\~oes para tornar o grafo mais f\'acil de consultar a partir da aplica\c{c}\~ao:
+
+\begin{itemize}[leftmargin=*]
+  \item Foram introduzidas propriedades mais leg\'iveis e diretamente \'{u}teis para a interface, como \texttt{bb:teamName}, \texttt{bb:franchiseName} e \texttt{bb:awardName}, mesmo quando essas informa\c{c}\~oes j\'a existiam noutras colunas equivalentes.
+  \item Tamb\'em foram expostos atalhos sem\^anticos para estat\'isticas frequentes, como \texttt{bb:homeRuns}, \texttt{bb:wins}, \texttt{bb:losses} e \texttt{bb:rank}, de modo a simplificar consultas e a camada de apresenta\c{c}\~ao.
+  \item O nome do jogador foi exposto tamb\'em com \texttt{foaf:name}, o que facilita a apresenta\c{c}\~ao textual e aproxima o modelo de vocabul\'arios mais comuns da Web Sem\^antica.
+  \item As rela\c{c}\~oes entre recursos foram materializadas explicitamente com propriedades como \texttt{bb:hasBatting}, \texttt{bb:hasPitching} e \texttt{bb:hasSalary}.
+  \item O mesmo princ\'ipio foi usado para liga\c{c}\~oes de contexto, como \texttt{bb:wonAward}, \texttt{bb:managedTeam} e \texttt{bb:franchiseOf}. Isto torna as consultas mais diretas do que depender apenas de chaves literais repetidas.
+\end{itemize}
+
+Estas decis\~oes privilegiam legibilidade e simplicidade de consulta em vez de um minimalismo ontol\'ogico estrito.
+
+\subsection{Dados exclu\'idos por omiss\~ao e justifica\c{c}\~ao}
+
+O conversor suporta dois perfis: \texttt{lean} e \texttt{full}. O perfil \texttt{full} exporta todas as vinte tabelas modeladas no projeto, enquanto o perfil \texttt{lean} \textemdash{} usado por omiss\~ao \textemdash{} exporta apenas o subconjunto atualmente necess\'ario para a aplica\c{c}\~ao Web e para as consultas principais.
+
+No perfil \texttt{lean}, ficam fora do RDF final importado por omiss\~ao os seguintes conjuntos:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{TeamsHalf.csv}
+  \item \texttt{BattingPost.csv} e \texttt{PitchingPost.csv}
+  \item \texttt{AwardsSharePlayers.csv}
+  \item \texttt{Fielding.csv} e \texttt{FieldingOF.csv}
+  \item \texttt{ManagersHalf.csv}
+  \item \texttt{AwardsManagers.csv} e \texttt{AwardsShareManagers.csv}
+\end{itemize}
+
+Ested dados não eram s\~ao necess\'arios para as funcionalidades da interface atual e, por isso, a sua omiss\~ao reduz o tamanho do grafo, acelera a importa\c{c}\~ao no GraphDB e torna as consultas mais rápidas. 
 
 
 \section{Dados Complementares para a Interface}
