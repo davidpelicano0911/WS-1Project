@@ -397,3 +397,66 @@ Para promover a qualidade e corre\c{c}\~ao dos dados sem\^anticos, a aplica\c{c}
 
     \item \textbf{Administrador, revis\~ao (Figura~\ref{fig:suggest_review}):} A \textit{dashboard} \textit{``Review Queue''} lista todas as sugest\~oes, filtr\'aveis por estado (pendente, aprovada, rejeitada) e tipo de entidade (jogador ou equipa). Para sugest\~oes pendentes, o administrador pode editar os valores propostos antes de aprovar, acrescentar uma nota de revis\~ao, e depois \textbf{aprovar e publicar} diretamente no GraphDB, ou \textbf{rejeitar} com justificativa. A aprova\c{c}\~ao escreve a modifica\c{c}\~ao diretamente no reposit\'orio RDF ativo.
 \end{itemize}
+
+% ============================================================
+\section{Assistente Conversacional (Chatbot)}
+% ============================================================
+
+Para complementar a navega\c{c}\~ao cl\'assica por p\'aginas, a aplica\c{c}\~ao integra um assistente conversacional que permite consultar o grafo sem\^antico atrav\'es de linguagem natural. O chatbot funciona como uma camada de acesso r\'apido aos mesmos dados expostos nas vistas de jogadores, equipas e estat\'isticas, mas com uma experi\^encia mais direta para explora\c{c}\~ao ad-hoc.
+
+\subsection{Objetivo funcional}
+
+O objetivo do chatbot n\~ao \`e gerar respostas livres sem valida\c{c}\~ao, mas sim mapear perguntas para consultas sem\^anticas concretas e devolver resultados estruturados. Assim, o utilizador pode:
+
+\begin{itemize}[leftmargin=*]
+    \item pesquisar jogadores e equipas por nome;
+    \item listar equipas por liga (por exemplo, AL ou NL);
+    \item consultar jogadores por pa\'is de nascimento;
+    \item obter vencedores de pr\'emios por ano;
+    \item ver l\'ideres salariais no conjunto de dados atual.
+\end{itemize}
+
+\subsection{Fluxo t\'ecnico da resposta}
+
+O fluxo de processamento da pergunta segue uma cadeia simples e controlada:
+
+\begin{enumerate}[leftmargin=*]
+    \item a interface envia a pergunta para o endpoint do chatbot;
+    \item o servi\c{c}o normaliza texto e identifica a inten\c{c}\~ao (liga, jogador, pr\'emio, sal\'ario, etc.);
+    \item com base na inten\c{c}\~ao, \`e escolhida uma fun\c{c}\~ao de consulta espec\'ifica;
+    \item a fun\c{c}\~ao executa uma \texttt{SELECT} SPARQL sobre o GraphDB;
+    \item a resposta \`e convertida para itens naveg\'aveis (links para p\'aginas da aplica\c{c}\~ao).
+\end{enumerate}
+
+Esta arquitetura garante que o chatbot reutiliza o mesmo backbone sem\^antico do restante sistema, em vez de manter uma base paralela de conhecimento.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/bot_demo1.png}
+    \caption{Exemplo de resposta do chatbot com resultados obtidos a partir de consultas SPARQL no GraphDB.}
+    \label{fig:chatbot_ui_entry}
+\end{figure}
+
+\subsection{Robustez lingu\'istica e cobertura de inten\c{c}\~oes}
+
+O classificador de inten\c{c}\~oes foi refor\c{c}ado para aceitar variantes em portugu\^es e ingl\^es, incluindo pequenas diferen\c{c}as de vocabul\'ario (por exemplo, \textit{equipa/equipe/team}, \textit{sal\'ario/salary}) e normaliza\c{c}\~ao de acentos. Quando uma pergunta n\~ao encaixa imediatamente numa regra direta, o sistema aplica um \textit{fallback} progressivo por termos candidatos antes de desistir.
+
+Na pr\'atica, isto melhora a taxa de acerto para perguntas reais de demonstra\c{c}\~ao, como:
+
+\begin{itemize}[leftmargin=*]
+    \item \textit{Mostra equipas da AL};
+    \item \textit{Pr\'emios em 2015};
+    \item \textit{Top sal\'arios};
+    \item \textit{Dados do jogador Aaron Judge}.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/bot_demo.png}
+    \caption{Interface do chatbot integrada na aplica\c{c}\~ao, com acesso por bot\~ao flutuante e painel de conversa.}
+    \label{fig:chatbot_demo_response}
+\end{figure}
+
+\subsection{Limita\c{c}\~oes atuais}
+
+Tal como no resto da aplica\c{c}\~ao, o chatbot depende da disponibilidade do GraphDB em execu\c{c}\~ao e da cobertura do dataset carregado. Perguntas fora do dom\'inio baseball ou fora do universo de dados importado podem n\~ao produzir resultados. Ainda assim, o assistente devolve sugest\~oes de navega\c{c}\~ao para orientar o utilizador para consultas suportadas.
