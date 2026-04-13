@@ -9,6 +9,7 @@ from .players import (
     compare_selection_view,
     graph_view,
     player_detail_view,
+    player_detail_rdf_view,
     player_graph_photo_view,
     players_view,
 )

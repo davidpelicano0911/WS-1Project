@@ -127,8 +127,37 @@
                         "background-clip": "node",
                         "background-position-x": "50%",
                         "background-position-y": "50%",
-                        "background-width": "112%",
-                        "background-height": "112%",
+                        "background-width": "100%",
+                        "background-height": "100%",
+                        "background-opacity": 1,
+                    },
+                },
+                {
+                    selector: 'node[type="team"]',
+                    style: {
+                        "background-color": "#ffffff",
+                        width: 104,
+                        height: 104,
+                        shape: "ellipse",
+                        "border-width": 5,
+                        "border-color": "#ffffff",
+                        "text-valign": "bottom",
+                        "text-margin-y": 14,
+                        "text-max-width": 156,
+                    },
+                },
+                {
+                    selector: 'node[type="team"][resolvedLogoUrl]',
+                    style: {
+                        "background-color": "#ffffff",
+                        "background-image": "data(resolvedLogoUrl)",
+                        "background-fit": "cover",
+                        "background-repeat": "no-repeat",
+                        "background-clip": "node",
+                        "background-position-x": "50%",
+                        "background-position-y": "50%",
+                        "background-width": "100%",
+                        "background-height": "100%",
                         "background-opacity": 1,
                     },
                 },
@@ -231,6 +260,11 @@
                 cy.nodes('[resolvedPhotoUrl]').forEach((node) => {
                     node.style("background-image", node.data("resolvedPhotoUrl"));
                 });
+            });
+        };
+
+        const applyLogoNodes = () => {
+            cy.batch(() => {
                 cy.nodes('[resolvedLogoUrl]').forEach((node) => {
                     node.style("background-image", node.data("resolvedLogoUrl"));
                 });
@@ -266,6 +300,7 @@
                     }
                 }
             }));
+            applyLogoNodes();
             refreshImageNodes();
         };
 

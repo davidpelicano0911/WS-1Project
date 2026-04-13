@@ -434,8 +434,83 @@ def _build_player_detail_payload(profile):
     }
 
 
+PLAYER_GRAPH_LIMITS = {
+    "teammate": 24,
+    "award": 12,
+    "manager": 10,
+}
+
+
+def _player_graph_sort_key(node):
+    node_data = node.get("data", {})
+    node_type = node_data.get("type", "")
+    label = str(node_data.get("label", ""))
+
+    if node_type == "teammate":
+        try:
+            shared_seasons = int(node_data.get("sharedSeasons") or 0)
+        except (TypeError, ValueError):
+            shared_seasons = 0
+        return (-shared_seasons, label.lower())
+
+    if node_type == "award":
+        year_text = label.rsplit("(", 1)[-1].rstrip(")") if "(" in label else ""
+        try:
+            year_value = int(year_text)
+        except (TypeError, ValueError):
+            year_value = 0
+        return (-year_value, label.lower())
+
+    return (0, label.lower())
+
+
+def _limit_player_graph(graph_data):
+    nodes = list(graph_data.get("nodes", []))
+    edges = list(graph_data.get("edges", []))
+    if not nodes:
+        return {
+            "nodes": [],
+            "edges": [],
+            "trimmed": False,
+            "hidden_counts": {},
+        }
+
+    keep_ids = set()
+    hidden_counts = {}
+
+    grouped_nodes = {}
+    for node in nodes:
+        node_type = node.get("data", {}).get("type", "")
+        grouped_nodes.setdefault(node_type, []).append(node)
+
+    for node_type, group in grouped_nodes.items():
+        limit = PLAYER_GRAPH_LIMITS.get(node_type)
+        if limit is None or len(group) <= limit:
+            keep_ids.update(node.get("data", {}).get("id") for node in group if node.get("data", {}).get("id"))
+            continue
+
+        sorted_group = sorted(group, key=_player_graph_sort_key)
+        kept_group = sorted_group[:limit]
+        keep_ids.update(node.get("data", {}).get("id") for node in kept_group if node.get("data", {}).get("id"))
+        hidden_counts[node_type] = len(group) - len(kept_group)
+
+    limited_nodes = [node for node in nodes if node.get("data", {}).get("id") in keep_ids]
+    limited_edges = [
+        edge for edge in edges
+        if edge.get("data", {}).get("source") in keep_ids and edge.get("data", {}).get("target") in keep_ids
+    ]
+
+    return {
+        "nodes": limited_nodes,
+        "edges": limited_edges,
+        "trimmed": bool(hidden_counts),
+        "hidden_counts": hidden_counts,
+    }
+
+
 def _build_player_graph_payload(player):
     graph_data = deepcopy(get_player_graph_data(player.get("player_id", "")))
+    limited_graph = _limit_player_graph(graph_data)
     direct_photo_url = (
         player.get("card_photo_url")
         or player.get("photo_url")
@@ -450,7 +525,7 @@ def _build_player_graph_payload(player):
     if player.get("photo_url") or player.get("photo_fallback_url"):
         proxy_photo_url = reverse("player_graph_photo", kwargs={"player_id": player.get("player_id", "")})
 
-    for node in graph_data.get("nodes", []):
+    for node in limited_graph.get("nodes", []):
         node_data = node.get("data", {})
         node_type = node_data.get("type")
 
@@ -468,10 +543,27 @@ def _build_player_graph_payload(player):
             if teammate_id:
                 node_data["photoProxyUrl"] = reverse("player_graph_photo", kwargs={"player_id": teammate_id})
 
+    hidden_counts = limited_graph.get("hidden_counts", {})
+    graph_limit_summary = ""
+    if hidden_counts:
+        parts = []
+        labels = {
+            "teammate": "teammates",
+            "award": "awards",
+            "manager": "managers",
+        }
+        for key in ("teammate", "award", "manager"):
+            count = hidden_counts.get(key)
+            if count:
+                parts.append(f"{count} {labels[key]}")
+        if parts:
+            graph_limit_summary = ""
+
     return {
-        "graph_nodes": graph_data.get("nodes", []),
-        "graph_edges": graph_data.get("edges", []),
-        "has_player_graph": bool(graph_data.get("nodes")),
+        "graph_nodes": limited_graph.get("nodes", []),
+        "graph_edges": limited_graph.get("edges", []),
+        "has_player_graph": bool(limited_graph.get("nodes")),
+        "graph_limit_summary": graph_limit_summary,
     }
 
 
@@ -970,15 +1062,28 @@ def _build_compare_profile(player_id):
     if not summary:
         return None
 
-    batting_seasons = get_player_batting_seasons(player_id)
-    pitching_seasons = get_player_pitching_seasons(player_id)
-    batting_summary = get_player_batting_summary(player_id)
-    pitching_summary = get_player_pitching_summary(player_id)
-    award_history = get_player_award_history(player_id)
-    allstar_history = get_player_allstar_history(player_id)
-    hall_of_fame = get_player_hall_of_fame(player_id)
-    salary_history = get_player_salary_history(player_id)
-    team_history = get_player_team_history(player_id)
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {
+            "batting_seasons": executor.submit(get_player_batting_seasons, player_id),
+            "pitching_seasons": executor.submit(get_player_pitching_seasons, player_id),
+            "batting_summary": executor.submit(get_player_batting_summary, player_id),
+            "pitching_summary": executor.submit(get_player_pitching_summary, player_id),
+            "award_history": executor.submit(get_player_award_history, player_id),
+            "allstar_history": executor.submit(get_player_allstar_history, player_id),
+            "hall_of_fame": executor.submit(get_player_hall_of_fame, player_id),
+            "salary_history": executor.submit(get_player_salary_history, player_id),
+            "team_history": executor.submit(get_player_team_history, player_id),
+        }
+
+        batting_seasons = futures["batting_seasons"].result()
+        pitching_seasons = futures["pitching_seasons"].result()
+        batting_summary = futures["batting_summary"].result()
+        pitching_summary = futures["pitching_summary"].result()
+        award_history = futures["award_history"].result()
+        allstar_history = futures["allstar_history"].result()
+        hall_of_fame = futures["hall_of_fame"].result()
+        salary_history = futures["salary_history"].result()
+        team_history = futures["team_history"].result()
 
     season_years = sorted({entry["year"] for entry in team_history if entry.get("year")})
     if not season_years:
@@ -1616,16 +1721,10 @@ def player_detail_view(request, player_id):
     detail_payload = _build_player_detail_payload(player)
     graph_payload = _build_player_graph_payload(player)
 
-    try:
-        rdf_triples = run_describe(BB_PLAYER_URI.format(player_id))
-    except Exception:
-        rdf_triples = []
-
     context = {
         "player": player,
         **detail_payload,
         **graph_payload,
-        "rdf_triples": rdf_triples,
         "edit_state": build_player_edit_state(player, request.user.is_staff) if request.user.is_authenticated else None,
         "recent_salary_history": player["salary_history"][:10],
         "recent_team_history": sorted(
@@ -1645,6 +1744,35 @@ def player_detail_view(request, player_id):
         )[:8],
     }
     return render(request, "player_detail.html", context)
+
+
+def player_detail_rdf_view(request, player_id):
+    if not get_player_summary(player_id):
+        raise Http404("Player not found")
+
+    try:
+        rdf_triples = run_describe(BB_PLAYER_URI.format(player_id))
+    except Exception:
+        return JsonResponse(
+            {
+                "triples": [],
+                "error": "The RDF data could not be loaded right now.",
+            },
+            status=503,
+        )
+
+    return JsonResponse(
+        {
+            "triples": [
+                {
+                    "predicate": str(triple.get("predicate", "")),
+                    "value": str(triple.get("value", "")),
+                }
+                for triple in rdf_triples
+            ],
+            "error": "",
+        }
+    )
 
 
 def compare_players_view(request):

@@ -7,6 +7,7 @@ urlpatterns = [
     path('chatbot/ask/', views.chatbot_ask_view, name='chatbot_ask'),
     path('players/', views.players_view, name='players'),
     path('players/<str:player_id>/graph-photo/', views.player_graph_photo_view, name='player_graph_photo'),
+    path('players/<str:player_id>/rdf/', views.player_detail_rdf_view, name='player_detail_rdf'),
     path('players/<str:player_id>/', views.player_detail_view, name='player_detail'),
     path('teams/', views.teams_view, name='teams'),
     path('teams/league/<str:league_code>/', views.league_detail_view, name='league_detail'),

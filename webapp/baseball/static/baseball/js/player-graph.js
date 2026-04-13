@@ -1,14 +1,36 @@
 (() => {
+    const graphRoot = document.querySelector("[data-player-graph-root]");
     const graphContainer = document.getElementById("player-graph");
     const nodesElement = document.getElementById("graph-nodes-data");
     const edgesElement = document.getElementById("graph-edges-data");
+    const loadingState = graphContainer?.querySelector("[data-player-graph-loading]");
 
-    if (!graphContainer || !nodesElement || !edgesElement || typeof cytoscape === "undefined") {
+    if (!graphRoot || !graphContainer || !nodesElement || !edgesElement || typeof cytoscape === "undefined") {
         return;
     }
 
     const nodes = JSON.parse(nodesElement.textContent);
     const edges = JSON.parse(edgesElement.textContent);
+
+    let graphStarted = false;
+
+    const isOverviewActive = () => {
+        const overviewPanel = document.getElementById("player-tab-overview");
+        return overviewPanel ? !overviewPanel.hidden : true;
+    };
+
+    const showGraphError = (message) => {
+        graphContainer.classList.remove("graph-canvas-pending");
+        graphContainer.innerHTML = `
+            <div class="graph-loading-state graph-loading-state-compact graph-loading-state-error">
+                <i class="bi bi-exclamation-circle"></i>
+                <div>
+                    <strong>Graph unavailable</strong>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+    };
 
     const preloadImage = (url) => new Promise((resolve) => {
         if (!url) {
@@ -135,11 +157,15 @@
                 {
                     selector: 'node[type="team"]',
                     style: {
-                        "background-color": "#1d4f91",
-                        width: 86,
-                        height: 86,
-                        "border-width": 3,
+                        "background-color": "#ffffff",
+                        width: 64,
+                        height: 64,
+                        "border-width": 4,
+                        "border-color": "#ffffff",
                         shape: "ellipse",
+                        "text-valign": "bottom",
+                        "text-margin-y": 11,
+                        "text-max-width": 128,
                     },
                 },
                 {
@@ -152,8 +178,8 @@
                         "background-image": "data(resolvedLogoUrl)",
                         "background-position-x": "50%",
                         "background-position-y": "50%",
-                        "background-width": "112%",
-                        "background-height": "112%",
+                        "background-width": "100%",
+                        "background-height": "100%",
                         "background-opacity": 1,
                     },
                 },
@@ -236,10 +262,15 @@
         const refreshImageNodes = () => {
             zoomRefreshFrame = null;
             cy.batch(() => {
-                cy.nodes('[resolvedPhotoUrl]').forEach((node) => {
+                cy.nodes("[resolvedPhotoUrl]").forEach((node) => {
                     node.style("background-image", node.data("resolvedPhotoUrl"));
                 });
-                cy.nodes('[resolvedLogoUrl]').forEach((node) => {
+            });
+        };
+
+        const applyLogoNodes = () => {
+            cy.batch(() => {
+                cy.nodes("[resolvedLogoUrl]").forEach((node) => {
                     node.style("background-image", node.data("resolvedLogoUrl"));
                 });
             });
@@ -274,6 +305,7 @@
                     }
                 }
             }));
+            applyLogoNodes();
             refreshImageNodes();
         };
 
@@ -293,7 +325,7 @@
 
         refreshImageNodes();
         cy.fit(undefined, 72);
-        loadGraphImages();
+        window.setTimeout(loadGraphImages, 120);
 
         document.addEventListener("player-detail-tab:change", (event) => {
             if (event.detail?.tab !== "overview") {
@@ -306,5 +338,33 @@
         });
     };
 
-    initializeGraph();
+    const maybeStartGraph = () => {
+        if (graphStarted || !isOverviewActive()) {
+            return;
+        }
+
+        try {
+            graphStarted = true;
+            graphContainer.classList.remove("graph-canvas-pending");
+            loadingState?.remove();
+            initializeGraph();
+        } catch (error) {
+            const message = error instanceof Error
+                ? error.message
+                : "The interactive graph could not be loaded right now.";
+            showGraphError(message);
+        }
+    };
+
+    if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(() => maybeStartGraph(), { timeout: 1200 });
+    } else {
+        window.setTimeout(maybeStartGraph, 250);
+    }
+
+    document.addEventListener("player-detail-tab:change", (event) => {
+        if (event.detail?.tab === "overview") {
+            maybeStartGraph();
+        }
+    });
 })();
