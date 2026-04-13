@@ -5553,24 +5553,24 @@ body.entity-edit-modal-open {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: clamp(4.5rem, 6vw, 5.35rem);
-    height: clamp(4.5rem, 6vw, 5.35rem);
+    width: clamp(6rem, 8vw, 7.25rem);
+    height: clamp(6rem, 8vw, 7.25rem);
     padding: 0;
-    border: 1px solid rgba(77, 121, 198, 0.3);
-    border-radius: 1.4rem;
-    background: linear-gradient(180deg, rgba(19, 46, 88, 0.96), rgba(10, 25, 52, 0.96));
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: inherit;
-    box-shadow: 0 20px 38px rgba(6, 14, 31, 0.32);
+    box-shadow: none;
     overflow: hidden;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    transition: none;
 }
 
 .chatbot-fab:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(180deg, rgba(23, 57, 108, 0.98), rgba(12, 33, 68, 0.98));
+    transform: none;
+    background: transparent;
     color: inherit;
-    border-color: rgba(104, 150, 224, 0.44);
-    box-shadow: 0 24px 44px rgba(6, 14, 31, 0.4);
+    border-color: transparent;
+    box-shadow: none;
 }
 
 .chatbot-fab-icon {
@@ -5580,7 +5580,7 @@ body.entity-edit-modal-open {
     object-fit: cover;
     object-position: center;
     transform: none;
-    border-radius: inherit;
+    border-radius: 0;
 }
 
 .chatbot-panel {
@@ -5754,7 +5754,7 @@ body.entity-edit-modal-open {
 
     .chatbot-fab {
         align-self: flex-end;
-        width: 4.7rem;
-        height: 4.7rem;
+        width: 6rem;
+        height: 6rem;
     }
 }
