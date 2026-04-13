@@ -8,6 +8,7 @@ from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import FOAF, RDF
 
 from baseball.models import DataSuggestion, QuizAttempt
+from baseball.chatbot.service import answer_chat_message
 from baseball.quiz_service import (
     QUIZ_SESSION_KEY,
     _get_cached_question_families,
@@ -189,6 +190,116 @@ class QuizServiceTests(TestCase):
 
         self.assertTrue(payload["is_correct"])
         mock_ask.assert_called_once_with("home_runs", "AL", 2005, "b")
+
+
+class ChatbotServiceTests(TestCase):
+    @patch("baseball.chatbot.service.get_teams_by_league_code")
+    def test_maps_portuguese_prompt_for_al_teams(self, mock_get_teams_by_league_code):
+        mock_get_teams_by_league_code.return_value = [
+            {
+                "franchise_id": "BOS",
+                "name": "Boston Red Sox",
+                "league_code": "AL",
+                "first_year": 1901,
+                "last_year": 2023,
+            }
+        ]
+
+        payload = answer_chat_message("Mostra equipas da AL")
+
+        mock_get_teams_by_league_code.assert_called_once_with("AL")
+        self.assertIn("American League", payload["answer"])
+        self.assertTrue(payload["items"])
+        self.assertEqual(payload["items"][0]["kind"], "League")
+
+    @patch("baseball.chatbot.service.get_teams_by_league_code")
+    def test_maps_brazilian_variant_for_al_teams(self, mock_get_teams_by_league_code):
+        mock_get_teams_by_league_code.return_value = [
+            {
+                "franchise_id": "NYY",
+                "name": "New York Yankees",
+                "league_code": "AL",
+                "first_year": 1901,
+                "last_year": 2023,
+            }
+        ]
+
+        payload = answer_chat_message("Quais equipes da liga americana?")
+
+        mock_get_teams_by_league_code.assert_called_once_with("AL")
+        self.assertTrue(payload["items"])
+        self.assertEqual(payload["items"][0]["kind"], "League")
+
+    @patch("baseball.chatbot.service.get_players_by_country")
+    def test_maps_portuguese_prompt_for_players_by_country(self, mock_get_players_by_country):
+        mock_get_players_by_country.return_value = [
+            {
+                "player_id": "judgeaa01",
+                "name": "Aaron Judge",
+                "birth_country": "USA",
+                "debut": "2016-08-13",
+            }
+        ]
+
+        payload = answer_chat_message("Mostra jogadores de USA")
+
+        mock_get_players_by_country.assert_called_once_with("USA")
+        self.assertIn("Found", payload["answer"])
+        self.assertTrue(payload["items"])
+        self.assertEqual(payload["items"][0]["kind"], "Player")
+
+    @patch("baseball.chatbot.service.get_awards_by_year")
+    def test_maps_portuguese_prompt_for_awards_year(self, mock_get_awards_by_year):
+        mock_get_awards_by_year.return_value = [
+            {
+                "player_id": "judgeaa01",
+                "name": "Aaron Judge",
+                "award_name": "MVP",
+                "league_code": "AL",
+            }
+        ]
+
+        payload = answer_chat_message("Prémios em 2015")
+
+        mock_get_awards_by_year.assert_called_once_with("2015")
+        self.assertIn("2015", payload["answer"])
+        self.assertTrue(payload["items"])
+        self.assertEqual(payload["items"][0]["kind"], "Award")
+
+    @patch("baseball.chatbot.service.get_salary_leaders")
+    def test_maps_portuguese_prompt_for_salary_leaders(self, mock_get_salary_leaders):
+        mock_get_salary_leaders.return_value = [
+            {
+                "player_id": "judgeaa01",
+                "name": "Aaron Judge",
+                "salary": 40000000,
+                "year": 2024,
+            }
+        ]
+
+        payload = answer_chat_message("Top salários")
+
+        mock_get_salary_leaders.assert_called_once_with()
+        self.assertIn("top salary records", payload["answer"])
+        self.assertTrue(payload["items"])
+        self.assertEqual(payload["items"][0]["kind"], "Salary")
+
+    @patch("baseball.chatbot.service.find_teams_by_name")
+    @patch("baseball.chatbot.service.find_players_by_name")
+    def test_fallback_extracts_entity_name_from_portuguese_prompt(self, mock_find_players_by_name, mock_find_teams_by_name):
+        mock_find_players_by_name.side_effect = [
+            [],
+            [],
+            [{"player_id": "judgeaa01", "name": "Aaron Judge", "birth_country": "USA", "debut": "2016"}],
+        ]
+        mock_find_teams_by_name.return_value = []
+
+        payload = answer_chat_message("Quero dados do jogador Aaron Judge")
+
+        searched_terms = [call.args[0] for call in mock_find_players_by_name.call_args_list]
+        self.assertTrue(any("aaron judge" in term.lower() for term in searched_terms))
+        self.assertTrue(payload["items"])
+        self.assertEqual(payload["items"][0]["kind"], "Player")
 
 
 class PlayerGraphQueryTests(TestCase):
