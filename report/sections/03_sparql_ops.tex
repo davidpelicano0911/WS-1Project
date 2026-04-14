@@ -95,6 +95,20 @@ WHERE {
 }
 ORDER BY ?franchiseId DESC(?year)
 \end{Verbatim}
+
+  \item \textbf{/players/\{player\_id\}/rdf/ -- Vista RDF da entidade}
+  
+  Fun\c{c}\~ao: \texttt{player\_detail\_rdf\_view()} com apoio de \texttt{run\_describe(resource\_uri)}
+  
+  Descri\c{c}\~ao: devolve uma vista crua dos triplos RDF associados ao jogador selecionado, usada na interface para inspe\c{c}\~ao direta da representa\c{c}\~ao sem\^antica da entidade.
+  
+  Tipo SPARQL: \texttt{DESCRIBE}
+
+  SPARQL:
+
+\begin{Verbatim}[fontsize=\scriptsize,breaklines=true]
+DESCRIBE <http://baseball.ws.pt/player/aaronha01>
+\end{Verbatim}
 \end{itemize}
 
 \subsection{Equipas e franquias}
